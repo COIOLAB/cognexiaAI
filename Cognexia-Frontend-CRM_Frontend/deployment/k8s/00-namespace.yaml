@@ -1,0 +1,182 @@
+# ===============================================================================
+# EzAi-MFGNINJA Government-Grade Kubernetes Namespace Configuration
+# AI-Powered Manufacturing Intelligence Platform
+# 
+# This creates isolated namespaces for government-grade security and compliance
+# ===============================================================================
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ezai-mfgninja-gov
+  labels:
+    name: ezai-mfgninja-gov
+    compliance: "iso27001,soc2,nist,fedramp,gdpr,sox"
+    environment: production
+    security-level: maximum
+    government-certified: "true"
+  annotations:
+    description: "EzAi-MFGNINJA Government-Grade Manufacturing Intelligence Platform"
+    security.compliance/iso27001: "enabled"
+    security.compliance/soc2: "enabled"
+    security.compliance/nist: "enabled"
+    security.compliance/fedramp: "enabled"
+    security.compliance/gdpr: "enabled"
+    security.compliance/sox: "enabled"
+    
+---
+# Network Policy to enforce zero-trust security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ezai-network-policy
+  namespace: ezai-mfgninja-gov
+  labels:
+    compliance: government-grade
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ezai-mfgninja-gov
+    - podSelector: {}
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: ezai-mfgninja-gov
+    - podSelector: {}
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 443
+
+---
+# Pod Security Policy for government compliance
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: ezai-psp-government
+  namespace: ezai-mfgninja-gov
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'runtime/default'
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: 'runtime/default'
+    seccomp.security.alpha.kubernetes.io/defaultProfileName: 'runtime/default'
+    apparmor.security.beta.kubernetes.io/defaultProfileName: 'runtime/default'
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'persistentVolumeClaim'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+  supplementalGroups:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1
+        max: 65535
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1
+        max: 65535
+  readOnlyRootFilesystem: true
+  seLinux:
+    rule: RunAsAny
+
+---
+# Role for Pod Security Policy
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ezai-psp-user
+  namespace: ezai-mfgninja-gov
+rules:
+- apiGroups: ['policy']
+  resources: ['podsecuritypolicies']
+  verbs: ['use']
+  resourceNames:
+  - ezai-psp-government
+
+---
+# RoleBinding for Pod Security Policy
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ezai-psp-binding
+  namespace: ezai-mfgninja-gov
+roleRef:
+  kind: Role
+  name: ezai-psp-user
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: ezai-mfgninja-gov
+
+---
+# Resource Quota for compliance and security
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: ezai-resource-quota
+  namespace: ezai-mfgninja-gov
+spec:
+  hard:
+    requests.cpu: "20"
+    requests.memory: 40Gi
+    limits.cpu: "40"
+    limits.memory: 80Gi
+    persistentvolumeclaims: "10"
+    pods: "50"
+    secrets: "20"
+    services: "15"
+    services.loadbalancers: "5"
+
+---
+# Limit Range for pod security
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: ezai-limit-range
+  namespace: ezai-mfgninja-gov
+spec:
+  limits:
+  - default:
+      cpu: "1"
+      memory: "2Gi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "256Mi"
+    max:
+      cpu: "4"
+      memory: "8Gi"
+    min:
+      cpu: "50m"
+      memory: "128Mi"
+    type: Container
+  - default:
+      storage: "10Gi"
+    max:
+      storage: "100Gi"
+    min:
+      storage: "1Gi"
+    type: PersistentVolumeClaim

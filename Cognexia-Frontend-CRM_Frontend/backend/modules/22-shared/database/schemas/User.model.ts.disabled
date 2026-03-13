@@ -1,0 +1,264 @@
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, ManyToMany, JoinTable, Index } from 'typeorm';
+import { IsEmail, IsNotEmpty, MinLength } from 'class-validator';
+import { Organization } from './Organization.model';
+import { Role } from './Role.model';
+import { AuditLog } from './AuditLog.model';
+
+export enum UserStatus {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  SUSPENDED = 'suspended',
+  PENDING = 'pending'
+}
+
+export enum AuthProvider {
+  LOCAL = 'local',
+  GOOGLE = 'google',
+  MICROSOFT = 'microsoft',
+  LDAP = 'ldap',
+  SAML = 'saml'
+}
+
+@Entity('users')
+@Index(['email'])
+@Index(['username'])
+@Index(['organizationId'])
+export class User {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ unique: true })
+  @IsNotEmpty()
+  username: string;
+
+  @Column({ unique: true })
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+
+  @Column({ select: false }) // Exclude from default selections
+  @MinLength(8)
+  passwordHash: string;
+
+  @Column()
+  @IsNotEmpty()
+  firstName: string;
+
+  @Column()
+  @IsNotEmpty()
+  lastName: string;
+
+  @Column({ nullable: true })
+  middleName?: string;
+
+  @Column({ nullable: true })
+  phoneNumber?: string;
+
+  @Column({ nullable: true })
+  avatar?: string;
+
+  @Column({
+    type: 'enum',
+    enum: UserStatus,
+    default: UserStatus.PENDING
+  })
+  status: UserStatus;
+
+  @Column({
+    type: 'enum',
+    enum: AuthProvider,
+    default: AuthProvider.LOCAL
+  })
+  authProvider: AuthProvider;
+
+  @Column({ nullable: true })
+  externalId?: string;
+
+  @Column({ type: 'json', nullable: true })
+  preferences?: {
+    language: string;
+    timezone: string;
+    theme: 'light' | 'dark' | 'auto';
+    notifications: {
+      email: boolean;
+      push: boolean;
+      sms: boolean;
+    };
+    dashboard: {
+      layout: string;
+      widgets: string[];
+    };
+  };
+
+  @Column({ type: 'json', nullable: true })
+  profile?: {
+    department: string;
+    position: string;
+    employeeId?: string;
+    manager?: string;
+    skills: string[];
+    certifications: Array<{
+      name: string;
+      issuer: string;
+      issueDate: Date;
+      expiryDate?: Date;
+    }>;
+  };
+
+  // Security fields
+  @Column({ nullable: true })
+  lastLoginAt?: Date;
+
+  @Column({ default: 0 })
+  failedLoginAttempts: number;
+
+  @Column({ nullable: true })
+  lockedUntil?: Date;
+
+  @Column({ nullable: true })
+  passwordResetToken?: string;
+
+  @Column({ nullable: true })
+  passwordResetExpires?: Date;
+
+  @Column({ nullable: true })
+  emailVerificationToken?: string;
+
+  @Column({ default: false })
+  emailVerified: boolean;
+
+  @Column({ nullable: true })
+  twoFactorSecret?: string;
+
+  @Column({ default: false })
+  twoFactorEnabled: boolean;
+
+  // Session management
+  @Column({ type: 'json', nullable: true })
+  activeSessions?: Array<{
+    sessionId: string;
+    deviceInfo: string;
+    ipAddress: string;
+    lastActivity: Date;
+    location?: string;
+  }>;
+
+  // Relationships
+  @ManyToOne(() => Organization, organization => organization.users)
+  organization: Organization;
+
+  @Column({ nullable: true })
+  organizationId?: string;
+
+  @ManyToMany(() => Role, role => role.users)
+  @JoinTable({
+    name: 'user_roles',
+    joinColumn: {
+      name: 'user_id',
+      referencedColumnName: 'id'
+    },
+    inverseJoinColumn: {
+      name: 'role_id', 
+      referencedColumnName: 'id'
+    }
+  })
+  roles: Role[];
+
+  @OneToMany(() => AuditLog, auditLog => auditLog.user)
+  auditLogs: AuditLog[];
+
+  // Timestamps
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @Column({ nullable: true })
+  deletedAt?: Date;
+
+  @Column({ nullable: true })
+  createdBy?: string;
+
+  @Column({ nullable: true })
+  updatedBy?: string;
+
+  // Computed properties
+  get fullName(): string {
+    return `${this.firstName} ${this.middleName ? this.middleName + ' ' : ''}${this.lastName}`;
+  }
+
+  get isActive(): boolean {
+    return this.status === UserStatus.ACTIVE && !this.isLocked;
+  }
+
+  get isLocked(): boolean {
+    return this.lockedUntil ? new Date() < this.lockedUntil : false;
+  }
+
+  get roleNames(): string[] {
+    return this.roles ? this.roles.map(role => role.name) : [];
+  }
+
+  // Methods for authentication
+  incrementFailedAttempts(): void {
+    this.failedLoginAttempts += 1;
+    if (this.failedLoginAttempts >= 5) {
+      this.lockedUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+    }
+  }
+
+  resetFailedAttempts(): void {
+    this.failedLoginAttempts = 0;
+    this.lockedUntil = null;
+    this.lastLoginAt = new Date();
+  }
+
+  addSession(sessionInfo: {
+    sessionId: string;
+    deviceInfo: string;
+    ipAddress: string;
+    location?: string;
+  }): void {
+    if (!this.activeSessions) {
+      this.activeSessions = [];
+    }
+    
+    // Remove old sessions (keep only last 5)
+    this.activeSessions = this.activeSessions.slice(-4);
+    
+    this.activeSessions.push({
+      ...sessionInfo,
+      lastActivity: new Date()
+    });
+  }
+
+  removeSession(sessionId: string): void {
+    if (this.activeSessions) {
+      this.activeSessions = this.activeSessions.filter(
+        session => session.sessionId !== sessionId
+      );
+    }
+  }
+
+  // Permission checking
+  hasRole(roleName: string): boolean {
+    return this.roles ? this.roles.some(role => role.name === roleName) : false;
+  }
+
+  hasPermission(permission: string): boolean {
+    if (!this.roles) return false;
+    
+    return this.roles.some(role => 
+      role.permissions && role.permissions.some(perm => perm.name === permission)
+    );
+  }
+
+  hasAnyPermission(permissions: string[]): boolean {
+    return permissions.some(permission => this.hasPermission(permission));
+  }
+
+  hasAllPermissions(permissions: string[]): boolean {
+    return permissions.every(permission => this.hasPermission(permission));
+  }
+}

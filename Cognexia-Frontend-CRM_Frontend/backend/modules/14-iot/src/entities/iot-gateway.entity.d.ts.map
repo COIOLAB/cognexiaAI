@@ -1,0 +1,1 @@
+{"version":3,"file":"iot-gateway.entity.d.ts","sourceRoot":"","sources":["iot-gateway.entity.ts"],"names":[],"mappings":"AAEA,qBACa,UAAU;IAErB,EAAE,EAAE,MAAM,CAAC;IAGX,IAAI,EAAE,MAAM,CAAC;IAGb,MAAM,EAAE,MAAM,CAAC;IAGf,QAAQ,CAAC,EAAE,MAAM,CAAC;IAGlB,aAAa,CAAC,EAAE,GAAG,CAAC;IAGpB,gBAAgB,CAAC,EAAE,MAAM,EAAE,CAAC;IAG5B,SAAS,EAAE,IAAI,CAAC;IAGhB,SAAS,EAAE,IAAI,CAAC;CACjB"}

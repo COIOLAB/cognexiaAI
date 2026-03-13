@@ -1,0 +1,138 @@
+# ===============================================================================
+# EzAi-MFGNINJA Government-Grade Grafana Datasources Configuration
+# AI-Powered Manufacturing Intelligence Platform
+# ===============================================================================
+
+apiVersion: 1
+
+datasources:
+  # Primary Prometheus datasource for metrics
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    orgId: 1
+    url: http://prometheus:9090
+    basicAuth: false
+    isDefault: true
+    version: 1
+    editable: true
+    jsonData:
+      httpMethod: POST
+      manageAlerts: true
+      prometheusType: Prometheus
+      prometheusVersion: 2.40.0
+      cacheLevel: 'High'
+      disableRecordingRules: false
+      incrementalQueryOverlapWindow: 10m
+
+  # Elasticsearch datasource for logs
+  - name: Elasticsearch-Logs
+    type: elasticsearch
+    access: proxy
+    orgId: 1
+    url: http://elasticsearch:9200
+    database: "logstash-*"
+    basicAuth: true
+    basicAuthUser: elastic
+    secureJsonData:
+      basicAuthPassword: ${ELASTIC_PASSWORD}
+    version: 1
+    editable: true
+    jsonData:
+      index: "logstash-*"
+      interval: Daily
+      timeField: "@timestamp"
+      esVersion: "8.11.0"
+      maxConcurrentShardRequests: 5
+      includeFrozen: false
+      xpack: true
+      logMessageField: message
+      logLevelField: level
+
+  # Elasticsearch datasource for security events
+  - name: Elasticsearch-Security
+    type: elasticsearch
+    access: proxy
+    orgId: 1
+    url: http://elasticsearch:9200
+    database: "security-*"
+    basicAuth: true
+    basicAuthUser: elastic
+    secureJsonData:
+      basicAuthPassword: ${ELASTIC_PASSWORD}
+    version: 1
+    editable: true
+    jsonData:
+      index: "security-*"
+      interval: Daily
+      timeField: "@timestamp"
+      esVersion: "8.11.0"
+      maxConcurrentShardRequests: 5
+      includeFrozen: false
+      xpack: true
+
+  # Elasticsearch datasource for audit logs
+  - name: Elasticsearch-Audit
+    type: elasticsearch
+    access: proxy
+    orgId: 1
+    url: http://elasticsearch:9200
+    database: "audit-*"
+    basicAuth: true
+    basicAuthUser: elastic
+    secureJsonData:
+      basicAuthPassword: ${ELASTIC_PASSWORD}
+    version: 1
+    editable: true
+    jsonData:
+      index: "audit-*"
+      interval: Daily
+      timeField: "@timestamp"
+      esVersion: "8.11.0"
+      maxConcurrentShardRequests: 5
+      includeFrozen: false
+      xpack: true
+
+  # TestData datasource for testing
+  - name: TestData
+    type: testdata
+    access: proxy
+    orgId: 1
+    version: 1
+    editable: false
+
+  # Loki datasource for additional log aggregation (if needed)
+  - name: Loki
+    type: loki
+    access: proxy
+    orgId: 1
+    url: http://loki:3100
+    version: 1
+    editable: true
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        - datasourceUid: prometheus
+          matcherRegex: "traceID=(\\w+)"
+          name: TraceID
+          url: "$${__value.raw}"
+
+  # InfluxDB datasource for time-series manufacturing data (if needed)
+  - name: InfluxDB-Manufacturing
+    type: influxdb
+    access: proxy
+    orgId: 1
+    url: http://influxdb:8086
+    version: 1
+    editable: true
+    jsonData:
+      version: Flux
+      organization: ezai-manufacturing
+      defaultBucket: production-metrics
+      tlsSkipVerify: true
+    secureJsonData:
+      token: ${INFLUXDB_TOKEN}
+
+deleteDatasources:
+  - name: TestData
+    orgId: 1

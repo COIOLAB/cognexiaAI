@@ -1,0 +1,291 @@
+{
+  "info": {
+    "name": "CognexiaAI CRM - Auth APIs",
+    "description": "Authentication & Authorization endpoints for CognexiaAI CRM backend. Auto-configured with variables for easy testing.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "cognexia-crm-auth-v1"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3003",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_email",
+      "value": "admin@cognexiaai.com",
+      "type": "string"
+    },
+    {
+      "key": "admin_password",
+      "value": "Tata@19822",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const jsonData = pm.response.json();",
+              "    pm.collectionVariables.set('access_token', jsonData.accessToken);",
+              "    pm.collectionVariables.set('refresh_token', jsonData.refreshToken);",
+              "    console.log('✓ Tokens saved to collection variables');",
+              "    console.log('User:', jsonData.user.email, '|', jsonData.user.userType);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["auth", "login"]
+        },
+        "description": "Authenticate user and receive JWT access & refresh tokens. Tokens are auto-saved to collection variables."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Get Current User (Me)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const jsonData = pm.response.json();",
+              "    console.log('✓ User ID:', jsonData.id);",
+              "    console.log('✓ Type:', jsonData.userType);",
+              "    console.log('✓ Roles:', jsonData.roles);",
+              "    console.log('✓ Org:', jsonData.organization?.name || 'N/A');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/auth/me",
+          "host": ["{{base_url}}"],
+          "path": ["auth", "me"]
+        },
+        "description": "Fetch current authenticated user profile with roles, permissions, and organization details. Requires Bearer token."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Refresh Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const jsonData = pm.response.json();",
+              "    pm.collectionVariables.set('access_token', jsonData.accessToken);",
+              "    console.log('✓ New access token saved');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/refresh",
+          "host": ["{{base_url}}"],
+          "path": ["auth", "refresh"]
+        },
+        "description": "Exchange refresh token for a new access token. New token is auto-saved to collection variables."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Logout",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/auth/logout",
+          "host": ["{{base_url}}"],
+          "path": ["auth", "logout"]
+        },
+        "description": "Invalidate current session. Requires Bearer token."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Password Reset - Request",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"user@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/password-reset/request",
+          "host": ["{{base_url}}"],
+          "path": ["auth", "password-reset", "request"]
+        },
+        "description": "Request a password reset email. Returns 200 regardless of whether email exists (security best practice)."
+      },
+      "response": []
+    },
+    {
+      "name": "6. Password Reset - Confirm",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"token\": \"RESET_TOKEN_FROM_EMAIL\",\n  \"newPassword\": \"NewStrongP@ss123\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/password-reset/confirm",
+          "host": ["{{base_url}}"],
+          "path": ["auth", "password-reset", "confirm"]
+        },
+        "description": "Confirm password reset with token from email and set new password."
+      },
+      "response": []
+    },
+    {
+      "name": "7. Email Verification - Send",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/auth/verify-email/send",
+          "host": ["{{base_url}}"],
+          "path": ["auth", "verify-email", "send"]
+        },
+        "description": "Send email verification link to current user's email. Requires Bearer token."
+      },
+      "response": []
+    },
+    {
+      "name": "8. Email Verification - Confirm",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"token\": \"EMAIL_VERIFICATION_TOKEN\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/verify-email/confirm",
+          "host": ["{{base_url}}"],
+          "path": ["auth", "verify-email", "confirm"]
+        },
+        "description": "Confirm email verification with token from email."
+      },
+      "response": []
+    },
+    {
+      "name": "9. Register New User (Super Admin only)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"SecureP@ss123\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"userType\": \"org_user\",\n  \"organizationId\": \"ORG_UUID_HERE\",\n  \"roles\": [\"user\"]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/register",
+          "host": ["{{base_url}}"],
+          "path": ["auth", "register"]
+        },
+        "description": "Register a new user. Typically restricted to super_admin role. Requires Bearer token."
+      },
+      "response": []
+    }
+  ]
+}

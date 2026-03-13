@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CognexiaAI Legal - AI-Powered Legal Intelligence | CMMI Level 5</title>
+    <meta name="description" content="Enterprise legal AI with document creation, intelligent drafting, case law analysis, contract intelligence, and predictive litigation analytics. CMMI Level 5 certified.">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #1e293b; background: #ffffff; }
+        .header { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; z-index: 1000; }
+        .header-content { max-width: 1400px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center; height: 7rem; }
+        .logo { display: flex; align-items: center; }
+        .logo img { transition: opacity 0.3s; }
+        .logo:hover img { opacity: 0.9; }
+        .nav-links { display: flex; gap: 2rem; align-items: center; }
+        .nav-links a { font-size: 0.875rem; font-weight: 500; color: #374151; text-decoration: none; transition: color 0.3s; }
+        .nav-links a:hover { color: #2563eb; }
+        .auth-buttons { display: flex; gap: 0.75rem; align-items: center; }
+        .btn-signin { padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; color: #374151; background: transparent; border: none; cursor: pointer; transition: background-color 0.3s; border-radius: 0.375rem; text-decoration: none; display: inline-block; }
+        .btn-signin:hover { background-color: #f3f4f6; }
+        .btn-getstarted { padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; color: white; background: linear-gradient(135deg, #2563eb, #06b6d4); border: none; cursor: pointer; border-radius: 0.375rem; text-decoration: none; display: inline-block; transition: all 0.3s; }
+        .btn-getstarted:hover { background: linear-gradient(135deg, #1e40af, #0891b2); }
+        @media (max-width: 768px) { .nav-links { display: none; } }
+        .hero { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); color: white; padding: 5rem 2rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 50px 50px; }
+        .hero-content { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+        .hero h1 { font-size: 3.5rem; font-weight: 800; margin-bottom: 1rem; background: linear-gradient(135deg, #818cf8, #a5b4fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .hero .tagline { font-size: 1.75rem; color: #c7d2fe; font-weight: 300; margin-bottom: 1rem; font-style: italic; }
+        .hero .description { font-size: 1.25rem; color: #cbd5e1; max-width: 900px; margin: 0 auto 3rem; line-height: 1.8; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-top: 3rem; }
+        .stat-card { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 2rem; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.2); }
+        .stat-number { font-size: 3rem; font-weight: 800; color: #818cf8; margin-bottom: 0.5rem; }
+        .stat-label { color: #cbd5e1; font-size: 1rem; font-weight: 600; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 2rem; }
+        .section { padding: 4rem 0; }
+        .section-title { font-size: 2.5rem; font-weight: 800; color: #0f172a; margin-bottom: 1rem; text-align: center; }
+        .section-subtitle { font-size: 1.25rem; color: #64748b; text-align: center; max-width: 800px; margin: 0 auto 3rem; }
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; margin-top: 2rem; }
+        .feature-card { background: #ffffff; border: 2px solid #e2e8f0; border-radius: 1rem; padding: 2rem; transition: all 0.3s ease; }
+        .feature-card:hover { border-color: #4f46e5; box-shadow: 0 10px 30px rgba(79, 70, 229, 0.15); transform: translateY(-5px); }
+        .feature-icon { width: 60px; height: 60px; background: linear-gradient(135deg, #4f46e5, #4338ca); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; color: white; margin-bottom: 1.5rem; }
+        .feature-title { font-size: 1.5rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; }
+        .feature-list { list-style: none; }
+        .feature-list li { padding: 0.5rem 0; display: flex; align-items: flex-start; gap: 0.75rem; color: #475569; }
+        .feature-list li::before { content: '✓'; color: #4f46e5; font-weight: 900; font-size: 1.25rem; flex-shrink: 0; }
+        .ai-section { background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); }
+        .ai-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
+        .ai-card { background: white; border-radius: 1rem; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .ai-icon { width: 50px; height: 50px; background: linear-gradient(135deg, #4f46e5, #4338ca); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1rem; }
+        .compliance-section { background: #0f172a; color: white; padding: 4rem 2rem; }
+        .compliance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; max-width: 1400px; margin: 3rem auto 0; }
+        .compliance-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; padding: 2rem; text-align: center; }
+        .compliance-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .compliance-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .cta-section { background: linear-gradient(135deg, #4f46e5, #4338ca); color: white; padding: 5rem 2rem; text-align: center; }
+        .cta-title { font-size: 3rem; font-weight: 800; margin-bottom: 1rem; }
+        .cta-buttons { display: flex; gap: 1rem; justify-content: center; margin-top: 2rem; flex-wrap: wrap; }
+        .btn { padding: 1rem 2.5rem; border-radius: 0.75rem; font-size: 1.125rem; font-weight: 600; text-decoration: none; transition: all 0.3s ease; display: inline-block; }
+        .btn-primary { background: white; color: #4338ca; }
+        .btn-primary:hover { background: #f1f5f9; transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .btn-secondary { background: transparent; color: white; border: 2px solid white; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+        .footer { background: #0f172a; color: #94a3b8; padding: 3rem 2rem; text-align: center; }
+        .footer-links { display: flex; gap: 2rem; justify-content: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .footer-links a { color: #94a3b8; text-decoration: none; transition: color 0.3s; }
+        .footer-links a:hover { color: #818cf8; }
+        @media (max-width: 768px) { .hero h1 { font-size: 2.5rem; } .feature-grid { grid-template-columns: 1fr; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo"><img src="/cognexiaai-logo.png" alt="CognexiaAI Logo" style="height: 96px; width: auto;" /></a>
+            <div class="nav-links">
+                <a href="/products">Products</a><a href="/features">Features</a><a href="/pricing">Pricing</a><a href="/about">About</a><a href="/contact">Contact</a>
+            </div>
+            <div class="auth-buttons">
+                <a href="/login" class="btn-signin">Sign In</a><a href="/register" class="btn-getstarted">Get Started</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>CognexiaAI Legal</h1>
+            <p class="tagline">"Intelligence Meets Justice"</p>
+            <p class="description">Complete AI-Powered Legal Intelligence Platform with Document Creation, Intelligent Drafting, Case Law Analysis, Contract Intelligence, and Predictive Litigation Analytics. CMMI Level 5 Certified.</p>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-number">100M+</div><div class="stat-label">Legal Documents</div></div>
+                <div class="stat-card"><div class="stat-number">5000+</div><div class="stat-label">Document Templates</div></div>
+                <div class="stat-card"><div class="stat-number">98%</div><div class="stat-label">Drafting Accuracy</div></div>
+                <div class="stat-card"><div class="stat-number">75%</div><div class="stat-label">Time Savings</div></div>
+                <div class="stat-card"><div class="stat-number">50+</div><div class="stat-label">Jurisdictions</div></div>
+                <div class="stat-card"><div class="stat-number">200+</div><div class="stat-label">Practice Areas</div></div>
+                <div class="stat-card"><div class="stat-number">200+</div><div class="stat-label">Try Demo For</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Document Creation & Drafting Section -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">AI Document Creation & Drafting</h2>
+            <p class="section-subtitle">Revolutionary AI-powered legal document generation and intelligent drafting assistant</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">✍️</div>
+                    <h3 class="feature-title">AI Legal Drafting Assistant</h3>
+                    <ul class="feature-list">
+                        <li>Intelligent Document Drafting</li>
+                        <li>Context-Aware Legal Writing</li>
+                        <li>Real-Time Clause Suggestions</li>
+                        <li>Style & Tone Optimization</li>
+                        <li>Grammar & Citation Checker</li>
+                        <li>Multi-Jurisdiction Adaptation</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📝</div>
+                    <h3 class="feature-title">Legal Document Generator</h3>
+                    <ul class="feature-list">
+                        <li>5000+ Legal Document Templates</li>
+                        <li>One-Click Document Creation</li>
+                        <li>Conditional Logic & Branching</li>
+                        <li>Dynamic Field Population</li>
+                        <li>Custom Template Builder</li>
+                        <li>Batch Document Generation</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3 class="feature-title">Pleadings & Motions</h3>
+                    <ul class="feature-list">
+                        <li>Automated Pleading Drafting</li>
+                        <li>Motion Template Library (1000+)</li>
+                        <li>Court-Specific Formatting</li>
+                        <li>Memorandum of Law Generator</li>
+                        <li>Discovery Request Automation</li>
+                        <li>Response & Objection Drafting</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🤝</div>
+                    <h3 class="feature-title">Contracts & Agreements</h3>
+                    <ul class="feature-list">
+                        <li>NDA & Confidentiality Agreements</li>
+                        <li>Employment Contract Generator</li>
+                        <li>Service & Vendor Agreements</li>
+                        <li>Real Estate Contract Drafting</li>
+                        <li>Partnership & Operating Agreements</li>
+                        <li>Settlement Agreement Builder</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏛️</div>
+                    <h3 class="feature-title">Court Filings</h3>
+                    <ul class="feature-list">
+                        <li>E-Filing Integration</li>
+                        <li>Court Form Automation</li>
+                        <li>Complaint & Answer Drafting</li>
+                        <li>Affidavit & Declaration Builder</li>
+                        <li>Notice & Summons Generation</li>
+                        <li>Appellate Brief Composer</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💼</div>
+                    <h3 class="feature-title">Corporate Documents</h3>
+                    <ul class="feature-list">
+                        <li>Articles of Incorporation</li>
+                        <li>Bylaws & Operating Agreements</li>
+                        <li>Board Resolutions & Minutes</li>
+                        <li>Shareholder Agreements</li>
+                        <li>Stock Purchase Agreements</li>
+                        <li>Corporate Governance Documents</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Advanced Legal Tools Section -->
+    <section class="section ai-section">
+        <div class="container">
+            <h2 class="section-title">Advanced Legal Tools & Workflows</h2>
+            <p class="section-subtitle">Professional-grade tools for modern legal professionals</p>
+            <div class="ai-grid">
+                <div class="ai-card">
+                    <div class="ai-icon">🔄</div>
+                    <h3 class="feature-title">Document Comparison & Review</h3>
+                    <ul class="feature-list">
+                        <li>AI-Powered Redlining</li>
+                        <li>Side-by-Side Comparison</li>
+                        <li>Change Tracking & History</li>
+                        <li>Version Control Management</li>
+                        <li>Clause-Level Comparison</li>
+                        <li>Merge & Consolidation Tools</li>
+                    </ul>
+                </div>
+                <div class="ai-card">
+                    <div class="ai-icon">🎯</div>
+                    <h3 class="feature-title">Legal Citation & Research</h3>
+                    <ul class="feature-list">
+                        <li>Bluebook Citation Generator</li>
+                        <li>Automated Shepardizing</li>
+                        <li>Citation Verification & Validation</li>
+                        <li>Table of Authorities Builder</li>
+                        <li>Cross-Reference Management</li>
+                        <li>Pinpoint Citation Extraction</li>
+                    </ul>
+                </div>
+                <div class="ai-card">
+                    <div class="ai-icon">📊</div>
+                    <h3 class="feature-title">Matter & Case Management</h3>
+                    <ul class="feature-list">
+                        <li>Case & Matter Tracking</li>
+                        <li>Deadline & Calendar Management</li>
+                        <li>Task Automation & Workflows</li>
+                        <li>Time & Billing Integration</li>
+                        <li>Client Communication Portal</li>
+                        <li>Document Organization & Search</li>
+                    </ul>
+                </div>
+                <div class="ai-card">
+                    <div class="ai-icon">🔍</div>
+                    <h3 class="feature-title">Legal Research & Analytics</h3>
+                    <ul class="feature-list">
+                        <li>100M+ Case Law Database</li>
+                        <li>Natural Language Search</li>
+                        <li>Precedent Analysis & Citations</li>
+                        <li>Judge & Court Analytics</li>
+                        <li>Legal Trend Analysis</li>
+                        <li>Competitive Intelligence</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Core Legal AI Features -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">Core Legal Intelligence</h2>
+            <p class="section-subtitle">Comprehensive AI-powered legal platform with 300+ features for modern law practices</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚖️</div>
+                    <h3 class="feature-title">Contract Intelligence</h3>
+                    <ul class="feature-list">
+                        <li>AI Contract Analysis & Review</li>
+                        <li>Risk Assessment Automation</li>
+                        <li>Obligation & Deadline Tracking</li>
+                        <li>Contract Lifecycle Management</li>
+                        <li>Clause Library (10,000+ Clauses)</li>
+                        <li>Negotiation Point Identification</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3 class="feature-title">Due Diligence & M&A</h3>
+                    <ul class="feature-list">
+                        <li>Automated Document Review</li>
+                        <li>Data Room Management</li>
+                        <li>Entity Verification & KYC</li>
+                        <li>Regulatory Compliance Checks</li>
+                        <li>Risk Flag Identification</li>
+                        <li>Deal Checklists & Workflows</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3 class="feature-title">Litigation Analytics</h3>
+                    <ul class="feature-list">
+                        <li>Case Outcome Prediction (95% Accuracy)</li>
+                        <li>Judge & Opposing Counsel Analysis</li>
+                        <li>Settlement Valuation Modeling</li>
+                        <li>Litigation Strategy Optimization</li>
+                        <li>Discovery Document Analysis</li>
+                        <li>Trial Preparation Assistance</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">✅</div>
+                    <h3 class="feature-title">Compliance & Regulatory</h3>
+                    <ul class="feature-list">
+                        <li>Regulatory Change Monitoring</li>
+                        <li>Compliance Policy Management</li>
+                        <li>Audit Trail & Reporting</li>
+                        <li>Risk & Controls Framework</li>
+                        <li>Employee Training Management</li>
+                        <li>Incident Response Workflows</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3 class="feature-title">Legal NLP & AI</h3>
+                    <ul class="feature-list">
+                        <li>Advanced Natural Language Processing</li>
+                        <li>Entity Recognition & Extraction</li>
+                        <li>Sentiment Analysis for Contracts</li>
+                        <li>Legal Language Translation</li>
+                        <li>Semantic Search & Reasoning</li>
+                        <li>Legal Question Answering</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3 class="feature-title">Privacy & Security</h3>
+                    <ul class="feature-list">
+                        <li>Attorney-Client Privilege Protection</li>
+                        <li>End-to-End Encryption</li>
+                        <li>Data Residency Controls</li>
+                        <li>PII Detection & Redaction</li>
+                        <li>Secure Document Sharing</li>
+                        <li>Audit Logging & Compliance</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Practice Area Solutions -->
+    <section class="section ai-section">
+        <div class="container">
+            <h2 class="section-title">Practice Area Solutions</h2>
+            <p class="section-subtitle">Specialized AI solutions for every legal practice area</p>
+            <div class="ai-grid">
+                <div class="ai-card">
+                    <div class="ai-icon">🏢</div>
+                    <h3 class="feature-title">Corporate Law</h3>
+                    <ul class="feature-list">
+                        <li>M&A Transaction Management</li>
+                        <li>Corporate Governance Tools</li>
+                        <li>Securities Compliance</li>
+                        <li>Board Resolution Drafting</li>
+                        <li>Entity Formation & Maintenance</li>
+                        <li>Shareholder Agreement Templates</li>
+                    </ul>
+                </div>
+                <div class="ai-card">
+                    <div class="ai-icon">🏛️</div>
+                    <h3 class="feature-title">Intellectual Property</h3>
+                    <ul class="feature-list">
+                        <li>Patent Prior Art Search</li>
+                        <li>Trademark Monitoring & Search</li>
+                        <li>Copyright Registration</li>
+                        <li>IP Portfolio Management</li>
+                        <li>Licensing Agreement Tools</li>
+                        <li>IP Infringement Analysis</li>
+                    </ul>
+                </div>
+                <div class="ai-card">
+                    <div class="ai-icon">👨‍⚖️</div>
+                    <h3 class="feature-title">Litigation Support</h3>
+                    <ul class="feature-list">
+                        <li>E-Discovery & Document Review</li>
+                        <li>Deposition Preparation</li>
+                        <li>Motion & Pleading Drafting</li>
+                        <li>Evidence Organization</li>
+                        <li>Trial Presentation Tools</li>
+                        <li>Jury Selection Analytics</li>
+                    </ul>
+                </div>
+                <div class="ai-card">
+                    <div class="ai-icon">🏠</div>
+                    <h3 class="feature-title">Real Estate Law</h3>
+                    <ul class="feature-list">
+                        <li>Purchase Agreement Drafting</li>
+                        <li>Lease Agreement Templates</li>
+                        <li>Title Search & Analysis</li>
+                        <li>Zoning & Land Use Research</li>
+                        <li>Property Due Diligence</li>
+                        <li>Closing Document Preparation</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Specialized Practice Areas Section -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">Specialized Practice Areas</h2>
+            <p class="section-subtitle">Comprehensive AI-powered solutions for Criminal, Civil, and specialized legal domains</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚖️</div>
+                    <h3 class="feature-title">Criminal Law</h3>
+                    <ul class="feature-list">
+                        <li>Criminal Case Research (IPC, CrPC, Evidence Act)</li>
+                        <li>Bail Application Drafting & Analysis</li>
+                        <li>FIR Analysis & Response Drafting</li>
+                        <li>Charge Sheet Review & Counter Arguments</li>
+                        <li>Criminal Trial Brief Preparation</li>
+                        <li>Sentencing Guidelines & Precedents</li>
+                        <li>Appeals & Revision Petition Drafting</li>
+                        <li>Criminal Writ Petition Templates</li>
+                        <li>Witness Examination Preparation</li>
+                        <li>Criminal Precedent Analysis</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3 class="feature-title">Civil Law</h3>
+                    <ul class="feature-list">
+                        <li>Civil Suit Drafting (CPC Compliance)</li>
+                        <li>Plaint & Written Statement Generation</li>
+                        <li>Injunction Application Templates</li>
+                        <li>Civil Appeal & Revision Drafting</li>
+                        <li>Evidence & Document Compilation</li>
+                        <li>Civil Procedure Code Analysis</li>
+                        <li>Limitation Act Calculations</li>
+                        <li>Summary Suit Procedures</li>
+                        <li>Execution Petition Drafting</li>
+                        <li>Civil Decree Analysis</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">👨‍👩‍👧</div>
+                    <h3 class="feature-title">Family Law</h3>
+                    <ul class="feature-list">
+                        <li>Divorce Petition Drafting</li>
+                        <li>Custody & Maintenance Applications</li>
+                        <li>Domestic Violence Act (PWDVA) Petitions</li>
+                        <li>Matrimonial Dispute Resolution</li>
+                        <li>Adoption & Guardianship Documents</li>
+                        <li>Property Settlement Agreements</li>
+                        <li>Restitution of Conjugal Rights</li>
+                        <li>Family Court Procedure Templates</li>
+                        <li>Alimony & Child Support Calculations</li>
+                        <li>Marriage Registration Documents</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💼</div>
+                    <h3 class="feature-title">Employment & Labor Law</h3>
+                    <ul class="feature-list">
+                        <li>Employment Contract Drafting</li>
+                        <li>Industrial Dispute Resolution</li>
+                        <li>Labour Law Compliance (Shops & Establishment)</li>
+                        <li>Wrongful Termination Cases</li>
+                        <li>PF, ESI, & Gratuity Compliance</li>
+                        <li>Sexual Harassment (POSH) Documentation</li>
+                        <li>Trade Union & Strike Matters</li>
+                        <li>Wage & Overtime Disputes</li>
+                        <li>Employee Grievance Templates</li>
+                        <li>Labour Court Petition Drafting</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏛️</div>
+                    <h3 class="feature-title">Constitutional & Writ Law</h3>
+                    <ul class="feature-list">
+                        <li>Writ Petition Drafting (PIL, Habeas Corpus)</li>
+                        <li>Fundamental Rights Analysis</li>
+                        <li>Constitutional Interpretation Research</li>
+                        <li>Article-wise Precedent Database</li>
+                        <li>Public Interest Litigation Support</li>
+                        <li>Judicial Review Applications</li>
+                        <li>Mandamus & Certiorari Petitions</li>
+                        <li>Constitutional Validity Challenges</li>
+                        <li>Supreme Court Practice & Procedure</li>
+                        <li>High Court Rules Compliance</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏦</div>
+                    <h3 class="feature-title">Banking & Finance Law</h3>
+                    <ul class="feature-list">
+                        <li>Loan Agreement Review & Drafting</li>
+                        <li>NPA (Non-Performing Asset) Recovery</li>
+                        <li>SARFAESI Act Proceedings</li>
+                        <li>Debt Recovery Tribunal (DRT) Matters</li>
+                        <li>Insolvency & Bankruptcy Code (IBC)</li>
+                        <li>NCLT/NCLAT Petition Drafting</li>
+                        <li>Banking Dispute Resolution</li>
+                        <li>Mortgage & Security Documentation</li>
+                        <li>Cheque Bounce Cases (Sec 138 NI Act)</li>
+                        <li>RBI Compliance & Regulations</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏗️</div>
+                    <h3 class="feature-title">Real Estate & Property Law</h3>
+                    <ul class="feature-list">
+                        <li>Sale Deed & Conveyance Drafting</li>
+                        <li>Lease & Rental Agreements</li>
+                        <li>RERA Compliance & Disputes</li>
+                        <li>Property Title Verification</li>
+                        <li>Land Acquisition Matters</li>
+                        <li>Development Agreement Templates</li>
+                        <li>Property Dispute Resolution</li>
+                        <li>Construction Contract Drafting</li>
+                        <li>Mortgage & Hypothecation Deeds</li>
+                        <li>Partition Suit Documentation</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💻</div>
+                    <h3 class="feature-title">Cyber Law & IT</h3>
+                    <ul class="feature-list">
+                        <li>IT Act, 2000 Compliance</li>
+                        <li>Cyber Crime Case Research</li>
+                        <li>Data Protection & Privacy (DPDP Act)</li>
+                        <li>E-Commerce Legal Framework</li>
+                        <li>Digital Signature & Authentication</li>
+                        <li>Social Media Law & Defamation</li>
+                        <li>Online Fraud & Phishing Cases</li>
+                        <li>Digital Evidence Handling</li>
+                        <li>Technology Transfer Agreements</li>
+                        <li>Website Terms & Privacy Policies</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌍</div>
+                    <h3 class="feature-title">Environmental Law</h3>
+                    <ul class="feature-list">
+                        <li>Environmental Clearance Applications</li>
+                        <li>Pollution Control Board Compliance</li>
+                        <li>National Green Tribunal (NGT) Matters</li>
+                        <li>Forest & Wildlife Protection Laws</li>
+                        <li>Environmental Impact Assessment</li>
+                        <li>Climate Change Litigation</li>
+                        <li>Waste Management Compliance</li>
+                        <li>Water & Air Pollution Cases</li>
+                        <li>Sustainable Development Laws</li>
+                        <li>Environmental Audit Reports</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">Tax Law</h3>
+                    <ul class="feature-list">
+                        <li>Income Tax Act Research & Analysis</li>
+                        <li>GST Compliance & Dispute Resolution</li>
+                        <li>Tax Tribunal (ITAT) Petition Drafting</li>
+                        <li>Tax Notice Response Preparation</li>
+                        <li>Transfer Pricing Documentation</li>
+                        <li>Customs & Excise Law</li>
+                        <li>Tax Assessment & Appeal Procedures</li>
+                        <li>Advance Ruling Applications</li>
+                        <li>Tax Litigation Strategy</li>
+                        <li>International Taxation Matters</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏛️</div>
+                    <h3 class="feature-title">Administrative & Service Law</h3>
+                    <ul class="feature-list">
+                        <li>Service Matter Petitions (CAT)</li>
+                        <li>Government Employment Disputes</li>
+                        <li>Pension & Retirement Benefits</li>
+                        <li>Disciplinary Action Challenges</li>
+                        <li>Promotion & Seniority Disputes</li>
+                        <li>Administrative Tribunal Procedures</li>
+                        <li>RTI (Right to Information) Applications</li>
+                        <li>Government Contract Disputes</li>
+                        <li>Service Rule Interpretation</li>
+                        <li>Vigilance & Departmental Inquiries</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏥</div>
+                    <h3 class="feature-title">Medical & Healthcare Law</h3>
+                    <ul class="feature-list">
+                        <li>Medical Negligence Case Analysis</li>
+                        <li>Consumer Protection Act (Medical Services)</li>
+                        <li>Healthcare Compliance & Licensing</li>
+                        <li>Medical Council Disciplinary Matters</li>
+                        <li>Hospital Contract Drafting</li>
+                        <li>Bioethics & Research Regulations</li>
+                        <li>Pharmaceutical Law Compliance</li>
+                        <li>Clinical Trial Agreements</li>
+                        <li>Medical Insurance Disputes</li>
+                        <li>Healthcare Data Privacy</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="compliance-section">
+        <div class="container">
+            <h2 class="section-title" style="color: white;">Enterprise Security & Compliance</h2>
+            <p class="section-subtitle" style="color: #cbd5e1;">World-class security with comprehensive legal industry compliance</p>
+            <div class="compliance-grid">
+                <div class="compliance-card"><div class="compliance-icon">🛡️</div><h3 class="compliance-title">CMMI Level 5</h3><p>Optimizing legal AI excellence</p></div>
+                <div class="compliance-card"><div class="compliance-icon">🔐</div><h3 class="compliance-title">ISO 27001</h3><p>Information security certified</p></div>
+                <div class="compliance-card"><div class="compliance-icon">✓</div><h3 class="compliance-title">SOC 2 Type II</h3><p>Trust services audited</p></div>
+                <div class="compliance-card"><div class="compliance-icon">⚖️</div><h3 class="compliance-title">Bar Association</h3><p>Ethics guidelines compliant</p></div>
+                <div class="compliance-card"><div class="compliance-icon">🌍</div><h3 class="compliance-title">GDPR & CCPA</h3><p>Privacy law compliant</p></div>
+                <div class="compliance-card"><div class="compliance-icon">🔒</div><h3 class="compliance-title">AES-256</h3><p>Military-grade encryption</p></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <div class="container">
+            <h2 class="cta-title">Transform Your Legal Practice Today</h2>
+            <p style="font-size: 1.25rem; margin-bottom: 1rem;">Join leading law firms using CognexiaAI Legal</p>
+            <p style="font-size: 1rem; opacity: 0.9;">14-day Enterprise Trial • No Credit Card Required • 24/7 Legal Support</p>
+            <div class="cta-buttons">
+                <a href="mailto:sales@cognexiaai.com" class="btn btn-primary">Contact Sales</a>
+                <a href="tel:+919167422630" class="btn btn-secondary">+91-9167422630</a>
+                <a href="http://localhost:3010/register" class="btn btn-secondary">Start Free Trial</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="mailto:sales@cognexiaai.com">sales@cognexiaai.com</a>
+            <a href="mailto:support@cognexiaai.com">support@cognexiaai.com</a>
+            <a href="tel:+919167422630">+91-9167422630</a>
+            <a href="http://www.cognexiaai.com/demo">www.cognexiaai.com/demo</a>
+        </div>
+        <p>&copy; 2026 CognexiaAI. All rights reserved. | CMMI Level 5 Certified | ISO 27001 | SOC 2 Type II</p>
+    </footer>
+</body>
+</html>

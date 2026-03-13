@@ -1,0 +1,13 @@
+# Railway deployment config for CognexiaAI CRM
+# https://docs.railway.app/reference/config-as-code
+# Uses Docker image from GitHub Container Registry
+
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+healthcheckPath = "/health"
+healthcheckTimeout = 300

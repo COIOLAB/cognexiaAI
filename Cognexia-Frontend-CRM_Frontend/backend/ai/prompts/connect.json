@@ -1,0 +1,80 @@
+{
+  "projectRoot": ".",
+  "backendEntry": "server.js",
+  "aiEndpoints": [
+    {
+      "name": "ERP Generator",
+      "url": "http://localhost:3000/ai/run",
+      "method": "POST",
+      "bodyTemplate": {
+        "instruction": "{{selectedText}}"
+      },
+      "prompts": [
+        
+        {
+          "title": "Quantum Scheduling Module",
+          "instruction": "Generate a Node.js module for simulating quantum-based scheduling in a smart factory ERP. Include qubit-based optimization for task allocation and inventory management."
+        },
+        {
+          "title": "IoT Device Integration",
+          "instruction": "Generate backend code to integrate IoT sensors for real-time equipment monitoring. Provide API endpoints to collect, store, and visualize sensor data in the ERP dashboard."
+        },
+        {
+          "title": "Robotics Automation",
+          "instruction": "Generate a robotics control module that integrates robotic arms with ERP production line data. Include functions for task assignment, status updates, and error reporting."
+        },
+        {
+          "title": "Predictive Maintenance AI",
+          "instruction": "Generate a predictive maintenance module using AI to forecast machine failures. Integrate with ERP inventory for spare parts and schedule maintenance automatically."
+        },
+        {
+          "title": "Smart Energy Management",
+          "instruction": "Generate a module for smart energy management in a manufacturing ERP. Optimize power consumption using IoT sensor data and AI algorithms."
+        },
+        {
+          "title": "Blockchain Supply Chain",
+          "instruction": "Generate a backend ERP module for blockchain-based supply chain tracking. Include endpoints to record, verify, and trace inventory from supplier to warehouse."
+        },
+        {
+          "title": "Digital Twin Simulation",
+          "instruction": "Generate a Node.js module to implement digital twin simulations of factory equipment. Include APIs for real-time monitoring and predictive analysis."
+        },
+        {
+          "title": "AI-Assisted Quality Control",
+          "instruction": "Generate a quality control module using AI and IoT camera feeds to detect defects on the production line and log them in ERP."
+        },
+
+        {
+          "title": "React Dashboard Component",
+          "instruction": "Generate a React dashboard component for ERP inventory module with charts, tables, and API integration to backend."
+        },
+        {
+          "title": "Login Page React",
+          "instruction": "Generate a responsive login page in React with form validation and JWT-based authentication connected to ERP backend."
+        },
+        {
+          "title": "IoT Data Visualization Page",
+          "instruction": "Generate a frontend page in React to display real-time IoT sensor data using charts and tables. Include auto-refresh and API integration."
+        },
+        {
+          "title": "Robotics Control Panel",
+          "instruction": "Generate a React component to display robotic arm statuses and controls. Include API calls to backend ERP robotics endpoints."
+        },
+        {
+          "title": "Energy Monitoring Dashboard",
+          "instruction": "Generate a React page showing smart energy consumption analytics for ERP, integrating with IoT backend sensors."
+        },
+        {
+          "title": "Digital Twin Visualization",
+          "instruction": "Generate a React component to visualize digital twin simulations of factory equipment, showing real-time statuses and predicted outcomes."
+        },
+        {
+          "title": "AI KPI Dashboard",
+          "instruction": "Generate a frontend dashboard displaying AI-generated KPIs for Industry 5.0 manufacturing, including charts for production, energy, and robotics."
+        }
+
+    
+      ]
+    }
+  ]
+}

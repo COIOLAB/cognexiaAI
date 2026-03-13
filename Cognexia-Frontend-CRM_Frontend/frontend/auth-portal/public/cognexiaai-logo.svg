@@ -1,0 +1,22 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Brain/AI Symbol -->
+  <path d="M24 4C15.163 4 8 11.163 8 20c0 5.523 2.79 10.403 7.03 13.312.525.36.97.823 1.28 1.368L18 40h12l1.69-5.32c.31-.545.755-1.008 1.28-1.368C37.21 30.403 40 25.523 40 20c0-8.837-7.163-16-16-16z" fill="url(#logoGradient)"/>
+  
+  <!-- Neural Network Lines -->
+  <circle cx="24" cy="16" r="2" fill="white" opacity="0.9"/>
+  <circle cx="18" cy="22" r="2" fill="white" opacity="0.9"/>
+  <circle cx="30" cy="22" r="2" fill="white" opacity="0.9"/>
+  <circle cx="24" cy="28" r="2" fill="white" opacity="0.9"/>
+  
+  <line x1="24" y1="16" x2="18" y2="22" stroke="white" stroke-width="1.5" opacity="0.7"/>
+  <line x1="24" y1="16" x2="30" y2="22" stroke="white" stroke-width="1.5" opacity="0.7"/>
+  <line x1="18" y1="22" x2="24" y2="28" stroke="white" stroke-width="1.5" opacity="0.7"/>
+  <line x1="30" y1="22" x2="24" y2="28" stroke="white" stroke-width="1.5" opacity="0.7"/>
+</svg>

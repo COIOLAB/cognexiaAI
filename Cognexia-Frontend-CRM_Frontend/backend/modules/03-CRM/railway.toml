@@ -1,0 +1,14 @@
+# Railway deployment config for CognexiaAI CRM
+# https://docs.railway.app/reference/config-as-code
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "npm start"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+# Health is at / and /health (not under /api/v1)
+healthcheckPath = "/health"
+# CRM has many modules/entities; allow up to 5 min for DB connect + startup
+healthcheckTimeout = 300

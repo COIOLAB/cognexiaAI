@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment files (NEVER commit real credentials)
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Keep example files
+!.env.example
+!.env.production.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+
+# Coverage & test
+coverage/
+.nyc_output/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Railway local config
+.railway/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+backup*.zip
+
+# Debug/test artifacts
+build-errors*.txt
+all-errors.txt
+*-results.csv
+failed-*.txt

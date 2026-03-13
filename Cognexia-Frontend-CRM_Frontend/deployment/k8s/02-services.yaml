@@ -1,0 +1,1142 @@
+# ===============================================================================
+# EzAi-MFGNINJA Government-Grade Kubernetes Services Configuration
+# AI-Powered Manufacturing Intelligence Platform
+# 
+# Core backend services with government-grade security and compliance
+# ===============================================================================
+
+# Frontend Service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: frontend
+    tier: presentation
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ezai-mfgninja
+      component: frontend
+  template:
+    metadata:
+      labels:
+        app: ezai-mfgninja
+        component: frontend
+        tier: presentation
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+      - name: frontend
+        image: ezai-mfgninja/frontend:government-latest
+        ports:
+        - containerPort: 3000
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: ezai-config
+              key: NODE_ENV
+        - name: GOVERNMENT_CERTIFICATION
+          valueFrom:
+            configMapKeyRef:
+              name: ezai-config
+              key: GOVERNMENT_CERTIFICATION
+        - name: NEXT_PUBLIC_API_BASE_URL
+          value: "https://api.ezai-mfgninja.gov"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/ready
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: cache
+          mountPath: /app/.next/cache
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: cache
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: frontend
+spec:
+  selector:
+    app: ezai-mfgninja
+    component: frontend
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+  type: ClusterIP
+
+# HR Service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hr-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: hr
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ezai-mfgninja
+      component: hr
+  template:
+    metadata:
+      labels:
+        app: ezai-mfgninja
+        component: hr
+        tier: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3001"
+        prometheus.io/path: "/api/v1/hr/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+      - name: hr-service
+        image: ezai-mfgninja/hr:government-latest
+        ports:
+        - containerPort: 3001
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "3001"
+        - name: SERVICE_NAME
+          value: "hr"
+        envFrom:
+        - configMapRef:
+            name: ezai-config
+        - secretRef:
+            name: ezai-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /api/v1/hr/health
+            port: 3001
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /api/v1/hr/ready
+            port: 3001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hr-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: hr
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3001"
+    prometheus.io/path: "/api/v1/hr/metrics"
+spec:
+  selector:
+    app: ezai-mfgninja
+    component: hr
+  ports:
+  - port: 3001
+    targetPort: 3001
+    protocol: TCP
+  type: ClusterIP
+
+# Finance Service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finance-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: finance
+    tier: backend
+    sox-compliant: "true"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ezai-mfgninja
+      component: finance
+  template:
+    metadata:
+      labels:
+        app: ezai-mfgninja
+        component: finance
+        tier: backend
+        sox-compliant: "true"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3002"
+        prometheus.io/path: "/api/v1/finance-accounting/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+      - name: finance-service
+        image: ezai-mfgninja/finance:government-latest
+        ports:
+        - containerPort: 3002
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "3002"
+        - name: SERVICE_NAME
+          value: "finance-accounting"
+        envFrom:
+        - configMapRef:
+            name: ezai-config
+        - secretRef:
+            name: ezai-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /api/v1/finance-accounting/health
+            port: 3002
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /api/v1/finance-accounting/ready
+            port: 3002
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: audit-logs
+          mountPath: /app/logs
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: audit-logs
+        persistentVolumeClaim:
+          claimName: finance-audit-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: finance-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: finance
+    sox-compliant: "true"
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3002"
+    prometheus.io/path: "/api/v1/finance-accounting/metrics"
+spec:
+  selector:
+    app: ezai-mfgninja
+    component: finance
+  ports:
+  - port: 3002
+    targetPort: 3002
+    protocol: TCP
+  type: ClusterIP
+
+# Manufacturing Service (Quantum & AI Powered)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: manufacturing-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: manufacturing
+    tier: backend
+    quantum-enabled: "true"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ezai-mfgninja
+      component: manufacturing
+  template:
+    metadata:
+      labels:
+        app: ezai-mfgninja
+        component: manufacturing
+        tier: backend
+        quantum-enabled: "true"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3003"
+        prometheus.io/path: "/api/v1/manufacturing/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+      - name: manufacturing-service
+        image: ezai-mfgninja/manufacturing:government-latest
+        ports:
+        - containerPort: 3003
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "3003"
+        - name: SERVICE_NAME
+          value: "manufacturing"
+        envFrom:
+        - configMapRef:
+            name: ezai-config
+        - secretRef:
+            name: ezai-secrets
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /api/v1/manufacturing/health
+            port: 3003
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /api/v1/manufacturing/ready
+            port: 3003
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: ai-models
+          mountPath: /app/models
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: ai-models
+        persistentVolumeClaim:
+          claimName: ai-models-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: manufacturing-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: manufacturing
+    quantum-enabled: "true"
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3003"
+    prometheus.io/path: "/api/v1/manufacturing/metrics"
+spec:
+  selector:
+    app: ezai-mfgninja
+    component: manufacturing
+  ports:
+  - port: 3003
+    targetPort: 3003
+    protocol: TCP
+  type: ClusterIP
+
+# Supply Chain Service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: supply-chain-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: supply-chain
+    tier: backend
+    blockchain-enabled: "true"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ezai-mfgninja
+      component: supply-chain
+  template:
+    metadata:
+      labels:
+        app: ezai-mfgninja
+        component: supply-chain
+        tier: backend
+        blockchain-enabled: "true"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3004"
+        prometheus.io/path: "/api/v1/supply-chain/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+      - name: supply-chain-service
+        image: ezai-mfgninja/supply-chain:government-latest
+        ports:
+        - containerPort: 3004
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "3004"
+        - name: SERVICE_NAME
+          value: "supply-chain"
+        envFrom:
+        - configMapRef:
+            name: ezai-config
+        - secretRef:
+            name: ezai-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /api/v1/supply-chain/health
+            port: 3004
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /api/v1/supply-chain/ready
+            port: 3004
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: supply-chain-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: supply-chain
+    blockchain-enabled: "true"
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3004"
+    prometheus.io/path: "/api/v1/supply-chain/metrics"
+spec:
+  selector:
+    app: ezai-mfgninja
+    component: supply-chain
+  ports:
+  - port: 3004
+    targetPort: 3004
+    protocol: TCP
+  type: ClusterIP
+
+# Inventory Service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: inventory
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ezai-mfgninja
+      component: inventory
+  template:
+    metadata:
+      labels:
+        app: ezai-mfgninja
+        component: inventory
+        tier: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3005"
+        prometheus.io/path: "/api/v1/inventory/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+      - name: inventory-service
+        image: ezai-mfgninja/inventory:government-latest
+        ports:
+        - containerPort: 3005
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "3005"
+        - name: SERVICE_NAME
+          value: "inventory"
+        envFrom:
+        - configMapRef:
+            name: ezai-config
+        - secretRef:
+            name: ezai-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /api/v1/inventory/health
+            port: 3005
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /api/v1/inventory/ready
+            port: 3005
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: inventory
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3005"
+    prometheus.io/path: "/api/v1/inventory/metrics"
+spec:
+  selector:
+    app: ezai-mfgninja
+    component: inventory
+  ports:
+  - port: 3005
+    targetPort: 3005
+    protocol: TCP
+  type: ClusterIP
+
+# Production Planning Service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: production-planning-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: production-planning
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ezai-mfgninja
+      component: production-planning
+  template:
+    metadata:
+      labels:
+        app: ezai-mfgninja
+        component: production-planning
+        tier: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3006"
+        prometheus.io/path: "/api/v1/production-planning/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+      - name: production-planning-service
+        image: ezai-mfgninja/production-planning:government-latest
+        ports:
+        - containerPort: 3006
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "3006"
+        - name: SERVICE_NAME
+          value: "production-planning"
+        envFrom:
+        - configMapRef:
+            name: ezai-config
+        - secretRef:
+            name: ezai-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /api/v1/production-planning/health
+            port: 3006
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /api/v1/production-planning/ready
+            port: 3006
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: production-planning-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: production-planning
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3006"
+    prometheus.io/path: "/api/v1/production-planning/metrics"
+spec:
+  selector:
+    app: ezai-mfgninja
+    component: production-planning
+  ports:
+  - port: 3006
+    targetPort: 3006
+    protocol: TCP
+  type: ClusterIP
+
+# CRM Service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crm-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: crm
+    tier: backend
+    gdpr-compliant: "true"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ezai-mfgninja
+      component: crm
+  template:
+    metadata:
+      labels:
+        app: ezai-mfgninja
+        component: crm
+        tier: backend
+        gdpr-compliant: "true"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3007"
+        prometheus.io/path: "/api/v1/crm/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+      - name: crm-service
+        image: ezai-mfgninja/crm:government-latest
+        ports:
+        - containerPort: 3007
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "3007"
+        - name: SERVICE_NAME
+          value: "crm"
+        envFrom:
+        - configMapRef:
+            name: ezai-config
+        - secretRef:
+            name: ezai-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /api/v1/crm/health
+            port: 3007
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /api/v1/crm/ready
+            port: 3007
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: crm-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: crm
+    gdpr-compliant: "true"
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3007"
+    prometheus.io/path: "/api/v1/crm/metrics"
+spec:
+  selector:
+    app: ezai-mfgninja
+    component: crm
+  ports:
+  - port: 3007
+    targetPort: 3007
+    protocol: TCP
+  type: ClusterIP
+
+# Procurement Service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: procurement-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: procurement
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ezai-mfgninja
+      component: procurement
+  template:
+    metadata:
+      labels:
+        app: ezai-mfgninja
+        component: procurement
+        tier: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3008"
+        prometheus.io/path: "/api/v1/procurement/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+      - name: procurement-service
+        image: ezai-mfgninja/procurement:government-latest
+        ports:
+        - containerPort: 3008
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "3008"
+        - name: SERVICE_NAME
+          value: "procurement"
+        envFrom:
+        - configMapRef:
+            name: ezai-config
+        - secretRef:
+            name: ezai-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /api/v1/procurement/health
+            port: 3008
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /api/v1/procurement/ready
+            port: 3008
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: procurement-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: procurement
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3008"
+    prometheus.io/path: "/api/v1/procurement/metrics"
+spec:
+  selector:
+    app: ezai-mfgninja
+    component: procurement
+  ports:
+  - port: 3008
+    targetPort: 3008
+    protocol: TCP
+  type: ClusterIP
+
+# Sales & Marketing Service (AI-Powered)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sales-marketing-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: sales-marketing
+    tier: backend
+    ai-powered: "true"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ezai-mfgninja
+      component: sales-marketing
+  template:
+    metadata:
+      labels:
+        app: ezai-mfgninja
+        component: sales-marketing
+        tier: backend
+        ai-powered: "true"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3009"
+        prometheus.io/path: "/api/v1/sales-marketing/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+      - name: sales-marketing-service
+        image: ezai-mfgninja/sales-marketing:government-latest
+        ports:
+        - containerPort: 3009
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "3009"
+        - name: SERVICE_NAME
+          value: "sales-marketing"
+        envFrom:
+        - configMapRef:
+            name: ezai-config
+        - secretRef:
+            name: ezai-secrets
+        resources:
+          requests:
+            memory: "768Mi"
+            cpu: "300m"
+          limits:
+            memory: "1.5Gi"
+            cpu: "1500m"
+        livenessProbe:
+          httpGet:
+            path: /api/v1/sales-marketing/health
+            port: 3009
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /api/v1/sales-marketing/ready
+            port: 3009
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: ai-models
+          mountPath: /app/models
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: ai-models
+        persistentVolumeClaim:
+          claimName: ai-models-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sales-marketing-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: sales-marketing
+    ai-powered: "true"
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3009"
+    prometheus.io/path: "/api/v1/sales-marketing/metrics"
+spec:
+  selector:
+    app: ezai-mfgninja
+    component: sales-marketing
+  ports:
+  - port: 3009
+    targetPort: 3009
+    protocol: TCP
+  type: ClusterIP
+
+# Backend Service (Aggregator)
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: backend-aggregator
+spec:
+  selector:
+    app: ezai-mfgninja
+    tier: backend
+  ports:
+  - port: 8080
+    targetPort: 3001
+    protocol: TCP
+    name: hr
+  - port: 8081
+    targetPort: 3002
+    protocol: TCP
+    name: finance
+  - port: 8082
+    targetPort: 3003
+    protocol: TCP
+    name: manufacturing
+  - port: 8083
+    targetPort: 3004
+    protocol: TCP
+    name: supply-chain
+  - port: 8084
+    targetPort: 3005
+    protocol: TCP
+    name: inventory
+  - port: 8085
+    targetPort: 3006
+    protocol: TCP
+    name: production-planning
+  - port: 8086
+    targetPort: 3007
+    protocol: TCP
+    name: crm
+  - port: 8087
+    targetPort: 3008
+    protocol: TCP
+    name: procurement
+  - port: 8088
+    targetPort: 3009
+    protocol: TCP
+    name: sales-marketing
+  type: ClusterIP

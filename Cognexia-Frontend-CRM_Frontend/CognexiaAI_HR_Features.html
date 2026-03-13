@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CognexiaAI HR - Human Resource Management Solution</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1in;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #fff;
+            font-size: 10pt;
+        }
+        
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo-text {
+            color: white;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        
+        .tagline {
+            color: rgba(255,255,255,0.9);
+            font-size: 12px;
+            font-style: italic;
+        }
+        
+        .back-link {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        
+        .back-link:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .content {
+            margin-top: 100px;
+            padding: 0 40px 40px 40px;
+        }
+        
+        .cover-page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            color: white;
+            margin: -100px -40px 40px -40px;
+            padding: 40px;
+        }
+        
+        .cover-title {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .cover-subtitle {
+            font-size: 24px;
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+        
+        .cover-tagline {
+            font-size: 18px;
+            font-style: italic;
+            opacity: 0.9;
+            margin-bottom: 50px;
+        }
+        
+        .cover-highlights {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            max-width: 800px;
+            margin-top: 40px;
+        }
+        
+        .highlight-box {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .highlight-box h3 {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .highlight-box p {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        h1 {
+            color: #1e40af;
+            font-size: 28px;
+            margin: 30px 0 15px 0;
+            page-break-after: avoid;
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 10px;
+        }
+        
+        h2 {
+            color: #3b82f6;
+            font-size: 20px;
+            margin: 25px 0 12px 0;
+            page-break-after: avoid;
+        }
+        
+        h3 {
+            color: #60a5fa;
+            font-size: 16px;
+            margin: 20px 0 10px 0;
+            page-break-after: avoid;
+        }
+        
+        h4 {
+            color: #333;
+            font-size: 14px;
+            margin: 15px 0 8px 0;
+            font-weight: 600;
+        }
+        
+        p {
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+        
+        ul, ol {
+            margin: 10px 0 15px 25px;
+        }
+        
+        li {
+            margin-bottom: 6px;
+        }
+        
+        .section {
+            page-break-inside: avoid;
+            margin-bottom: 30px;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .feature-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .feature-box h4 {
+            color: #3b82f6;
+            margin-bottom: 10px;
+        }
+        
+        .stats-box {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px solid #3b82f6;
+        }
+        
+        .checkmark {
+            color: #10b981;
+            font-weight: 700;
+        }
+        
+        .cta-box {
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .cta-box h2 {
+            color: white;
+            margin-bottom: 20px;
+        }
+        
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+            text-align: center;
+            color: #64748b;
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header with Logo -->
+    <div class="header">
+        <div class="logo-container">
+            <div class="logo-text">COGNEXIAAI</div>
+        </div>
+        <a href="index.html" class="back-link">← Back to Products</a>
+    </div>
+
+    <div class="content">
+        <!-- Cover Page -->
+        <div class="cover-page">
+            <h1 class="cover-title">CognexiaAI HR</h1>
+            <h2 class="cover-subtitle">Intelligent Human Resource Management</h2>
+            <p class="cover-tagline">"Empower Your Workforce with Industry 5.0 HR Technology"</p>
+            
+            <div class="cover-highlights">
+                <div class="highlight-box">
+                    <h3>Features</h3>
+                    <p>150+</p>
+                </div>
+                <div class="highlight-box">
+                    <h3>AI-Powered</h3>
+                    <p>Yes</p>
+                </div>
+                <div class="highlight-box">
+                    <h3>Blockchain Verified</h3>
+                    <p>Yes</p>
+                </div>
+                <div class="highlight-box">
+                    <h3>Quantum Computing</h3>
+                    <p>Enabled</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Executive Summary -->
+        <div class="section">
+            <h1>🎯 Executive Summary</h1>
+            <p>CognexiaAI HR delivers an <strong>Industry 5.0 AI-powered Human Resource Management System</strong> that revolutionizes talent acquisition, employee engagement, payroll processing, and workforce optimization. Built with cutting-edge technology including quantum computing, blockchain verification, and advanced AI/ML capabilities.</p>
+            
+            <div class="stats-box">
+                <h3>Platform Highlights</h3>
+                <ul>
+                    <li><span class="checkmark">✅</span> <strong>150+ HR Features</strong> - Complete HR lifecycle management</li>
+                    <li><span class="checkmark">✅</span> <strong>AI-Powered Recruitment</strong> - Intelligent candidate matching</li>
+                    <li><span class="checkmark">✅</span> <strong>Blockchain Credentials</strong> - Immutable employment records</li>
+                    <li><span class="checkmark">✅</span> <strong>Quantum Optimization</strong> - Advanced workforce planning</li>
+                    <li><span class="checkmark">✅</span> <strong>Real-Time Analytics</strong> - Live HR dashboards and insights</li>
+                    <li><span class="checkmark">✅</span> <strong>Enterprise Security</strong> - GDPR compliant, SOC2 ready</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Core HR Features -->
+        <div class="section">
+            <h1>📊 Core HR Features</h1>
+            
+            <h2>Employee Management - Complete Lifecycle</h2>
+            <div class="feature-grid">
+                <div class="feature-box">
+                    <h4>Employee Lifecycle</h4>
+                    <ul>
+                        <li>Onboarding to exit management</li>
+                        <li>Employee self-service portal</li>
+                        <li>Digital twin consciousness creation</li>
+                        <li>Biometric integration</li>
+                        <li>Employee hierarchy management</li>
+                        <li>Engagement tracking</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-box">
+                    <h4>Advanced Profiling</h4>
+                    <ul>
+                        <li>Quantum-consciousness profiling</li>
+                        <li>DNA-based work optimization</li>
+                        <li>Multidimensional personality assessment</li>
+                        <li>Employee analytics & reporting</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Talent Acquisition -->
+        <div class="section">
+            <h2>Talent Acquisition & Recruitment</h2>
+            <div class="feature-grid">
+                <div class="feature-box">
+                    <h4>Intelligent Recruitment</h4>
+                    <ul>
+                        <li>Job requisition management</li>
+                        <li>Candidate tracking system</li>
+                        <li>Application processing</li>
+                        <li>Interview scheduling & management</li>
+                        <li>AI-powered candidate matching</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-box">
+                    <h4>Hiring Process</h4>
+                    <ul>
+                        <li>Candidate evaluation & scoring</li>
+                        <li>Hiring decision workflows</li>
+                        <li>Onboarding automation</li>
+                        <li>Recruitment analytics</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payroll Management -->
+        <div class="section">
+            <h2>Payroll Management</h2>
+            <div class="feature-grid">
+                <div class="feature-box">
+                    <h4>Automated Payroll</h4>
+                    <ul>
+                        <li>Payroll run processing</li>
+                        <li>Automated calculations</li>
+                        <li>Tax rule management</li>
+                        <li>Deduction processing</li>
+                        <li>Payslip generation</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-box">
+                    <h4>Compliance & History</h4>
+                    <ul>
+                        <li>Multi-period support</li>
+                        <li>Approval workflows</li>
+                        <li>Employee payroll history</li>
+                        <li>Tax compliance</li>
+                        <li>Direct deposit processing</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Management -->
+        <div class="section">
+            <h2>Performance Management</h2>
+            <div class="feature-grid">
+                <div class="feature-box">
+                    <h4>Performance Tracking</h4>
+                    <ul>
+                        <li>Performance review cycles</li>
+                        <li>Goal setting & tracking</li>
+                        <li>KPI management</li>
+                        <li>360-degree feedback</li>
+                        <li>Performance analytics</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-box">
+                    <h4>Development</h4>
+                    <ul>
+                        <li>Revolutionary performance tracking</li>
+                        <li>Continuous feedback system</li>
+                        <li>Performance improvement plans</li>
+                        <li>Competency assessments</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compensation & Benefits -->
+        <div class="section">
+            <h2>Compensation & Benefits</h2>
+            <div class="feature-grid">
+                <div class="feature-box">
+                    <h4>Compensation Planning</h4>
+                    <ul>
+                        <li>Compensation planning</li>
+                        <li>Salary structure management</li>
+                        <li>Bonus calculations</li>
+                        <li>Stock option management</li>
+                        <li>Total rewards statements</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-box">
+                    <h4>Benefits Administration</h4>
+                    <ul>
+                        <li>Benefits administration</li>
+                        <li>Benefits enrollment</li>
+                        <li>Insurance management</li>
+                        <li>Retirement plan management</li>
+                        <li>Revolutionary compensation engine</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Time & Attendance -->
+        <div class="section">
+            <h2>Time & Attendance</h2>
+            <div class="feature-box">
+                <h4>Complete Time Tracking</h4>
+                <ul>
+                    <li>Time tracking & attendance management</li>
+                    <li>Leave management & time-off requests</li>
+                    <li>Shift scheduling & overtime tracking</li>
+                    <li>Attendance reports</li>
+                    <li>Biometric device integration</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Learning & Development -->
+        <div class="section">
+            <h2>Learning & Development</h2>
+            <div class="feature-grid">
+                <div class="feature-box">
+                    <h4>Training Programs</h4>
+                    <ul>
+                        <li>Training program management</li>
+                        <li>Course catalog</li>
+                        <li>Learning path creation</li>
+                        <li>Certification tracking</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-box">
+                    <h4>Skills Development</h4>
+                    <ul>
+                        <li>Skills assessment</li>
+                        <li>E-learning integration</li>
+                        <li>Training analytics</li>
+                        <li>Career development planning</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Organizational Management -->
+        <div class="section">
+            <h2>Organizational Management</h2>
+            <div class="feature-box">
+                <h4>Organizational Structure</h4>
+                <ul>
+                    <li>Organization structure management</li>
+                    <li>Department management</li>
+                    <li>Position management</li>
+                    <li>Reporting relationships</li>
+                    <li>Cost center allocation</li>
+                    <li>Workforce planning</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Advanced Features -->
+        <div class="section">
+            <h1>🚀 Advanced Features</h1>
+            
+            <h2>AI & Machine Learning</h2>
+            <div class="feature-box">
+                <ul>
+                    <li>AI-powered security analytics</li>
+                    <li>Predictive turnover analysis</li>
+                    <li>Employee sentiment analysis</li>
+                    <li>Career path recommendations</li>
+                    <li>Skills gap analysis</li>
+                </ul>
+            </div>
+
+            <h2>Blockchain Integration</h2>
+            <div class="feature-box">
+                <ul>
+                    <li>Credential verification</li>
+                    <li>Immutable employment records</li>
+                    <li>Smart contract employment agreements</li>
+                    <li>Tamper-proof document storage</li>
+                </ul>
+            </div>
+
+            <h2>Compliance & Security</h2>
+            <div class="feature-box">
+                <ul>
+                    <li>Privacy compliance engine (GDPR, CCPA)</li>
+                    <li>Audit forensics</li>
+                    <li>Dynamic RBAC (Role-Based Access Control)</li>
+                    <li>Quantum security</li>
+                    <li>Cybersecurity operations center</li>
+                    <li>Advanced audit logging</li>
+                </ul>
+            </div>
+
+            <h2>Industry 5.0 Revolutionary Features</h2>
+            <div class="feature-grid">
+                <div class="feature-box">
+                    <h4>Quantum & Consciousness</h4>
+                    <ul>
+                        <li>Quantum computing integration</li>
+                        <li>Neuro-interface for feedback</li>
+                        <li>Energetic resonance analysis</li>
+                        <li>Soul purpose alignment</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-box">
+                    <h4>Holistic Experience</h4>
+                    <ul>
+                        <li>Cosmic career path generation</li>
+                        <li>Transcendent work experience design</li>
+                        <li>Holistic wellbeing tracking</li>
+                        <li>Digital twin consciousness</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Integration Capabilities -->
+        <div class="section">
+            <h1>🔗 Integration Capabilities</h1>
+            <div class="feature-box">
+                <h4>Seamless Integrations</h4>
+                <ul>
+                    <li>Third-party HR system integration</li>
+                    <li>SSO integration (Single Sign-On)</li>
+                    <li>Background check integration</li>
+                    <li>Benefits provider integration</li>
+                    <li>Payroll service provider integration</li>
+                    <li>Time tracking system integration</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ROI & Business Impact -->
+        <div class="section">
+            <h1>📊 ROI & Business Impact</h1>
+            
+            <h2>Measurable Outcomes</h2>
+            <div class="feature-grid">
+                <div class="feature-box">
+                    <h4>Recruitment Efficiency</h4>
+                    <ul>
+                        <li>50% faster time-to-hire</li>
+                        <li>70% better candidate quality</li>
+                        <li>40% reduction in recruitment costs</li>
+                        <li>AI-powered candidate matching accuracy: 95%</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-box">
+                    <h4>Employee Engagement</h4>
+                    <ul>
+                        <li>35% increase in employee satisfaction</li>
+                        <li>25% reduction in turnover</li>
+                        <li>60% improvement in onboarding experience</li>
+                        <li>Real-time engagement tracking</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-box">
+                    <h4>Operational Excellence</h4>
+                    <ul>
+                        <li>80% reduction in manual HR processes</li>
+                        <li>90% faster payroll processing</li>
+                        <li>100% payroll accuracy</li>
+                        <li>50% lower HR operational costs</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-box">
+                    <h4>Compliance & Security</h4>
+                    <ul>
+                        <li>100% GDPR/CCPA compliance</li>
+                        <li>SOC2 Type II ready</li>
+                        <li>Zero security breaches</li>
+                        <li>Complete audit trail</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Call to Action -->
+        <div class="cta-box">
+            <h2>🚀 Ready to Transform Your HR Operations?</h2>
+            <p>Join leading enterprises leveraging Industry 5.0 HR technology for workforce excellence</p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>&copy; 2026 CognexiaAI. All rights reserved. | "Cognition Meets Precision"</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "type": "postgres",
+  "host": "db.moijigidcrvbnjoaqelr.supabase.co",
+  "port": 5432,
+  "username": "postgres",
+  "password": "Nikkisharma@143",
+  "database": "postgres",
+  "entities": ["src/entities/**/*.entity.ts"],
+  "synchronize": true,
+  "logging": true,
+  "ssl": {
+    "rejectUnauthorized": false
+  }
+}

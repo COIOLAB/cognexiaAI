@@ -1,0 +1,401 @@
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { 
+  Brain, 
+  Shield, 
+  Zap, 
+  Users, 
+  BarChart3, 
+  Globe,
+  Target,
+  Database,
+  Lock,
+  TrendingUp,
+  MessageSquare,
+  FileText,
+  Calendar,
+  Mail,
+  Phone,
+  CheckCircle2
+} from 'lucide-react';
+
+export default function FeaturesPage() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+      {/* Navigation */}
+      <nav className="fixed top-0 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link href="/" className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg flex items-center justify-center">
+                <Brain className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+                  COGNEXIAAI
+                </h1>
+                <p className="text-xs text-muted-foreground">Cognition Meets Precision</p>
+              </div>
+            </Link>
+            
+            <div className="hidden md:flex items-center space-x-8">
+              <Link href="/" className="text-sm font-medium hover:text-blue-600 transition-colors">
+                Home
+              </Link>
+              <Link href="/about" className="text-sm font-medium hover:text-blue-600 transition-colors">
+                About
+              </Link>
+              <Link href="/features" className="text-sm font-medium text-blue-600">
+                Features
+              </Link>
+              <Link href="/contact" className="text-sm font-medium hover:text-blue-600 transition-colors">
+                Contact
+              </Link>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <Link href="/login">
+                <Button variant="ghost" size="sm">Sign In</Button>
+              </Link>
+              <Link href="/register">
+                <Button size="sm" className="bg-gradient-to-r from-blue-600 to-cyan-500">
+                  Get Started
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6">
+            <span className="bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+              Powerful Features
+            </span>
+          </h1>
+          <p className="text-xl text-muted-foreground">
+            Everything you need to manage customer relationships at scale
+          </p>
+        </div>
+      </section>
+
+      {/* Core Features */}
+      <section className="py-20 bg-gray-50 dark:bg-gray-900/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Core CRM Capabilities</h2>
+            <p className="text-lg text-muted-foreground">
+              Complete suite of tools for modern customer management
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <Card className="border-2 hover:border-blue-500 transition-all">
+              <CardHeader>
+                <Users className="h-10 w-10 text-blue-600 mb-4" />
+                <CardTitle>Customer Management</CardTitle>
+                <CardDescription>
+                  360° customer view with complete interaction history, contact management, 
+                  and detailed demographics tracking
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-center"><CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Contact hierarchies</li>
+                  <li className="flex items-center"><CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Activity tracking</li>
+                  <li className="flex items-center"><CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Custom fields</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:border-cyan-500 transition-all">
+              <CardHeader>
+                <Target className="h-10 w-10 text-cyan-600 mb-4" />
+                <CardTitle>Lead Management</CardTitle>
+                <CardDescription>
+                  AI-powered lead scoring, qualification workflows, and automated nurturing 
+                  campaigns to maximize conversions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-center"><CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Auto lead scoring</li>
+                  <li className="flex items-center"><CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Lead routing</li>
+                  <li className="flex items-center"><CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Conversion tracking</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:border-purple-500 transition-all">
+              <CardHeader>
+                <TrendingUp className="h-10 w-10 text-purple-600 mb-4" />
+                <CardTitle>Sales Pipeline</CardTitle>
+                <CardDescription>
+                  Visual pipeline management with opportunity tracking, forecasting, 
+                  and deal probability analysis
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-center"><CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Stage automation</li>
+                  <li className="flex items-center"><CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Win/loss analysis</li>
+                  <li className="flex items-center"><CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Revenue forecasting</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:border-green-500 transition-all">
+              <CardHeader>
+                <MessageSquare className="h-10 w-10 text-green-600 mb-4" />
+                <CardTitle>Support Ticketing</CardTitle>
+                <CardDescription>
+                  Complete ticket management with SLA tracking, priority management, 
+                  and automated escalation workflows
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-center"><CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Multi-channel support</li>
+                  <li className="flex items-center"><CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> SLA monitoring</li>
+                  <li className="flex items-center"><CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Knowledge base</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:border-orange-500 transition-all">
+              <CardHeader>
+                <BarChart3 className="h-10 w-10 text-orange-600 mb-4" />
+                <CardTitle>Analytics & Reports</CardTitle>
+                <CardDescription>
+                  Real-time dashboards, custom reports, and AI-driven insights for 
+                  data-driven decision making
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-center"><CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Custom dashboards</li>
+                  <li className="flex items-center"><CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Export to Excel/PDF</li>
+                  <li className="flex items-center"><CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Scheduled reports</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:border-pink-500 transition-all">
+              <CardHeader>
+                <Calendar className="h-10 w-10 text-pink-600 mb-4" />
+                <CardTitle>Activity Management</CardTitle>
+                <CardDescription>
+                  Task management, meeting scheduling, email tracking, and automated 
+                  reminders to stay organized
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-center"><CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Calendar sync</li>
+                  <li className="flex items-center"><CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Task automation</li>
+                  <li className="flex items-center"><CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Activity logging</li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* AI Features */}
+      <section className="py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              <span className="bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+                AI-Powered Intelligence
+              </span>
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Advanced machine learning and artificial intelligence capabilities
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            <Card>
+              <CardHeader>
+                <Brain className="h-10 w-10 text-blue-600 mb-4" />
+                <CardTitle>Predictive Lead Scoring</CardTitle>
+                <CardDescription>
+                  Machine learning algorithms analyze historical data to automatically score 
+                  leads based on conversion probability, helping sales teams prioritize efforts
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <TrendingUp className="h-10 w-10 text-cyan-600 mb-4" />
+                <CardTitle>Sales Forecasting</CardTitle>
+                <CardDescription>
+                  AI-driven revenue predictions based on pipeline health, historical trends, 
+                  and deal probability to optimize resource allocation
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <MessageSquare className="h-10 w-10 text-purple-600 mb-4" />
+                <CardTitle>Sentiment Analysis</CardTitle>
+                <CardDescription>
+                  Natural language processing analyzes customer communications to detect 
+                  sentiment, identify risks, and surface opportunities
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <Target className="h-10 w-10 text-green-600 mb-4" />
+                <CardTitle>Recommendation Engine</CardTitle>
+                <CardDescription>
+                  AI-powered suggestions for next best actions, product recommendations, 
+                  and customer engagement strategies
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Integration Features */}
+      <section className="py-20 bg-gray-50 dark:bg-gray-900/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Seamless Integrations</h2>
+            <p className="text-lg text-muted-foreground">
+              Connect with your existing tools and workflows
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card>
+              <CardHeader>
+                <Globe className="h-10 w-10 text-blue-600 mb-4" />
+                <CardTitle>ERP Systems</CardTitle>
+                <CardDescription>
+                  Native integration with SAP, Oracle, Salesforce, HubSpot, and Zoho CRM
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <Mail className="h-10 w-10 text-cyan-600 mb-4" />
+                <CardTitle>Email & Calendar</CardTitle>
+                <CardDescription>
+                  Gmail, Outlook, Office 365 sync with automatic activity logging
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <Phone className="h-10 w-10 text-purple-600 mb-4" />
+                <CardTitle>Communication</CardTitle>
+                <CardDescription>
+                  WhatsApp, Slack, Teams, and Twilio SMS integration for omnichannel support
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Security Features */}
+      <section className="py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Enterprise-Grade Security</h2>
+            <p className="text-lg text-muted-foreground">
+              Your data is protected with military-grade security
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="text-center">
+              <CardHeader>
+                <Shield className="h-10 w-10 text-blue-600 mx-auto mb-4" />
+                <CardTitle>MFA</CardTitle>
+                <CardDescription>
+                  Multi-factor authentication with TOTP and backup codes
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="text-center">
+              <CardHeader>
+                <Lock className="h-10 w-10 text-cyan-600 mx-auto mb-4" />
+                <CardTitle>SSO</CardTitle>
+                <CardDescription>
+                  Google, Azure AD, and SAML single sign-on support
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="text-center">
+              <CardHeader>
+                <Database className="h-10 w-10 text-purple-600 mx-auto mb-4" />
+                <CardTitle>RLS</CardTitle>
+                <CardDescription>
+                  Row-level security for complete tenant data isolation
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="text-center">
+              <CardHeader>
+                <FileText className="h-10 w-10 text-green-600 mx-auto mb-4" />
+                <CardTitle>Audit Logs</CardTitle>
+                <CardDescription>
+                  Complete audit trail of all user actions and data changes
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-gradient-to-r from-blue-600 to-cyan-500">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            Ready to Get Started?
+          </h2>
+          <p className="text-xl text-blue-100 mb-8">
+            Start your free 14-day trial today. No credit card required.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href="/register">
+              <Button size="lg" variant="secondary" className="text-lg px-8 py-6">
+                Start Free Trial
+              </Button>
+            </Link>
+            <Link href="/contact">
+              <Button size="lg" variant="outline" className="text-lg px-8 py-6 text-white border-white hover:bg-white/10">
+                Contact Sales
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-gray-400 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <p>&copy; 2026 CognexiaAI. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}

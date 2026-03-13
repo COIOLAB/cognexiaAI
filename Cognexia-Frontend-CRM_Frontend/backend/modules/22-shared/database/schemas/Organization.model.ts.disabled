@@ -1,0 +1,351 @@
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, Index } from 'typeorm';
+import { IsNotEmpty, IsEmail, IsUrl } from 'class-validator';
+import { User } from './User.model';
+
+export enum OrganizationType {
+  ENTERPRISE = 'enterprise',
+  SME = 'sme',
+  STARTUP = 'startup',
+  GOVERNMENT = 'government',
+  NPO = 'npo'
+}
+
+export enum Industry {
+  MANUFACTURING = 'manufacturing',
+  AUTOMOTIVE = 'automotive',
+  AEROSPACE = 'aerospace',
+  ELECTRONICS = 'electronics',
+  PHARMACEUTICALS = 'pharmaceuticals',
+  FOOD_BEVERAGE = 'food_beverage',
+  TEXTILES = 'textiles',
+  CHEMICALS = 'chemicals',
+  ENERGY = 'energy',
+  DEFENSE = 'defense',
+  OTHER = 'other'
+}
+
+export enum OrganizationStatus {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  SUSPENDED = 'suspended',
+  TRIAL = 'trial',
+  EXPIRED = 'expired'
+}
+
+@Entity('organizations')
+@Index(['code'])
+@Index(['domain'])
+@Index(['status'])
+export class Organization {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ unique: true })
+  @IsNotEmpty()
+  code: string;
+
+  @Column()
+  @IsNotEmpty()
+  name: string;
+
+  @Column({ nullable: true })
+  displayName?: string;
+
+  @Column({ type: 'text', nullable: true })
+  description?: string;
+
+  @Column({
+    type: 'enum',
+    enum: OrganizationType,
+    default: OrganizationType.SME
+  })
+  type: OrganizationType;
+
+  @Column({
+    type: 'enum',
+    enum: Industry,
+    default: Industry.MANUFACTURING
+  })
+  industry: Industry;
+
+  @Column({
+    type: 'enum',
+    enum: OrganizationStatus,
+    default: OrganizationStatus.TRIAL
+  })
+  status: OrganizationStatus;
+
+  // Contact Information
+  @Column({ type: 'json' })
+  contactInfo: {
+    address: {
+      street: string;
+      city: string;
+      state: string;
+      country: string;
+      postalCode: string;
+      coordinates?: { lat: number; lng: number };
+    };
+    phone: string;
+    email: string;
+    website?: string;
+    socialMedia?: {
+      linkedin?: string;
+      twitter?: string;
+      facebook?: string;
+    };
+  };
+
+  @Column({ nullable: true })
+  @IsEmail()
+  primaryContactEmail?: string;
+
+  @Column({ nullable: true })
+  logo?: string;
+
+  @Column({ nullable: true })
+  @IsUrl()
+  website?: string;
+
+  @Column({ unique: true, nullable: true })
+  domain?: string; // For email domain-based auto-assignment
+
+  // Business Information
+  @Column({ type: 'json', nullable: true })
+  businessInfo?: {
+    registrationNumber: string;
+    taxId: string;
+    vatNumber?: string;
+    establishedYear?: number;
+    employeeCount?: number;
+    annualRevenue?: number;
+    fiscalYearEnd?: string;
+    companyStructure: 'corporation' | 'llc' | 'partnership' | 'sole_proprietorship' | 'cooperative' | 'other';
+  };
+
+  // Subscription & Licensing
+  @Column({ type: 'json', nullable: true })
+  subscription?: {
+    planType: 'trial' | 'basic' | 'professional' | 'enterprise' | 'custom';
+    startDate: Date;
+    endDate?: Date;
+    features: string[];
+    limits: {
+      maxUsers: number;
+      maxWarehouses: number;
+      maxProducts: number;
+      storageGB: number;
+      apiCallsPerMonth: number;
+    };
+    billing: {
+      frequency: 'monthly' | 'quarterly' | 'yearly';
+      amount: number;
+      currency: string;
+      nextBillingDate: Date;
+      paymentMethod: string;
+    };
+  };
+
+  // Industry 5.0 Configuration
+  @Column({ type: 'json', nullable: true })
+  industry50Config?: {
+    enabledModules: string[];
+    iotIntegration: {
+      enabled: boolean;
+      protocols: string[];
+      deviceLimit: number;
+    };
+    aiFeatures: {
+      enabled: boolean;
+      features: string[];
+      computeAllocation: number;
+    };
+    blockchainIntegration: {
+      enabled: boolean;
+      networks: string[];
+      contractAddresses?: Record<string, string>;
+    };
+    sustainabilityTracking: {
+      enabled: boolean;
+      carbonFootprintMonitoring: boolean;
+      energyOptimization: boolean;
+      wasteReduction: boolean;
+    };
+    humanAICollaboration: {
+      enabled: boolean;
+      collaborationModes: string[];
+      aiAssistanceLevel: 'basic' | 'advanced' | 'expert';
+    };
+  };
+
+  // Compliance & Certifications
+  @Column({ type: 'json', nullable: true })
+  compliance?: {
+    standards: string[]; // ISO 9001, ISO 14001, etc.
+    certifications: Array<{
+      name: string;
+      issuer: string;
+      issuedDate: Date;
+      expiryDate: Date;
+      certificateNumber: string;
+      status: 'valid' | 'expired' | 'pending_renewal';
+    }>;
+    dataProtection: {
+      gdprCompliant: boolean;
+      ccpaCompliant: boolean;
+      hipaaCompliant?: boolean;
+      soxCompliant?: boolean;
+    };
+    industrySpecific?: string[];
+  };
+
+  // System Configuration
+  @Column({ type: 'json', nullable: true })
+  systemConfig?: {
+    timezone: string;
+    defaultLanguage: string;
+    supportedLanguages: string[];
+    defaultCurrency: string;
+    supportedCurrencies: string[];
+    dateFormat: string;
+    timeFormat: '12h' | '24h';
+    numberFormat: string;
+    fiscalYearStart: string; // MM-DD format
+    workingDays: string[];
+    workingHours: {
+      start: string;
+      end: string;
+    };
+    holidays: Array<{
+      name: string;
+      date: string; // MM-DD format
+      recurring: boolean;
+    }>;
+  };
+
+  // Integration Settings
+  @Column({ type: 'json', nullable: true })
+  integrations?: {
+    erp: Array<{
+      system: string;
+      enabled: boolean;
+      config: Record<string, any>;
+    }>;
+    external: Array<{
+      name: string;
+      type: string;
+      endpoint: string;
+      credentials: Record<string, any>;
+      enabled: boolean;
+    }>;
+  };
+
+  // Security Settings
+  @Column({ type: 'json', nullable: true })
+  securityConfig?: {
+    passwordPolicy: {
+      minLength: number;
+      requireUppercase: boolean;
+      requireLowercase: boolean;
+      requireNumbers: boolean;
+      requireSymbols: boolean;
+      expiryDays?: number;
+    };
+    mfaRequired: boolean;
+    mfaMethods: string[];
+    sessionTimeout: number; // minutes
+    ipWhitelist?: string[];
+    ssoConfig?: {
+      enabled: boolean;
+      provider: string;
+      settings: Record<string, any>;
+    };
+  };
+
+  // Audit & Compliance
+  @Column({ type: 'json', nullable: true })
+  auditSettings?: {
+    retentionPeriod: number; // days
+    encryptionEnabled: boolean;
+    backupFrequency: 'daily' | 'weekly' | 'monthly';
+    auditLevel: 'basic' | 'detailed' | 'comprehensive';
+  };
+
+  // Relationships
+  @OneToMany(() => User, user => user.organization)
+  users: User[];
+
+  // Timestamps
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @Column({ nullable: true })
+  deletedAt?: Date;
+
+  @Column({ nullable: true })
+  createdBy?: string;
+
+  @Column({ nullable: true })
+  updatedBy?: string;
+
+  // Computed properties
+  get isActive(): boolean {
+    return this.status === OrganizationStatus.ACTIVE;
+  }
+
+  get isTrialExpired(): boolean {
+    if (this.status !== OrganizationStatus.TRIAL || !this.subscription?.endDate) {
+      return false;
+    }
+    return new Date() > new Date(this.subscription.endDate);
+  }
+
+  get userCount(): number {
+    return this.users ? this.users.length : 0;
+  }
+
+  get subscriptionStatus(): string {
+    if (!this.subscription) return 'no_subscription';
+    
+    const now = new Date();
+    const endDate = new Date(this.subscription.endDate || 0);
+    
+    if (now > endDate) return 'expired';
+    
+    const daysUntilExpiry = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysUntilExpiry <= 7) return 'expiring_soon';
+    
+    return 'active';
+  }
+
+  // Methods
+  isFeatureEnabled(feature: string): boolean {
+    return this.industry50Config?.enabledModules?.includes(feature) || false;
+  }
+
+  hasValidCertification(certificationName: string): boolean {
+    if (!this.compliance?.certifications) return false;
+    
+    const cert = this.compliance.certifications.find(c => c.name === certificationName);
+    if (!cert) return false;
+    
+    return cert.status === 'valid' && new Date() < new Date(cert.expiryDate);
+  }
+
+  getMaxUsers(): number {
+    return this.subscription?.limits?.maxUsers || 5; // Default for trial
+  }
+
+  canAddUser(): boolean {
+    return this.userCount < this.getMaxUsers();
+  }
+
+  updateSubscriptionUsage(usage: Partial<typeof this.subscription.limits>): void {
+    if (this.subscription) {
+      this.subscription.limits = { ...this.subscription.limits, ...usage };
+    }
+  }
+}

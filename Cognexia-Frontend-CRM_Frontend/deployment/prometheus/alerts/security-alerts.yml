@@ -1,0 +1,335 @@
+# ===============================================================================
+# EzAi-MFGNINJA Government-Grade Security Alert Rules
+# AI-Powered Manufacturing Intelligence Platform
+# 
+# These alerts are designed for government-grade security monitoring
+# and compliance with ISO 27001, SOC 2, NIST, FedRAMP standards
+# ===============================================================================
+
+groups:
+  - name: security.critical
+    interval: 10s
+    rules:
+      # Critical Security Incidents
+      - alert: SecurityBreach
+        expr: increase(security_incidents_total{severity="critical"}[5m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+          category: security
+          compliance: "iso27001,soc2,fedramp"
+        annotations:
+          summary: "CRITICAL: Security breach detected"
+          description: "Critical security incident detected on {{ $labels.instance }}. Immediate investigation required."
+          runbook_url: "https://docs.ezai-mfgninja.com/security/incident-response"
+
+      - alert: UnauthorizedAccess
+        expr: increase(auth_failures_total[1m]) > 10
+        for: 30s
+        labels:
+          severity: critical
+          category: security
+          compliance: "iso27001,soc2"
+        annotations:
+          summary: "CRITICAL: Multiple unauthorized access attempts"
+          description: "{{ $value }} failed authentication attempts in the last minute from {{ $labels.source_ip }}"
+          runbook_url: "https://docs.ezai-mfgninja.com/security/unauthorized-access"
+
+      - alert: PrivilegeEscalation
+        expr: increase(privilege_escalation_attempts_total[5m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+          category: security
+          compliance: "iso27001,nist"
+        annotations:
+          summary: "CRITICAL: Privilege escalation attempt detected"
+          description: "Privilege escalation attempt detected for user {{ $labels.username }} on {{ $labels.instance }}"
+
+      - alert: MalwareDetected
+        expr: increase(malware_detections_total[1m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+          category: security
+          compliance: "iso27001,soc2,fedramp"
+        annotations:
+          summary: "CRITICAL: Malware detected"
+          description: "Malware '{{ $labels.malware_type }}' detected on {{ $labels.instance }}. Immediate containment required."
+
+  - name: security.high
+    interval: 30s
+    rules:
+      # High Priority Security Events
+      - alert: SuspiciousNetworkActivity
+        expr: rate(network_connections_suspicious_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: high
+          category: security
+          compliance: "iso27001,nist"
+        annotations:
+          summary: "HIGH: Suspicious network activity detected"
+          description: "Suspicious network connections detected: {{ $value }} connections/sec on {{ $labels.instance }}"
+
+      - alert: DataExfiltrationAttempt
+        expr: rate(data_transfer_outbound_bytes[5m]) > 100000000  # 100MB/sec
+        for: 1m
+        labels:
+          severity: high
+          category: security
+          compliance: "gdpr,sox,fedramp"
+        annotations:
+          summary: "HIGH: Potential data exfiltration detected"
+          description: "Unusually high outbound data transfer: {{ $value | humanizeBytes }}/sec from {{ $labels.instance }}"
+
+      - alert: EncryptionFailure
+        expr: increase(encryption_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: high
+          category: security
+          compliance: "sox,gdpr,fedramp"
+        annotations:
+          summary: "HIGH: Encryption failure detected"
+          description: "{{ $value }} encryption failures in the last 5 minutes on {{ $labels.instance }}"
+
+      - alert: AuditLogTampering
+        expr: increase(audit_log_integrity_violations_total[1m]) > 0
+        for: 0s
+        labels:
+          severity: high
+          category: security
+          compliance: "sox,iso27001"
+        annotations:
+          summary: "HIGH: Audit log tampering detected"
+          description: "Audit log integrity violation detected on {{ $labels.instance }}. Potential tampering attempt."
+
+  - name: security.medium
+    interval: 60s
+    rules:
+      # Medium Priority Security Events
+      - alert: UnusualLoginPattern
+        expr: increase(auth_success_total[1h]) > 100 and hour() > 22 or hour() < 6
+        for: 5m
+        labels:
+          severity: medium
+          category: security
+          compliance: "iso27001"
+        annotations:
+          summary: "MEDIUM: Unusual login activity during off-hours"
+          description: "{{ $value }} successful logins detected during off-hours from {{ $labels.source_ip }}"
+
+      - alert: VulnerabilityDetected
+        expr: increase(vulnerability_scan_findings_total{severity="high"}[6h]) > 0
+        for: 5m
+        labels:
+          severity: medium
+          category: security
+          compliance: "nist,fedramp"
+        annotations:
+          summary: "MEDIUM: High-severity vulnerability detected"
+          description: "{{ $value }} high-severity vulnerabilities detected in latest scan"
+
+      - alert: ConfigurationDrift
+        expr: increase(config_drift_detections_total[1h]) > 0
+        for: 10m
+        labels:
+          severity: medium
+          category: security
+          compliance: "iso27001,soc2"
+        annotations:
+          summary: "MEDIUM: Security configuration drift detected"
+          description: "Security configuration drift detected on {{ $labels.instance }}. Review required."
+
+  - name: compliance.critical
+    interval: 300s  # 5 minutes
+    rules:
+      # Compliance Violations
+      - alert: SOXComplianceViolation
+        expr: increase(sox_compliance_violations_total[15m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+          category: compliance
+          compliance: "sox"
+        annotations:
+          summary: "CRITICAL: SOX compliance violation"
+          description: "SOX compliance violation detected: {{ $labels.violation_type }}. Immediate remediation required."
+
+      - alert: GDPRDataBreach
+        expr: increase(gdpr_data_breach_incidents_total[1m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+          category: compliance
+          compliance: "gdpr"
+        annotations:
+          summary: "CRITICAL: GDPR data breach incident"
+          description: "GDPR data breach incident detected. 72-hour notification requirement activated."
+
+      - alert: FedRAMPSecurityIncident
+        expr: increase(fedramp_security_incidents_total[1m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+          category: compliance
+          compliance: "fedramp"
+        annotations:
+          summary: "CRITICAL: FedRAMP security incident"
+          description: "FedRAMP security incident detected. Government notification procedures initiated."
+
+      - alert: AuditLogRetentionViolation
+        expr: audit_log_retention_days < 2557  # 7 years for SOX
+        for: 1h
+        labels:
+          severity: high
+          category: compliance
+          compliance: "sox"
+        annotations:
+          summary: "HIGH: Audit log retention policy violation"
+          description: "Audit logs are being retained for only {{ $value }} days. SOX requires 7 years (2557 days)."
+
+  - name: authentication.security
+    interval: 30s
+    rules:
+      # Authentication & Authorization Security
+      - alert: BruteForceAttack
+        expr: rate(auth_failures_total[5m]) > 5
+        for: 1m
+        labels:
+          severity: high
+          category: security
+          compliance: "iso27001,soc2"
+        annotations:
+          summary: "HIGH: Brute force attack detected"
+          description: "Brute force attack detected: {{ $value }} failed attempts/min from {{ $labels.source_ip }}"
+
+      - alert: WeakPasswordUsage
+        expr: increase(weak_password_detections_total[1h]) > 0
+        for: 5m
+        labels:
+          severity: medium
+          category: security
+          compliance: "iso27001,nist"
+        annotations:
+          summary: "MEDIUM: Weak password usage detected"
+          description: "{{ $value }} weak passwords detected in the last hour. Password policy enforcement required."
+
+      - alert: MFABypassAttempt
+        expr: increase(mfa_bypass_attempts_total[5m]) > 0
+        for: 0s
+        labels:
+          severity: high
+          category: security
+          compliance: "iso27001,fedramp"
+        annotations:
+          summary: "HIGH: MFA bypass attempt detected"
+          description: "Multi-factor authentication bypass attempt detected for user {{ $labels.username }}"
+
+      - alert: SessionHijacking
+        expr: increase(session_hijack_attempts_total[5m]) > 0
+        for: 0s
+        labels:
+          severity: high
+          category: security
+          compliance: "iso27001,soc2"
+        annotations:
+          summary: "HIGH: Session hijacking attempt detected"
+          description: "Session hijacking attempt detected for session {{ $labels.session_id }}"
+
+  - name: data.protection
+    interval: 60s
+    rules:
+      # Data Protection & Privacy
+      - alert: PIIExposure
+        expr: increase(pii_exposure_incidents_total[5m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+          category: security
+          compliance: "gdpr,sox"
+        annotations:
+          summary: "CRITICAL: PII exposure detected"
+          description: "Personally Identifiable Information (PII) exposure detected. GDPR breach protocols activated."
+
+      - alert: DatabaseInjectionAttempt
+        expr: increase(sql_injection_attempts_total[5m]) > 0
+        for: 30s
+        labels:
+          severity: high
+          category: security
+          compliance: "iso27001,soc2"
+        annotations:
+          summary: "HIGH: Database injection attempt detected"
+          description: "{{ $labels.attack_type }} injection attempt detected from {{ $labels.source_ip }}"
+
+      - alert: UnencryptedDataTransfer
+        expr: increase(unencrypted_data_transfers_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: high
+          category: security
+          compliance: "sox,gdpr,fedramp"
+        annotations:
+          summary: "HIGH: Unencrypted data transfer detected"
+          description: "Unencrypted sensitive data transfer detected. Encryption policy violation."
+
+      - alert: DataRetentionViolation
+        expr: data_retention_violations_total > 0
+        for: 5m
+        labels:
+          severity: medium
+          category: compliance
+          compliance: "gdpr,sox"
+        annotations:
+          summary: "MEDIUM: Data retention policy violation"
+          description: "{{ $value }} data retention policy violations detected. Review and remediation required."
+
+  - name: infrastructure.security
+    interval: 30s
+    rules:
+      # Infrastructure Security
+      - alert: ContainerSecurityViolation
+        expr: increase(container_security_violations_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: high
+          category: security
+          compliance: "nist,fedramp"
+        annotations:
+          summary: "HIGH: Container security violation"
+          description: "Container security violation detected: {{ $labels.violation_type }} on {{ $labels.container }}"
+
+      - alert: NetworkSegmentationBreach
+        expr: increase(network_segmentation_breaches_total[5m]) > 0
+        for: 0s
+        labels:
+          severity: high
+          category: security
+          compliance: "iso27001,nist"
+        annotations:
+          summary: "HIGH: Network segmentation breach"
+          description: "Network segmentation breach detected. Zero-trust architecture compromised."
+
+      - alert: FirewallRuleViolation
+        expr: increase(firewall_rule_violations_total[5m]) > 0
+        for: 2m
+        labels:
+          severity: medium
+          category: security
+          compliance: "iso27001,soc2"
+        annotations:
+          summary: "MEDIUM: Firewall rule violation"
+          description: "{{ $value }} firewall rule violations detected in the last 5 minutes"
+
+      - alert: CertificateExpiry
+        expr: (tls_certificate_expiry_seconds - time()) / (24 * 3600) < 30
+        for: 1h
+        labels:
+          severity: high
+          category: security
+          compliance: "iso27001,soc2,fedramp"
+        annotations:
+          summary: "HIGH: TLS certificate expiring soon"
+          description: "TLS certificate for {{ $labels.instance }} expires in {{ $value }} days"

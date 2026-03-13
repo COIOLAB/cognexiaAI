@@ -1,0 +1,93 @@
+import { InventoryItem } from './InventoryItem';
+export declare class StockLocation {
+    id: string;
+    itemId: string;
+    locationCode: string;
+    locationName?: string;
+    quantity: number;
+    reservedQuantity: number;
+    availableQuantity: number;
+    minQuantity?: number;
+    maxQuantity?: number;
+    isDefault: boolean;
+    isActive: boolean;
+    zone?: string;
+    aisle?: string;
+    shelf?: string;
+    bin?: string;
+    notes?: string;
+    coordinates?: {
+        x?: number;
+        y?: number;
+        z?: number;
+    };
+    warehouseCode?: string;
+    warehouseName?: string;
+    temperatureMin?: number;
+    temperatureMax?: number;
+    humidityMin?: number;
+    humidityMax?: number;
+    createdBy?: string;
+    updatedBy?: string;
+    createdAt: Date;
+    lastUpdated: Date;
+    item: InventoryItem;
+    updateAvailableQuantity(): void;
+    hasStock(): boolean;
+    hasAvailableStock(): boolean;
+    canFulfill(requestedQuantity: number): boolean;
+    isAtMinLevel(): boolean;
+    isAtMaxLevel(): boolean;
+    getUtilizationPercentage(): number;
+    getFullLocationCode(): string;
+    getLocationHierarchy(): string;
+    hasEnvironmentalControls(): boolean;
+    isEnvironmentSuitable(temperature?: number, humidity?: number): boolean;
+    reserve(quantity: number): boolean;
+    unreserve(quantity: number): boolean;
+    adjustStock(quantity: number): void;
+    getStockStatus(): 'EMPTY' | 'LOW' | 'NORMAL' | 'HIGH' | 'FULL';
+    toJSON(): {
+        id: string;
+        itemId: string;
+        locationCode: string;
+        locationName: string | undefined;
+        quantity: number;
+        reservedQuantity: number;
+        availableQuantity: number;
+        minQuantity: number | undefined;
+        maxQuantity: number | undefined;
+        isDefault: boolean;
+        isActive: boolean;
+        zone: string | undefined;
+        aisle: string | undefined;
+        shelf: string | undefined;
+        bin: string | undefined;
+        notes: string | undefined;
+        coordinates: {
+            x?: number;
+            y?: number;
+            z?: number;
+        } | undefined;
+        warehouseCode: string | undefined;
+        warehouseName: string | undefined;
+        temperatureRange: {
+            min: number | undefined;
+            max: number | undefined;
+        } | null;
+        humidityRange: {
+            min: number | undefined;
+            max: number | undefined;
+        } | null;
+        fullLocationCode: string;
+        locationHierarchy: string;
+        utilizationPercentage: number;
+        stockStatus: "LOW" | "HIGH" | "EMPTY" | "NORMAL" | "FULL";
+        hasStock: boolean;
+        hasAvailableStock: boolean;
+        hasEnvironmentalControls: boolean;
+        createdAt: Date;
+        lastUpdated: Date;
+    };
+}
+//# sourceMappingURL=StockLocation.d.ts.map

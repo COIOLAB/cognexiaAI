@@ -1,0 +1,172 @@
+version: '3.8'
+
+# EzAi-MFGNINJA Starter Docker Compose
+# Government-Grade AI Manufacturing Intelligence Platform
+# Simple setup with essential services for immediate deployment
+
+services:
+  # ==================== FRONTEND APPLICATION ====================
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: ezai-frontend
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost
+      - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - ezai-network
+
+  # ==================== BACKEND SERVICES ====================
+  
+  # HR Service (Core Module)
+  hr-service:
+    build:
+      context: ../backend/hr
+      dockerfile: ../Dockerfile.template
+    container_name: ezai-hr-service
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - SERVICE_NAME=hr
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - GOVERNMENT_CERTIFICATION=enabled
+      - AUDIT_ENABLED=true
+    ports:
+      - "3001:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - ezai-network
+
+  # Manufacturing Service (Core Module)
+  manufacturing-service:
+    build:
+      context: ../backend/manufacturing
+      dockerfile: ../Dockerfile.template
+    container_name: ezai-manufacturing-service
+    environment:
+      - NODE_ENV=production
+      - PORT=3003
+      - SERVICE_NAME=manufacturing
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - GOVERNMENT_CERTIFICATION=enabled
+      - AUDIT_ENABLED=true
+    ports:
+      - "3003:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - ezai-network
+
+  # Inventory Service (Core Module)
+  inventory-service:
+    build:
+      context: ../backend/inventory
+      dockerfile: ../Dockerfile.template
+    container_name: ezai-inventory-service
+    environment:
+      - NODE_ENV=production
+      - PORT=3005
+      - SERVICE_NAME=inventory
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - GOVERNMENT_CERTIFICATION=enabled
+      - AUDIT_ENABLED=true
+    ports:
+      - "3005:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - ezai-network
+
+  # ==================== MONITORING & ANALYTICS ====================
+  
+  # Prometheus for Metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ezai-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus-simple.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    restart: unless-stopped
+    networks:
+      - ezai-network
+
+  # Grafana for Analytics
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ezai-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-ezai_grafana_2025!}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3010:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    networks:
+      - ezai-network
+
+# ==================== VOLUMES ====================
+volumes:
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+# ==================== NETWORKS ====================
+networks:
+  ezai-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.22.0.0/16

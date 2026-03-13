@@ -1,0 +1,181 @@
+import { OrganizationEntity } from './organization.entity';
+import { EmployeeEntity } from './employee.entity';
+export declare class PerformanceReviewEntity {
+    id: string;
+    organizationId: string;
+    employeeId: string;
+    reviewerId: string;
+    reviewPeriodStart: Date;
+    reviewPeriodEnd: Date;
+    reviewType: string;
+    reviewYear: number;
+    reviewCycle: string;
+    status: string;
+    dueDate: Date;
+    submittedDate: Date;
+    completedDate: Date;
+    isOverdue: boolean;
+    overallRating: number;
+    overallRatingLabel: string;
+    performanceSummary: string;
+    competencyRatings: Array<{
+        competencyId: string;
+        competencyName: string;
+        rating: number;
+        weight: number;
+        comments: string;
+        examples: string[];
+        developmentNotes?: string;
+    }>;
+    goalAchievements: Array<{
+        goalId: string;
+        goalTitle: string;
+        goalDescription: string;
+        targetValue: number | string;
+        actualValue: number | string;
+        achievementPercentage: number;
+        status: string;
+        rating: number;
+        comments: string;
+        evidenceLinks?: string[];
+    }>;
+    strengths: string[];
+    developmentAreas: string[];
+    managerComments: string;
+    employeeComments: string;
+    hrComments: string;
+    additionalFeedback: string;
+    developmentPlan: Array<{
+        area: string;
+        objective: string;
+        actions: string[];
+        resources: string[];
+        targetDate: string;
+        priority: string;
+        status: string;
+    }>;
+    trainingRecommendations: Array<{
+        trainingType: string;
+        trainingName: string;
+        description: string;
+        priority: string;
+        estimatedDuration: string;
+        cost?: number;
+    }>;
+    skillsAssessment: Array<{
+        skillName: string;
+        currentLevel: number;
+        targetLevel: number;
+        importance: string;
+        developmentPriority: string;
+        notes: string;
+    }>;
+    careerDiscussion: {
+        currentRole: string;
+        careerAspiration: string;
+        nextRoleTarget?: string;
+        timeFrameForPromotion?: string;
+        skillGapsForPromotion: string[];
+        mentorshipNeeds?: string[];
+        lateralMoveInterest?: string[];
+    };
+    feedback360: Array<{
+        feedbackerId: string;
+        feedbackerName: string;
+        feedbackerRole: string;
+        relationship: string;
+        rating: number;
+        comments: string;
+        strengths: string[];
+        developmentAreas: string[];
+        submittedDate: string;
+    }>;
+    performanceMetrics: Array<{
+        metricName: string;
+        metricType: string;
+        target: number | string;
+        actual: number | string;
+        unit: string;
+        achievementPercentage: number;
+        trend: string;
+        comparison: string;
+    }>;
+    achievements: Array<{
+        title: string;
+        description: string;
+        date: string;
+        impact: string;
+        recognition?: string;
+    }>;
+    awards: Array<{
+        awardName: string;
+        awardType: string;
+        date: string;
+        description: string;
+        monetary?: number;
+    }>;
+    nextPeriodGoals: Array<{
+        goalType: string;
+        title: string;
+        description: string;
+        successCriteria: string[];
+        targetDate: string;
+        priority: string;
+        metrics?: Array<{
+            name: string;
+            target: number | string;
+            unit: string;
+        }>;
+    }>;
+    includeCompensationReview: boolean;
+    compensationRecommendation: string;
+    recommendedSalaryIncreasePercentage: number;
+    recommendedSalaryAmount: number;
+    recommendedBonusAmount: number;
+    compensationJustification: string;
+    reviewTemplateId: string;
+    reviewTemplateName: string;
+    customFields: Record<string, any>;
+    reviewParticipants: Array<{
+        userId: string;
+        userName: string;
+        role: string;
+        participationType: string;
+        status: string;
+        submittedDate?: string;
+    }>;
+    approvedById: string;
+    approvedDate: Date;
+    approvalNotes: string;
+    requiresHRApproval: boolean;
+    requiresSkipManagerApproval: boolean;
+    attachments: Array<{
+        fileName: string;
+        fileUrl: string;
+        fileType: string;
+        uploadedBy: string;
+        uploadedDate: string;
+        description?: string;
+    }>;
+    previousReviewId: string;
+    previousRating: number;
+    ratingTrend: string;
+    isPIPRequired: boolean;
+    pipId: string;
+    pipReason: string;
+    isVisibleToEmployee: boolean;
+    isConfidential: boolean;
+    isArchived: boolean;
+    archivedDate: Date;
+    settings: Record<string, any>;
+    metadata: Record<string, any>;
+    tags: string[];
+    createdAt: Date;
+    updatedAt: Date;
+    organization: OrganizationEntity;
+    employee: EmployeeEntity;
+    reviewer: EmployeeEntity;
+    approvedBy: EmployeeEntity;
+    previousReview: PerformanceReviewEntity;
+}
+//# sourceMappingURL=performance-review.entity.d.ts.map

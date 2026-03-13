@@ -1,0 +1,44 @@
+import { OrganizationEntity } from './organization.entity';
+import { EmployeeEntity } from './employee.entity';
+import { PositionEntity } from './position.entity';
+export declare class DepartmentEntity {
+    id: string;
+    organizationId: string;
+    name: string;
+    code: string;
+    description: string;
+    type: string;
+    parentDepartmentId: string;
+    level: number;
+    hierarchyPath: string;
+    headOfDepartmentId: string;
+    managerId: string;
+    annualBudget: number;
+    budgetCurrency: string;
+    maxEmployees: number;
+    currentEmployeeCount: number;
+    location: string;
+    building: string;
+    floor: string;
+    phoneExtension: string;
+    email: string;
+    isActive: boolean;
+    isVirtual: boolean;
+    establishedDate: Date;
+    costCenterCode: string;
+    costCenterName: string;
+    goals: Record<string, any>;
+    settings: Record<string, any>;
+    metadata: Record<string, any>;
+    tags: string[];
+    createdAt: Date;
+    updatedAt: Date;
+    organization: OrganizationEntity;
+    parentDepartment: DepartmentEntity;
+    childDepartments: DepartmentEntity[];
+    headOfDepartment: EmployeeEntity;
+    manager: EmployeeEntity;
+    employees: EmployeeEntity[];
+    positions: PositionEntity[];
+}
+//# sourceMappingURL=department.entity.d.ts.map

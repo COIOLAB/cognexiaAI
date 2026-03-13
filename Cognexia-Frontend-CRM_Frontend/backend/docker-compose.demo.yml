@@ -1,0 +1,125 @@
+version: '3.8'
+
+services:
+  # API Gateway for all modules
+  api-gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile.demo
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - manufacturing-service
+      - finance-service
+      - inventory-service
+      - supply-chain-service
+      - iot-service
+
+  # Manufacturing Demo Service
+  manufacturing-service:
+    build:
+      context: ./modules/02-manufacturing
+      dockerfile: Dockerfile.demo
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - DB_URL=mongodb://mongo:27017/manufacturing
+      - MQTT_URL=mqtt://mosquitto:1883
+    depends_on:
+      - mongo
+      - mosquitto
+
+  # Finance Demo Service
+  finance-service:
+    build:
+      context: ./modules/finance
+      dockerfile: Dockerfile.demo
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - DB_URL=mongodb://mongo:27017/finance
+    depends_on:
+      - mongo
+
+  # Inventory Demo Service
+  inventory-service:
+    build:
+      context: ./modules/inventory
+      dockerfile: Dockerfile.demo
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=development
+      - DB_URL=mongodb://mongo:27017/inventory
+    depends_on:
+      - mongo
+
+  # Supply Chain Demo Service with Simple Blockchain
+  supply-chain-service:
+    build:
+      context: ./modules/supply-chain
+      dockerfile: Dockerfile.demo
+    ports:
+      - "3005:3005"
+    environment:
+      - NODE_ENV=development
+      - DB_URL=mongodb://mongo:27017/supplychain
+      - BLOCKCHAIN_URL=http://ganache:8545
+    depends_on:
+      - mongo
+      - ganache
+
+  # IoT Demo Service
+  iot-service:
+    build:
+      context: ./modules/iot
+      dockerfile: Dockerfile.demo
+    ports:
+      - "3006:3006"
+    environment:
+      - NODE_ENV=development
+      - MQTT_URL=mqtt://mosquitto:1883
+    depends_on:
+      - mosquitto
+
+  # Demo Database (MongoDB for simplicity)
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_demo_data:/data/db
+
+  # MQTT Broker for IoT Demo
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./modules/02-manufacturing/mosquitto.demo.conf:/mosquitto/config/mosquitto.conf
+
+  # Simple Blockchain for Demo (Ganache)
+  ganache:
+    image: trufflesuite/ganache:latest
+    ports:
+      - "8545:8545"
+
+  # Demo Dashboard
+  demo-dashboard:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.demo
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://api-gateway:8000
+    depends_on:
+      - api-gateway
+
+volumes:
+  mongodb_demo_data:
