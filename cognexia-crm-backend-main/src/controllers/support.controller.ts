@@ -9,14 +9,17 @@ import {
   Query,
   UseGuards,
   HttpCode,
+  Request,
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SupportService, CreateTicketDto, UpdateTicketDto, TicketSearchCriteria } from '../services/support.service';
 import { SupportTicket } from '../entities/support-ticket.entity';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 
 @ApiTags('Support & Service')
-@Controller('api/crm/support')
+@Controller('crm/support')
+@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class SupportController {
   constructor(private readonly supportService: SupportService) {}
@@ -25,15 +28,22 @@ export class SupportController {
   @ApiOperation({ summary: 'Create a new support ticket' })
   @ApiResponse({ status: 201, description: 'Ticket created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input' })
-  async createTicket(@Body() createDto: CreateTicketDto): Promise<SupportTicket> {
-    return await this.supportService.createTicket(createDto);
+  async createTicket(@Body() createDto: CreateTicketDto, @Request() req: any): Promise<SupportTicket> {
+    const defaultOrgId = req.user?.organizationId;
+    const defaultUserId = req.user?.userId || req.user?.id;
+    return await this.supportService.createTicket({
+      ...createDto,
+      organizationId: createDto.organizationId || defaultOrgId,
+      submittedBy: createDto.submittedBy || defaultUserId,
+    });
   }
 
   @Get('tickets')
   @ApiOperation({ summary: 'Search and list support tickets' })
   @ApiResponse({ status: 200, description: 'List of tickets' })
-  async searchTickets(@Query() criteria: TicketSearchCriteria): Promise<SupportTicket[]> {
-    return await this.supportService.searchTickets(criteria);
+  async searchTickets(@Query() criteria: TicketSearchCriteria): Promise<any> {
+    const data = await this.supportService.searchTickets(criteria);
+    return { data, total: data.length };
   }
 
   @Get('tickets/:id')
@@ -42,6 +52,14 @@ export class SupportController {
   @ApiResponse({ status: 404, description: 'Ticket not found' })
   async getTicket(@Param('id') id: string): Promise<SupportTicket> {
     return await this.supportService.getTicketById(id);
+  }
+
+  @Delete('tickets/:id')
+  @ApiOperation({ summary: 'Delete ticket' })
+  @ApiResponse({ status: 200, description: 'Ticket deleted successfully' })
+  @HttpCode(HttpStatus.OK)
+  async deleteTicket(@Param('id') id: string): Promise<{ message: string }> {
+    return await this.supportService.deleteTicket(id);
   }
 
   @Put('tickets/:id')

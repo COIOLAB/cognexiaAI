@@ -299,7 +299,7 @@ export class CustomerService {
       const query = this.customerRepository.createQueryBuilder('customer');
       
       if (search) {
-        query.andWhere('customer.name ILIKE :search OR customer.email ILIKE :search', {
+        query.andWhere('customer.companyName ILIKE :search OR customer.customerCode ILIKE :search', {
           search: `%${search}%`
         });
       }

@@ -3,27 +3,49 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, In } from 'typeorm';
 import { Call, CallStatus, CallDisposition, CallDirection } from '../entities/call.entity';
 import { InitiateCallDto, UpdateCallDto, CallSearchDto, TransferCallDto } from '../dto/telephony.dto';
+import { TwilioService } from './twilio.service';
 
 @Injectable()
 export class CallService {
   constructor(
     @InjectRepository(Call)
     private readonly callRepo: Repository<Call>,
+    private readonly twilioService: TwilioService,
   ) {}
 
   // ============ CRUD Operations ============
 
   async initiateCall(tenantId: string, dto: InitiateCallDto): Promise<Call> {
-    const call = this.callRepo.create({
-      ...dto,
-      tenantId,
-      callSid: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      direction: dto.fromNumber.includes('+') ? CallDirection.OUTBOUND : CallDirection.INBOUND,
-      status: CallStatus.INITIATED,
-      startTime: new Date(),
-    });
+    try {
+      // 1. Actually call the Twilio SDK
+      const twilioCall = await this.twilioService.initiateCall(dto.toNumber, dto.fromNumber);
+      
+      // 2. Save to DB with real SID
+      const call = this.callRepo.create({
+        ...dto,
+        tenantId,
+        callSid: twilioCall.sid,
+        direction: dto.fromNumber.includes('+') ? CallDirection.OUTBOUND : CallDirection.INBOUND,
+        status: CallStatus.INITIATED,
+        startTime: new Date(),
+      });
 
-    return this.callRepo.save(call);
+      return await this.callRepo.save(call);
+    } catch (error) {
+      // Create a failed call record and re-throw
+      const failedCall = this.callRepo.create({
+        ...dto,
+        tenantId,
+        callSid: `failed_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        direction: dto.fromNumber.includes('+') ? CallDirection.OUTBOUND : CallDirection.INBOUND,
+        status: CallStatus.FAILED,
+        startTime: new Date(),
+        endTime: new Date(),
+        notes: `Failed to initiate via Twilio. Error: ${error.message}`
+      });
+      await this.callRepo.save(failedCall);
+      throw error;
+    }
   }
 
   async findCallById(id: string, tenantId: string): Promise<Call> {

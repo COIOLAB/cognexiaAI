@@ -108,6 +108,7 @@ import { CRMService } from './services/crm.service';
 import { SalesService } from './services/sales.service';
 import { SalesOrderService } from './services/sales-order.service';
 import { CustomerService } from './services/customer.service';
+import { LeadService } from './services/lead.service';
 import { CRMAIIntegrationService } from './services/crm-ai-integration.service';
 import { MarketingService } from './services/marketing.service';
 import { SupportService } from './services/support.service';
@@ -251,6 +252,7 @@ import { PriceListController, DiscountController, PricingController } from './co
 import { CallService } from './services/call.service';
 import { CallQueueService } from './services/call-queue.service';
 import { CallAnalyticsService } from './services/call-analytics.service';
+import { TwilioService } from './services/twilio.service';
 import { CallController, CallQueueController, CallAnalyticsController } from './controllers/telephony.controller';
 import { TelephonyWebSocketGateway } from './gateways/telephony-websocket.gateway';
 import { IVRMenuController } from './controllers/ivr-menu.controller';
@@ -875,6 +877,7 @@ import { Deployment } from './entities/deployment.entity';
     SalesService, 
     SalesOrderService,
     CustomerService, 
+    LeadService,
     CRMAIIntegrationService,
     MarketingService,
     SupportService,
@@ -1043,6 +1046,7 @@ import { Deployment } from './entities/deployment.entity';
     InventoryService,
     
     // Phase 3: Telephony Services
+    TwilioService,
     CallService,
     CallQueueService,
     CallAnalyticsService,

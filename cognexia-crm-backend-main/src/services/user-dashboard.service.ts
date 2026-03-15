@@ -146,6 +146,8 @@ export class UserDashboardService {
   async getUserMetrics(organizationId: string): Promise<UserDashboardMetrics> {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    // For demo/realtime dashboard show global counts if org is missing
+    const tenantWhere = organizationId ? this.getTenantWhere(this.customerRepository, organizationId) : {};
 
     const [
       totalCustomers,
@@ -158,54 +160,54 @@ export class UserDashboardService {
       resolvedTicketsThisMonth,
     ] = await Promise.all([
       this.customerRepository.count({
-        where: this.getTenantWhere(this.customerRepository, organizationId) as any,
+        where: tenantWhere as any,
       }),
       this.customerRepository.count({
         where: {
-          ...this.getTenantWhere(this.customerRepository, organizationId),
+          ...tenantWhere,
           status: CustomerStatus.ACTIVE,
         } as any,
       }),
       this.leadRepository.count({
-        where: this.getTenantWhere(this.leadRepository, organizationId) as any,
+        where: organizationId ? this.getTenantWhere(this.leadRepository, organizationId) as any : {},
       }),
       this.opportunityRepository.count({
-        where: this.getTenantWhere(this.opportunityRepository, organizationId) as any,
+        where: organizationId ? this.getTenantWhere(this.opportunityRepository, organizationId) as any : {},
       }),
       this.opportunityRepository.count({
         where: {
-          ...this.getTenantWhere(this.opportunityRepository, organizationId),
+          ...(organizationId ? this.getTenantWhere(this.opportunityRepository, organizationId) : {}),
           stage: Not(In([OpportunityStage.WON, OpportunityStage.LOST])) as any,
         } as any,
       }),
       this.ticketRepository.count({
         where: {
-          ...this.getTenantWhere(this.ticketRepository, organizationId),
+          ...(organizationId ? this.getTenantWhere(this.ticketRepository, organizationId) : {}),
           status: TicketStatus.OPEN,
         } as any,
       }),
       this.ticketRepository.count({
         where: {
-          ...this.getTenantWhere(this.ticketRepository, organizationId),
+          ...(organizationId ? this.getTenantWhere(this.ticketRepository, organizationId) : {}),
           status: TicketStatus.OPEN,
         } as any,
       }),
       this.ticketRepository.count({
         where: {
-          ...this.getTenantWhere(this.ticketRepository, organizationId),
+          ...(organizationId ? this.getTenantWhere(this.ticketRepository, organizationId) : {}),
           status: TicketStatus.RESOLVED,
-          resolved_at: Between(monthStart, now),
+          resolvedAt: Between(monthStart, now),
         } as any,
       }),
     ]);
 
     // Calculate pipeline value
     const opportunities = await this.opportunityRepository.find({
-      where: this.getTenantWhere(this.opportunityRepository, organizationId) as any,
+      where: organizationId ? this.getTenantWhere(this.opportunityRepository, organizationId) as any : {},
     });
 
     const totalPipelineValue = opportunities.reduce(
-      (sum, opp) => sum + (opp.value || 0),
+      (sum, opp) => sum + Number(opp.value || 0),
       0
     );
 
@@ -411,17 +413,13 @@ export class UserDashboardService {
     const baseWhere = this.getTenantWhere(this.ticketRepository, organizationId) as any;
 
     const totalTickets = await this.ticketRepository.count({ where: baseWhere });
+    // No due_date column exists; treat unresolved tickets older than 72h as breached
+    const breachThreshold = new Date(now.getTime() - 72 * 60 * 60 * 1000);
     const breachedTickets = await this.ticketRepository.count({
       where: {
         ...baseWhere,
-        due_date: LessThan(now),
-        status: In([
-          TicketStatus.OPEN,
-          TicketStatus.OPEN,
-          TicketStatus.IN_PROGRESS,
-          TicketStatus.OPEN,
-          TicketStatus.OPEN,
-        ]) as any,
+        status: In([TicketStatus.OPEN, TicketStatus.IN_PROGRESS, TicketStatus.WAITING_ON_CUSTOMER]) as any,
+        createdAt: LessThan(breachThreshold),
       } as any,
     });
 
@@ -673,19 +671,20 @@ export class UserDashboardService {
         where: {
           ...this.getTenantWhere(this.ticketRepository, organizationId),
           status: TicketStatus.RESOLVED,
-          resolved_at: Between(startDate, now),
+          resolvedAt: Between(startDate, now),
         } as any,
       }),
     };
   }
 
   private getTenantWhere(repo: Repository<any>, organizationId: string): Record<string, any> {
+    if (!organizationId) {
+      // No tenant context supplied; return unscoped for global dashboards/demo
+      return {};
+    }
     const columns = repo.metadata.columns.map((column) => column.propertyName);
     if (columns.includes('organizationId')) {
       return { organizationId };
-    }
-    if (columns.includes('organizationId')) {
-      return { organizationId: organizationId };
     }
     if (columns.includes('tenantId')) {
       return { tenantId: organizationId };

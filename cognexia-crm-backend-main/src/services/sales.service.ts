@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Opportunity, OpportunityStage } from '../entities/opportunity.entity';
 import { SalesQuote, QuoteStatus } from '../entities/sales-quote.entity';
 import { Lead } from '../entities/lead.entity';
+import { Customer } from '../entities/customer.entity';
 
 @Injectable()
 export class SalesService {
@@ -84,24 +85,92 @@ export class SalesService {
   async createOpportunity(opportunityData: any, createdBy: string) {
     try {
       const opportunityNumber = await this.generateOpportunityNumber();
+      const value = Number(opportunityData.value || opportunityData.amount) || 0;
+      const probability = Number(opportunityData.probability) || 10;
+      const weightedValue = (value * probability) / 100;
+
+      let customerId = opportunityData.customerId;
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       
+      if (customerId && !uuidRegex.test(customerId)) {
+        // If not a UUID, try to find customer by customerCode
+        const customer = await this.opportunityRepository.manager.findOne(Customer, { 
+          where: { customerCode: customerId } 
+        });
+        
+        if (!customer) {
+          throw new NotFoundException(`Customer with code ${customerId} not found`);
+        }
+        customerId = customer.id;
+      }
+
+      // Handle products payload which may come as a comma-separated string or array
+      let productsJson = { items: [] as any[], subtotal: 0, totalDiscount: 0, tax: 0, total: 0 };
+      if (opportunityData.products) {
+        const productIds = typeof opportunityData.products === 'string'
+          ? opportunityData.products.split(',').map(p => p.trim()).filter(Boolean)
+          : (Array.isArray(opportunityData.products) ? opportunityData.products : []);
+
+        if (productIds.length > 0) {
+          productsJson.items = productIds.map(id => ({
+            productId: typeof id === 'object' ? id.id : id,
+            productName: `Product ${typeof id === 'object' ? id.id : id}`,
+            category: 'General',
+            quantity: 1,
+            unitPrice: 0,
+            totalPrice: 0
+          }));
+        }
+      }
+
       const opportunity = this.opportunityRepository.create({
         ...opportunityData,
+        customerId,
         opportunityNumber,
         name: opportunityData.name || 'New Opportunity',
         stage: opportunityData.stage || OpportunityStage.PROSPECTING,
-        probability: opportunityData.probability || 10,
-        value: opportunityData.value || 0,
-        weightedValue: opportunityData.value ? opportunityData.value * (opportunityData.probability || 10) / 100 : 0,
+        value,
+        probability,
+        weightedValue,
+        type: opportunityData.type || 'new_business',
+        salesRep: opportunityData.assignedTo || opportunityData.salesRep || 'Unassigned',
+        salesTeam: opportunityData.salesTeam || [],
+        tags: opportunityData.tags || [],
         expectedCloseDate: opportunityData.expectedCloseDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         createdBy: createdBy || 'system',
         updatedBy: createdBy || 'system',
+        // Required JSON columns with safe defaults
+        products: productsJson,
+        requirements: opportunityData.requirements || {
+          functionalRequirements: [], technicalRequirements: [], businessRequirements: [],
+        },
+        decisionProcess: opportunityData.decisionProcess || {
+          decisionMakers: [], evaluationCriteria: [], budgetApprovalProcess: '', timeframe: '', alternativesConsidered: [],
+        },
+        competitive: opportunityData.competitive || {
+          mainCompetitors: [], ourPosition: 'outsider', competitiveAdvantages: [],
+          competitiveThreats: [], winFactors: [], loseFactors: [], competitorAnalysis: [],
+        },
+        activities: opportunityData.activities || {
+          totalActivities: 0, lastActivityDate: new Date().toISOString(),
+          nextActivity: { type: '', date: '', description: '', owner: '' }, milestones: [],
+        },
+        financials: opportunityData.financials || {
+          budget: value, paymentTerms: 'Net 30', profitMargin: 0, costOfSale: 0, roi: 0,
+        },
+        risks: opportunityData.risks || {
+          overallRisk: 'low', riskFactors: [], budgetRisk: 0, timelineRisk: 0, competitiveRisk: 0, technicalRisk: 0,
+        },
+        communications: opportunityData.communications || {
+          totalTouches: 0, lastContact: new Date().toISOString(),
+          preferredChannels: [], responseRate: 0, engagementScore: 0, keyConversations: [],
+        },
       });
 
       return await this.opportunityRepository.save(opportunity);
     } catch (error) {
       this.logger.error('Error creating opportunity:', error);
-      throw error; // Let controller handle the error properly
+      throw error;
     }
   }
 
@@ -316,11 +385,23 @@ export class SalesService {
   async getSalesMetrics(filters: any = {}) {
     try {
       const opportunities = await this.findAllOpportunities(filters);
-      
+
+      const totalValue = opportunities.reduce((sum, opp) => sum + Number(opp.value || 0), 0);
+      const totalWeightedValue = opportunities.reduce((sum, opp) => {
+        const value = Number(opp.value || 0);
+        const probability = Number((opp as any).probability || 0);
+        const weighted = opp.weightedValue ? Number(opp.weightedValue) : (value * probability) / 100;
+        return sum + (Number.isFinite(weighted) ? weighted : 0);
+      }, 0);
+
+      const totalOpportunities = opportunities.length;
+
       return {
-        totalValue: opportunities.reduce((sum, opp) => sum + Number(opp.value), 0),
-        totalOpportunities: opportunities.length,
-        avgDealSize: opportunities.length > 0 ? opportunities.reduce((sum, opp) => sum + Number(opp.value), 0) / opportunities.length : 0,
+        total: totalOpportunities,
+        totalOpportunities,
+        totalValue,
+        totalWeightedValue,
+        avgDealSize: totalOpportunities > 0 ? totalValue / totalOpportunities : 0,
         winRate: this.calculateWinRate(opportunities),
         salesCycle: this.calculateAvgSalesCycle(opportunities),
       };
@@ -332,8 +413,9 @@ export class SalesService {
 
   private async generateOpportunityNumber(): Promise<string> {
     const year = new Date().getFullYear();
-    const count = await this.opportunityRepository.count();
-    return `OPP-${year}-${String(count + 1).padStart(3, '0')}`;
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `OPP-${year}-${timestamp}-${random}`;
   }
 
   private async generateQuoteNumber(): Promise<string> {

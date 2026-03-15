@@ -86,7 +86,7 @@ export class AuthService {
     private emailNotificationService: EmailNotificationService,
     private dataSource: DataSource,
     private demoDataService: DemoDataService,
-  ) {}
+  ) { }
 
   /**
    * User Registration (Multi-Tenant SaaS)
@@ -99,7 +99,7 @@ export class AuthService {
 
       // Accept both companyName and organizationName (for backwards compatibility)
       const orgName = organizationName || companyName;
-      
+
       if (!orgName) {
         throw new BadRequestException('Organization name is required (use companyName or organizationName field)');
       }
@@ -107,14 +107,14 @@ export class AuthService {
       // Normalize email
       const normalizedEmail = email.toLowerCase().trim();
 
-    // Check if user already exists
-    const existingUser = await this.userRepository.findOne({
-      where: { email: normalizedEmail },
-    });
+      // Check if user already exists
+      const existingUser = await this.userRepository.findOne({
+        where: { email: normalizedEmail },
+      });
 
-    if (existingUser) {
-      throw new ConflictException('User with this email already exists');
-    }
+      if (existingUser) {
+        throw new ConflictException('User with this email already exists');
+      }
 
       // Check if organization name already exists
       const existingOrg = await this.organizationRepository.findOne({
@@ -158,91 +158,91 @@ export class AuthService {
 
         const organization = queryRunner.manager.create(Organization, {
           name: orgName,
-        email: normalizedEmail,
-        phone: phone,
-        isActive: true,
-        status: 'trial' as any,
-        subscriptionStatus: SubscriptionStatus.TRIAL,
-        subscriptionPlanId: subscriptionPlan.id,
-        trialEndsAt,
-        subscriptionStartDate: new Date(),
-        maxUsers: subscriptionPlan.includedUsers || 5,
-        currentUserCount: 1, // The owner user
-        contactPersonName: `${firstName} ${lastName}`,
-        contactPersonEmail: normalizedEmail,
-        contactPersonPhone: phone,
-        metadata: {
-          industry,
-          companySize,
-          registrationDate: new Date().toISOString(),
-          ipAddress,
-          userAgent,
-        },
-      });
+          email: normalizedEmail,
+          phone: phone,
+          isActive: true,
+          status: 'trial' as any,
+          subscriptionStatus: SubscriptionStatus.TRIAL,
+          subscriptionPlanId: subscriptionPlan.id,
+          trialEndsAt,
+          subscriptionStartDate: new Date(),
+          maxUsers: subscriptionPlan.includedUsers || 5,
+          currentUserCount: 1, // The owner user
+          contactPersonName: `${firstName} ${lastName}`,
+          contactPersonEmail: normalizedEmail,
+          contactPersonPhone: phone,
+          metadata: {
+            industry,
+            companySize,
+            registrationDate: new Date().toISOString(),
+            ipAddress,
+            userAgent,
+          },
+        });
 
-      const savedOrganization = await queryRunner.manager.save(organization);
+        const savedOrganization = await queryRunner.manager.save(organization);
 
-      // 2. Create Owner User (First user with OWNER role)
-      const user = queryRunner.manager.create(User, {
-        email: normalizedEmail,
-        passwordHash,
-        firstName,
-        lastName,
-        phoneNumber: phone,
-        userType: UserType.ORG_ADMIN, // Owner is admin type
-        organizationId: savedOrganization.id,
-        isActive: true,
-        isEmailVerified: false, // Require email verification
-        roles: ['OWNER', 'ADMIN'], // Owner has all permissions
-        metadata: {},
-      });
+        // 2. Create Owner User (First user with OWNER role)
+        const user = queryRunner.manager.create(User, {
+          email: normalizedEmail,
+          passwordHash,
+          firstName,
+          lastName,
+          phoneNumber: phone,
+          userType: UserType.ORG_ADMIN, // Owner is admin type
+          organizationId: savedOrganization.id,
+          isActive: true,
+          isEmailVerified: false, // Require email verification
+          roles: ['OWNER', 'ADMIN'], // Owner has all permissions
+          metadata: {},
+        });
 
-      const savedUser = await queryRunner.manager.save(user);
+        const savedUser = await queryRunner.manager.save(user);
 
-      // 3. Generate email verification token
-      const verificationToken = crypto.randomBytes(32).toString('hex');
-      const verificationExpiry = new Date(Date.now() + 86400000); // 24 hours
+        // 3. Generate email verification token
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        const verificationExpiry = new Date(Date.now() + 86400000); // 24 hours
 
-      savedUser.metadata = {
-        emailVerificationToken: await bcrypt.hash(verificationToken, 10),
-        emailVerificationExpiry: verificationExpiry.toISOString(),
-      };
-      await queryRunner.manager.save(savedUser);
+        savedUser.metadata = {
+          emailVerificationToken: await bcrypt.hash(verificationToken, 10),
+          emailVerificationExpiry: verificationExpiry.toISOString(),
+        };
+        await queryRunner.manager.save(savedUser);
 
-      // 4. Create audit log for registration
-      const auditLog = queryRunner.manager.create(AuditLog, {
-        organization_id: savedOrganization.id,
-        user_id: savedUser.id,
-        action: AuditAction.CREATE,
-        entity_type: AuditEntityType.USER,
-        entity_id: savedUser.id,
-        description: `Organization '${orgName}' created with owner user '${normalizedEmail}'`,
-        metadata: {
-          userEmail: savedUser.email,
-          userName: `${savedUser.firstName} ${savedUser.lastName}`,
-          ipAddress,
-          userAgent,
-          isSecurityEvent: false,
-          planType: subscriptionPlan.planType,
-          trialEndsAt: trialEndsAt.toISOString(),
-        },
-      });
-      await queryRunner.manager.save(auditLog);
+        // 4. Create audit log for registration
+        const auditLog = queryRunner.manager.create(AuditLog, {
+          organization_id: savedOrganization.id,
+          user_id: savedUser.id,
+          action: AuditAction.CREATE,
+          entity_type: AuditEntityType.USER,
+          entity_id: savedUser.id,
+          description: `Organization '${orgName}' created with owner user '${normalizedEmail}'`,
+          metadata: {
+            userEmail: savedUser.email,
+            userName: `${savedUser.firstName} ${savedUser.lastName}`,
+            ipAddress,
+            userAgent,
+            isSecurityEvent: false,
+            planType: subscriptionPlan.planType,
+            trialEndsAt: trialEndsAt.toISOString(),
+          },
+        });
+        await queryRunner.manager.save(auditLog);
 
-      // Commit transaction
-      await queryRunner.commitTransaction();
+        // Commit transaction
+        await queryRunner.commitTransaction();
 
-      // Send welcome + verification email (outside transaction)
-      try {
-        await this.emailNotificationService.sendEmailVerification(savedUser, verificationToken);
-        // Optionally send welcome email with onboarding info
-        if (savedOrganization) {
-          await this.emailNotificationService.sendWelcomeEmail(savedUser, savedOrganization);
+        // Send welcome + verification email (outside transaction)
+        try {
+          await this.emailNotificationService.sendEmailVerification(savedUser, verificationToken);
+          // Optionally send welcome email with onboarding info
+          if (savedOrganization) {
+            await this.emailNotificationService.sendWelcomeEmail(savedUser, savedOrganization);
+          }
+        } catch (emailError) {
+          // Log email error but don't fail registration
+          console.error('Failed to send welcome email:', emailError);
         }
-      } catch (emailError) {
-        // Log email error but don't fail registration
-        console.error('Failed to send welcome email:', emailError);
-      }
 
         // Generate JWT tokens
         const tokens = await this.generateTokens(savedUser);
@@ -298,7 +298,7 @@ export class AuthService {
         // #region agent log
         const fs = require('fs');
         const logPath = 'c:\\Users\\nshrm\\Desktop\\CognexiaAI-ERP\\.cursor\\debug.log';
-        try { fs.appendFileSync(logPath, JSON.stringify({ hypothesisId: 'A1', location: 'auth.service:login', message: 'User not found', data: { emailUsed: emailLower }, timestamp: Date.now() }) + '\n'); } catch (_) {}
+        try { fs.appendFileSync(logPath, JSON.stringify({ hypothesisId: 'A1', location: 'auth.service:login', message: 'User not found', data: { emailUsed: emailLower }, timestamp: Date.now() }) + '\n'); } catch (_) { }
         // #endregion
         throw new UnauthorizedException('Invalid credentials');
       }
@@ -309,7 +309,7 @@ export class AuthService {
         // #region agent log
         const fs = require('fs');
         const logPath = 'c:\\Users\\nshrm\\Desktop\\CognexiaAI-ERP\\.cursor\\debug.log';
-        try { fs.appendFileSync(logPath, JSON.stringify({ hypothesisId: 'A2', location: 'auth.service:login', message: 'Password invalid', data: { userId: user.id, email: user.email }, timestamp: Date.now() }) + '\n'); } catch (_) {}
+        try { fs.appendFileSync(logPath, JSON.stringify({ hypothesisId: 'A2', location: 'auth.service:login', message: 'Password invalid', data: { userId: user.id, email: user.email }, timestamp: Date.now() }) + '\n'); } catch (_) { }
         // #endregion
         // Log failed login attempt
         await this.createAuditLog(
@@ -373,7 +373,7 @@ export class AuthService {
       // #region agent log
       const fs = require('fs');
       const logPath = 'c:\\Users\\nshrm\\Desktop\\CognexiaAI-ERP\\.cursor\\debug.log';
-      try { fs.appendFileSync(logPath, JSON.stringify({ hypothesisId: 'A3', location: 'auth.service:login', message: 'Login success', data: { userId: user.id, email: user.email }, timestamp: Date.now() }) + '\n'); } catch (_) {}
+      try { fs.appendFileSync(logPath, JSON.stringify({ hypothesisId: 'A3', location: 'auth.service:login', message: 'Login success', data: { userId: user.id, email: user.email }, timestamp: Date.now() }) + '\n'); } catch (_) { }
       // #endregion
 
       return {
@@ -524,7 +524,7 @@ export class AuthService {
    */
   async logout(user_id: string, ipAddress?: string, userAgent?: string): Promise<void> {
     const user = await this.userRepository.findOne({ where: { id: user_id } });
-    
+
     if (user) {
       await this.createAuditLog(
         user.organizationId || '',
@@ -568,8 +568,8 @@ export class AuthService {
    */
   async requestPasswordReset(dto: PasswordResetRequestDto): Promise<{ message: string }> {
     try {
-      const user = await this.userRepository.findOne({ 
-        where: { email: dto.email.toLowerCase() } 
+      const user = await this.userRepository.findOne({
+        where: { email: dto.email.toLowerCase() }
       });
 
       if (!user) {
@@ -637,7 +637,7 @@ export class AuthService {
       if (u.metadata?.passwordResetToken && u.metadata?.passwordResetExpiry) {
         const isTokenValid = await bcrypt.compare(dto.token, u.metadata.passwordResetToken);
         const isNotExpired = new Date(u.metadata.passwordResetExpiry) > new Date();
-        
+
         if (isTokenValid && isNotExpired) {
           user = u;
           break;
@@ -733,7 +733,7 @@ export class AuthService {
         if (u.metadata?.emailVerificationToken && u.metadata?.emailVerificationExpiry) {
           const isTokenValid = await bcrypt.compare(dto.token, u.metadata.emailVerificationToken);
           const isNotExpired = new Date(u.metadata.emailVerificationExpiry) > new Date();
-          
+
           if (isTokenValid && isNotExpired) {
             user = u;
             break;
@@ -841,7 +841,7 @@ export class AuthService {
     isSecurityEvent: boolean = false,
   ): Promise<void> {
     const user = await this.userRepository.findOne({ where: { id: user_id } });
-    
+
     if (!user) return;
 
     const normalizedOrgId =
@@ -887,7 +887,7 @@ export class AuthService {
     try {
       // 1. Ensure organization exists
       let organization = await this.organizationRepository.findOne({ where: { id: DEFAULT_ORG_ID } });
-      
+
       if (!organization) {
         organization = this.organizationRepository.create({
           id: DEFAULT_ORG_ID,

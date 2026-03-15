@@ -142,15 +142,17 @@ export class SupportTicketsController {
   ) {
     // Generate ticket number
     const count = await this.ticketRepository.count();
-    const ticketNumber = `TICKET-${String(count + 1).padStart(6, '0')}`;
+    const ticketNumber =`TICKET-${String(count + 1).padStart(6, '0')}`;
     const resolvedChannel =
       body.channel && Object.values(TicketChannel).includes(body.channel as TicketChannel)
         ? (body.channel as TicketChannel)
         : TicketChannel.WEB;
 
+        
+
     const ticket = this.ticketRepository.create({
       ticketNumber,
-      organizationId: body.organizationId,
+      organizationId: body.organizationId || req.user.organizationId,
       submittedBy: req.user.userId,
       subject: body.subject,
       description: body.description,

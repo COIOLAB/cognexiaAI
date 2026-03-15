@@ -109,7 +109,7 @@ async function createTestUsers() {
     console.log('Database connection closed.');
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('❌ Error:', error);
     console.error(error);
     process.exit(1);
   }

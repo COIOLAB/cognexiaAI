@@ -15,6 +15,8 @@ export interface CreateTicketDto {
   channel?: string;
   customer_id?: string;
   created_by?: string;
+  organizationId?: string;
+  submittedBy?: string;
   tags?: string[];
   custom_fields?: Record<string, any>;
 }
@@ -59,7 +61,7 @@ export class SupportService {
       const ticketNumber = await this.generateTicketNumber();
       
       const ticket = this.ticketRepository.create({
-        ticket_number: ticketNumber,
+       ticketNumber: ticketNumber,
         subject: createDto.subject || 'No Subject',
         description: createDto.description || '',
         priority: createDto.priority || TicketPriority.MEDIUM,
@@ -67,6 +69,8 @@ export class SupportService {
         channel: createDto.channel || 'web',
         customer_id: createDto.customer_id,
         created_by: createDto.created_by,
+        organizationId: createDto.organizationId,
+        submittedBy: createDto.submittedBy,
         tags: createDto.tags || [],
         custom_fields: createDto.custom_fields || {},
         status: TicketStatus.OPEN,
@@ -107,7 +111,6 @@ export class SupportService {
   async getTicketById(id: string): Promise<SupportTicket> {
     const ticket = await this.ticketRepository.findOne({
       where: { id },
-      relations: ['customer', 'assigned_agent', 'creator'],
     });
 
     if (!ticket) {
@@ -115,6 +118,15 @@ export class SupportService {
     }
 
     return ticket;
+  }
+
+  /**
+   * Delete ticket by ID
+   */
+  async deleteTicket(id: string): Promise<{ message: string }> {
+    const ticket = await this.getTicketById(id);
+    await this.ticketRepository.remove(ticket);
+    return { message: `Ticket ${id} deleted successfully` };
   }
 
   /**
@@ -242,8 +254,6 @@ export class SupportService {
       query.andWhere('ticket.tags && ARRAY[:...tags]', { tags: criteria.tags });
     }
 
-    query.leftJoinAndSelect('ticket.customer', 'customer');
-    query.leftJoinAndSelect('ticket.assigned_agent', 'assigned_agent');
     query.orderBy('ticket.createdAt', 'DESC');
 
     return await query.getMany();
@@ -271,14 +281,15 @@ export class SupportService {
       .where('ticket.resolvedAt IS NOT NULL')
       .getRawOne();
 
+    const inProgressTickets = await query.clone().andWhere('ticket.status = :status', { status: TicketStatus.IN_PROGRESS }).getCount();
+
     return {
       total,
-      by_status: {
-        new: newTickets,
-        open: openTickets,
-        resolved: resolvedTickets,
-        closed: closedTickets,
-      },
+      open: openTickets,
+      inProgress: inProgressTickets,
+      resolved: resolvedTickets,
+      closed: closedTickets,
+      avgSatisfactionRating: 0,
       average_resolution_time_hours: avgResolutionTime?.avg ? avgResolutionTime.avg / 3600 : 0,
     };
   }

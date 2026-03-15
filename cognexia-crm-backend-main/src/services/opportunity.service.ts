@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Opportunity } from '../entities/opportunity.entity';
+import { Customer } from '../entities/customer.entity';
 import { CreateOpportunityDto } from '../dto/opportunity.dto';
 import { UpdateOpportunityDto } from '../dto/opportunity.dto';
 import { PaginationDto } from '../dto';
@@ -18,8 +19,95 @@ export class OpportunityService {
   async create(createOpportunityDto: CreateOpportunityDto): Promise<Opportunity> {
     try {
       this.logger.log(`Creating opportunity: ${createOpportunityDto.name}`);
+
+      // Auto-generate opportunityNumber
+      const year = new Date().getFullYear();
+      const timestamp = Date.now().toString().slice(-6);
+      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      const opportunityNumber = `OPP-${year}-${timestamp}-${random}`;
+
+      // Compute weightedValue
+      const value = Number(createOpportunityDto.value) || 0;
+      const probability = Number(createOpportunityDto.probability) || 10;
+      const weightedValue = (value * probability) / 100;
+
+      let customerId = (createOpportunityDto as any).customerId;
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       
-      const opportunity = this.opportunityRepository.create(createOpportunityDto as any);
+      if (customerId && !uuidRegex.test(customerId)) {
+        // If not a UUID, try to find customer by customerCode
+        const customer = await this.opportunityRepository.manager.findOne(Customer, { 
+          where: { customerCode: customerId } 
+        });
+        
+        if (!customer) {
+          throw new NotFoundException(`Customer with code ${customerId} not found`);
+        }
+        customerId = customer.id;
+      }
+
+      // Handle products payload which may come as a comma-separated string or array
+      let productsJson = { items: [] as any[], subtotal: 0, totalDiscount: 0, tax: 0, total: 0 };
+      const productsData = (createOpportunityDto as any).products;
+      if (productsData) {
+        const productIds = typeof productsData === 'string'
+          ? productsData.split(',').map(p => p.trim()).filter(Boolean)
+          : (Array.isArray(productsData) ? productsData : []);
+
+        if (productIds.length > 0) {
+          productsJson.items = productIds.map(id => ({
+            productId: typeof id === 'object' ? id.id : id,
+            productName: `Product ${typeof id === 'object' ? id.id : id}`,
+            category: 'General',
+            quantity: 1,
+            unitPrice: 0,
+            totalPrice: 0
+          }));
+        }
+      }
+
+      const opportunity = this.opportunityRepository.create({
+        ...createOpportunityDto as any,
+        customerId,
+        opportunityNumber,
+        value,
+        probability,
+        weightedValue,
+        // Map frontend's amount/dealAmount field names too
+        type: (createOpportunityDto as any).type || 'new_business',
+        salesRep: (createOpportunityDto as any).assignedTo || (createOpportunityDto as any).salesRep || 'Unassigned',
+        salesTeam: (createOpportunityDto as any).salesTeam || [],
+        tags: createOpportunityDto.tags || [],
+        createdBy: (createOpportunityDto as any).createdBy || 'system',
+        updatedBy: (createOpportunityDto as any).updatedBy || 'system',
+        // Required JSON columns – supply safe empty defaults
+        products: productsJson,
+        requirements: (createOpportunityDto as any).requirements || {
+          functionalRequirements: [], technicalRequirements: [], businessRequirements: [],
+        },
+        decisionProcess: (createOpportunityDto as any).decisionProcess || {
+          decisionMakers: [], evaluationCriteria: [], budgetApprovalProcess: '', timeframe: '', alternativesConsidered: [],
+        },
+        competitive: (createOpportunityDto as any).competitive || {
+          mainCompetitors: [], ourPosition: 'outsider', competitiveAdvantages: [],
+          competitiveThreats: [], winFactors: [], loseFactors: [], competitorAnalysis: [],
+        },
+        activities: (createOpportunityDto as any).activities || {
+          totalActivities: 0, lastActivityDate: new Date().toISOString(),
+          nextActivity: { type: '', date: '', description: '', owner: '' }, milestones: [],
+        },
+        financials: (createOpportunityDto as any).financials || {
+          budget: value, paymentTerms: 'Net 30', profitMargin: 0, costOfSale: 0, roi: 0,
+        },
+        risks: (createOpportunityDto as any).risks || {
+          overallRisk: 'low', riskFactors: [], budgetRisk: 0, timelineRisk: 0, competitiveRisk: 0, technicalRisk: 0,
+        },
+        communications: (createOpportunityDto as any).communications || {
+          totalTouches: 0, lastContact: new Date().toISOString(),
+          preferredChannels: [], responseRate: 0, engagementScore: 0, keyConversations: [],
+        },
+      });
+
       const savedOpportunity = await this.opportunityRepository.save(opportunity) as unknown as Opportunity;
       this.logger.log(`Opportunity created successfully: ${savedOpportunity.id}`);
       return savedOpportunity;
@@ -43,7 +131,7 @@ export class OpportunityService {
         skip,
         take: limit,
         order: { createdAt: 'DESC' },
-        relations: ['customer', 'assignedTo', 'activities', 'products'],
+        relations: ['customer'],
       });
 
       return {
@@ -64,14 +152,7 @@ export class OpportunityService {
       
       const opportunity = await this.opportunityRepository.findOne({
         where: { id },
-        relations: [
-          'customer', 
-          'assignedTo', 
-          'activities', 
-          'products', 
-          'quotes',
-          'lead'
-        ],
+        relations: ['customer', 'quotes', 'lead'],
       });
 
       if (!opportunity) {

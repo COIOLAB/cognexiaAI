@@ -49,6 +49,43 @@ export async function seedMultiTenantData() {
 
     const plans = [
       {
+        name: 'Free Trial',
+        planType: PlanType.FREE,
+        description: '14-day free trial with full access to core CRM features',
+        price: 0.00,
+        currency: 'USD',
+        billingInterval: BillingInterval.MONTHLY,
+        includedUsers: 5,
+        pricePerAdditionalUser: 0,
+        maxUsers: 5,
+        storageLimit: 2, // GB
+        apiCallsPerMonth: 1000,
+        features: [
+          'Up to 5 users',
+          '2 GB storage',
+          'Core CRM features',
+          'Email support',
+          '14-day free trial',
+          '1,000 API calls/month'
+        ],
+        featureFlags: {
+          aiFeatures: false,
+          advancedAnalytics: false,
+          customReporting: false,
+          apiAccess: true,
+          ssoIntegration: false,
+          whiteLabeling: false,
+          prioritySupport: false,
+          dedicatedAccountManager: false,
+          customIntegrations: false,
+          advancedSecurity: false
+        },
+        trialDays: 14,
+        isActive: true,
+        isPopular: false,
+        sortOrder: 0
+      },
+      {
         name: 'Starter',
         planType: PlanType.STARTER,
         description: 'Perfect for small teams getting started with CRM',

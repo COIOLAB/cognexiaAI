@@ -1,5 +1,7 @@
 'use client';
 
+import * as React from 'react';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,8 +11,9 @@ import { formatDistanceToNow } from 'date-fns';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
-export default function TicketDetailPage({ params }: { params: { id: string } }) {
-  const { data: ticket, isLoading } = useGetTicket(params.id);
+export default function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params);
+  const { data: ticket, isLoading } = useGetTicket(id);
 
   if (isLoading) {
     return <Skeleton className="h-96" />;

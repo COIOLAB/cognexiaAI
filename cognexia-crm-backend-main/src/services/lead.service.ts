@@ -1,7 +1,8 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { Lead } from '../entities/lead.entity';
+import { SequenceEnrollment } from '../entities/sequence-enrollment.entity';
 import { CreateLeadDto } from '../dto/lead.dto';
 import { UpdateLeadDto } from '../dto/lead.dto';
 import { PaginationDto } from '../dto';
@@ -14,6 +15,8 @@ export class LeadService {
   constructor(
     @InjectRepository(Lead)
     private readonly leadRepository: Repository<Lead>,
+    @InjectRepository(SequenceEnrollment)
+    private readonly enrollmentRepository: Repository<SequenceEnrollment>,
   ) {}
 
   async create(createLeadDto: CreateLeadDto): Promise<Lead> {
@@ -31,22 +34,41 @@ export class LeadService {
     }
   }
 
-  async findAll(paginationDto: PaginationDto): Promise<{
+  async findAll(paginationDto: PaginationDto & {
+    status?: string;
+    source?: string;
+    assignedTo?: string;
+    minScore?: number;
+    search?: string;
+  }): Promise<{
     data: Lead[];
     total: number;
     page: number;
     limit: number;
   }> {
     try {
-      const { page = 1, limit = 10 } = paginationDto;
-      const skip = (page - 1) * limit;
+      const { page = 1, limit = 10, status, source, assignedTo, minScore, search } = paginationDto;
+      const qb = this.leadRepository.createQueryBuilder('lead');
 
-      const [leads, total] = await this.leadRepository.findAndCount({
-        skip,
-        take: limit,
-        order: { createdAt: 'DESC' },
-        relations: ['source', 'assignedTo', 'activities'],
-      });
+      if (status) qb.andWhere('lead.status = :status', { status });
+      if (source) qb.andWhere('lead.source = :source', { source });
+      if (assignedTo) qb.andWhere('lead.assignedTo = :assignedTo', { assignedTo });
+      const minScoreNumber = Number(minScore);
+      if (Number.isFinite(minScoreNumber)) {
+        qb.andWhere('lead.score >= :minScore', { minScore: minScoreNumber });
+      }
+      if (search) {
+        qb.andWhere(
+          `(lead.contact->>'firstName' ILIKE :q OR lead.contact->>'lastName' ILIKE :q OR lead.contact->>'email' ILIKE :q OR lead.contact->>'company' ILIKE :q OR lead.company ILIKE :q)`,
+          { q: `%${search}%` },
+        );
+      }
+
+      qb.orderBy('lead.createdAt', 'DESC')
+        .skip((page - 1) * limit)
+        .take(limit);
+
+      const [leads, total] = await qb.getManyAndCount();
 
       return {
         data: leads,
@@ -66,7 +88,7 @@ export class LeadService {
       
       const lead = await this.leadRepository.findOne({
         where: { id },
-        relations: ['source', 'assignedTo', 'activities', 'opportunities'],
+        relations: ['customer'],
       });
 
       if (!lead) {
@@ -108,6 +130,8 @@ export class LeadService {
       this.logger.log(`Deleting lead: ${id}`);
       
       const lead = await this.findOne(id);
+      // Remove dependent sequence enrollments to satisfy FK constraints
+      await this.enrollmentRepository.delete({ leadId: id } as any);
       await this.leadRepository.remove(lead);
       
       this.logger.log(`Lead deleted successfully: ${id}`);
@@ -124,7 +148,7 @@ export class LeadService {
     try {
       return await this.leadRepository.findOne({
         where: { contact: { path: ['email'], equals: email } } as any,
-        relations: ['source', 'assignedTo'],
+        relations: ['customer'],
       });
     } catch (error) {
       this.logger.error(`Error finding lead by email ${email}:`, error);
@@ -136,7 +160,7 @@ export class LeadService {
     try {
       return await this.leadRepository.find({
         where: { status: status as any },
-        relations: ['source', 'assignedTo'],
+        relations: ['customer'],
         order: { createdAt: 'DESC' },
       });
     } catch (error) {
@@ -202,6 +226,38 @@ export class LeadService {
     } catch (error) {
       this.logger.error('Error fetching high value leads:', error);
       throw new Error(`Failed to fetch high value leads: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async getStats() {
+    try {
+      const total = await this.leadRepository.count();
+      const open = await this.leadRepository.count({ where: { status: LeadStatus.NEW as any } });
+      const qualified = await this.leadRepository.count({ where: { status: LeadStatus.QUALIFIED as any } });
+      const converted = await this.leadRepository.count({ where: { status: LeadStatus.CONVERTED as any } });
+
+      const last30 = new Date();
+      last30.setDate(last30.getDate() - 30);
+      const createdLast30 = await this.leadRepository.count({
+        where: { createdAt: Between(last30, new Date()) } as any,
+      });
+
+      const avgScoreRow = await this.leadRepository
+        .createQueryBuilder('lead')
+        .select('AVG(lead.score)', 'avg')
+        .getRawOne();
+
+      return {
+        total,
+        open,
+        qualified,
+        converted,
+        createdLast30,
+        avgScore: Number(avgScoreRow?.avg || 0),
+      };
+    } catch (error) {
+      this.logger.error('Error fetching lead stats:', error);
+      throw error;
     }
   }
 }

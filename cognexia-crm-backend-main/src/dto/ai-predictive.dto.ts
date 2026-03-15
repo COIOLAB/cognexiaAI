@@ -10,7 +10,7 @@ export class CreateChurnPredictionDto {
   @IsDateString()
   prediction_date: string;
 
-  @ApiProperty()
+  @ApiProperty()  
   @IsNumber()
   @Min(0)
   @Max(100)

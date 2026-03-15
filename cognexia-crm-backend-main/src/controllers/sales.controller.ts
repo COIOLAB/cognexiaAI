@@ -95,9 +95,9 @@ export class SalesController {
         data: opportunity,
         message: 'Opportunity created successfully',
       };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('Error creating opportunity:', error);
-      throw new HttpException('Failed to create opportunity', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(error.message || 'Failed to create opportunity', HttpStatus.BAD_REQUEST);
     }
   }
 

@@ -56,18 +56,44 @@ export function TicketForm({ initialData, onSubmit, isLoading, submitLabel = 'Cr
     },
   });
 
-  const onFormSubmit = (data: TicketFormData) => {
-    const payload: CreateTicketDto = {
-      subject: data.subject,
-      description: data.description,
-      priority: data.priority as TicketPriority,
-      category: data.category as TicketCategory,
-      channel: data.channel as TicketChannel,
-      customerId: data.customerId,
-      tags: data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
-    };
-    onSubmit(payload);
+  const categoryMap: Record<string, string> = {
+  technical: 'technical_issue',
+  billing: 'billing_inquiry',
+  general_inquiry: 'account_management',
+  feature_request: 'feature_request',
+  bug: 'bug_report',
+  complaint: 'other',
+  other: 'other',
+};
+
+  // const onFormSubmit = (data: TicketFormData) => {
+  //   const payload: CreateTicketDto = {
+  //     subject: data.subject,
+  //     description: data.description,
+  //     priority: data.priority as TicketPriority,
+  //     category: data.category as TicketCategory,
+  //     channel: data.channel as TicketChannel,
+  //     customerId: data.customerId,
+  //     tags: data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
+  //   };
+  //   onSubmit(payload);
+  //   // console.log(payload);
+  // };
+const onFormSubmit = (data: TicketFormData) => {
+  const payload: CreateTicketDto = {
+    subject: data.subject,
+    description: data.description,
+    priority: data.priority as TicketPriority,
+    category: categoryMap[data.category] as TicketCategory, // map here
+    channel: data.channel as TicketChannel,
+    customerId: data.customerId,
+    tags: data.tags
+      ? data.tags.split(',').map(t => t.trim()).filter(Boolean)
+      : undefined,
   };
+  onSubmit(payload);
+};
+
 
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">

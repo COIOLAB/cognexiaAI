@@ -56,6 +56,12 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     createOpportunity: true,
   });
 
+  // After delete succeeds, return to list
+  if (deleteMutation.isSuccess) {
+    router.push('/leads');
+    return null;
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -65,11 +71,9 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
   }
 
   if (!data?.data) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <p className="text-red-600">Lead not found</p>
-      </div>
-    );
+    // If the lead was deleted or not found, bounce to list
+    router.push('/leads');
+    return null;
   }
 
   const lead = data.data;

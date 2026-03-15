@@ -45,7 +45,7 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
   // Retry configuration
-  validateStatus: (status) => status < 500, // Don't throw on 4xx errors
+  // validateStatus: (status) => status < 500, // REMOVED: Don't swallow 4xx errors
 });
 
 // Request interceptor - Add JWT token, tenant ID, and logging

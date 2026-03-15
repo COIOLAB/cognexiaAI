@@ -11,6 +11,7 @@ import {
   Logger,
   HttpException,
   HttpStatus,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,6 +23,10 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../guards/roles.guard';
+import { CustomerService } from '../services/customer.service';
+import { LeadService } from '../services/lead.service';
+import { LeadSource, LeadStatus } from '../entities/lead.entity';
+import { v4 as uuidv4, validate as isUuid } from 'uuid';
 
 @ApiTags('CRM - Customer Relationship Management')
 @Controller('crm')
@@ -30,12 +35,15 @@ import { RolesGuard, Roles } from '../guards/roles.guard';
 export class CRMController {
   private readonly logger = new Logger(CRMController.name);
 
-  constructor() {}
+  constructor(
+    private readonly customerService: CustomerService,
+    private readonly leadService: LeadService,
+  ) { }
 
   // =================== CUSTOMER MANAGEMENT ===================
 
   @Get('customers')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get all customers',
     description: 'Retrieve all customers with advanced filtering and segmentation'
   })
@@ -54,153 +62,27 @@ export class CRMController {
     @Query('region') region?: string,
     @Query('industry') industry?: string,
     @Query('status') status?: string,
+    @Query('search') search?: string,
   ) {
     try {
+      const currentPage = Number(page) || 1;
+      const itemsPerPage = Number(limit) || 20;
+      const { data, total } = await this.customerService.findAll({
+        page: currentPage,
+        limit: itemsPerPage,
+        search,
+      });
+
       return {
         success: true,
         data: {
-          customers: [
-            {
-              id: 'CUST-001',
-              customerCode: 'C-2024-001',
-              companyName: 'TechCorp Industries',
-              customerType: 'b2b',
-              industry: 'technology',
-              size: 'enterprise',
-              status: 'active' as any,
-              primaryContact: {
-                firstName: 'John',
-                lastName: 'Smith',
-                title: 'Chief Technology Officer',
-                email: 'john.smith@techcorp.com',
-                phone: '+1-555-0123',
-                linkedin: 'https://linkedin.com/in/johnsmith'
-              },
-              address: {
-                street: '123 Tech Avenue',
-                city: 'San Francisco',
-                state: 'CA',
-                country: 'USA',
-                zipCode: '94105',
-                region: 'North America'
-              },
-              demographics: {
-                foundedYear: 2010,
-                employeeCount: 5000,
-                annualRevenue: 500000000,
-                website: 'https://techcorp.com',
-                taxId: 'US-123456789'
-              },
-              preferences: {
-                language: 'en',
-                currency: 'USD',
-                timezone: 'America/Los_Angeles',
-                communicationChannels: ['email', 'phone', 'linkedin'],
-                marketingOptIn: true
-              },
-              salesMetrics: {
-                totalRevenue: 2500000,
-                lastOrderDate: '2024-02-10',
-                lastOrderValue: 150000,
-                averageOrderValue: 85000,
-                orderFrequency: 'monthly',
-                paymentTerms: 'NET30',
-                creditLimit: 500000,
-                outstandingBalance: 75000
-              },
-              relationshipMetrics: {
-                customerSince: '2022-03-15',
-                loyaltyScore: 8.5,
-                satisfactionScore: 9.2,
-                npsScore: 8,
-                lastInteractionDate: '2024-02-15',
-                interactionFrequency: 'weekly',
-                preferredSalesRep: 'Sarah Johnson'
-              },
-              segmentation: {
-                segment: 'enterprise',
-                tier: 'platinum',
-                riskLevel: 'low',
-                growthPotential: 'high',
-                competitiveThreats: ['CompetitorA', 'CompetitorB']
-              },
-              socialMedia: {
-                linkedin: 'https://linkedin.com/company/techcorp',
-                twitter: '@TechCorp',
-                facebook: 'TechCorpOfficial',
-                youtube: 'TechCorpChannel'
-              },
-              tags: ['technology', 'enterprise', 'high-value', 'strategic']
-            },
-            {
-              id: 'CUST-002',
-              customerCode: 'C-2024-002',
-              companyName: 'Global Manufacturing Ltd',
-              customerType: 'b2b',
-              industry: 'manufacturing',
-              size: 'large',
-              status: 'active' as any,
-              primaryContact: {
-                firstName: 'Maria',
-                lastName: 'Rodriguez',
-                title: 'VP Operations',
-                email: 'maria.rodriguez@globalmfg.com',
-                phone: '+44-20-7123-4567'
-              },
-              address: {
-                street: '45 Industrial Park',
-                city: 'London',
-                country: 'UK',
-                zipCode: 'SW1A 1AA',
-                region: 'Europe'
-              },
-              demographics: {
-                foundedYear: 1985,
-                employeeCount: 2500,
-                annualRevenue: 250000000,
-                website: 'https://globalmfg.com'
-              },
-              preferences: {
-                language: 'en-GB',
-                currency: 'GBP',
-                timezone: 'Europe/London',
-                communicationChannels: ['email', 'phone']
-              },
-              salesMetrics: {
-                totalRevenue: 1800000,
-                lastOrderDate: '2024-02-12',
-                averageOrderValue: 65000,
-                paymentTerms: 'NET45'
-              },
-              relationshipMetrics: {
-                customerSince: '2021-08-20',
-                loyaltyScore: 7.8,
-                satisfactionScore: 8.5,
-                npsScore: 7
-              },
-              segmentation: {
-                segment: 'large_enterprise',
-                tier: 'gold',
-                riskLevel: 'medium',
-                growthPotential: 'medium'
-              }
-            }
-          ],
+          customers: data,
           pagination: {
-            currentPage: page || 1,
-            totalPages: 1,
-            totalItems: 2,
-            itemsPerPage: limit || 20
+            currentPage,
+            totalPages: Math.ceil(total / itemsPerPage) || 0,
+            totalItems: total,
+            itemsPerPage,
           },
-          summary: {
-            totalCustomers: 1547,
-            b2bCustomers: 892,
-            b2cCustomers: 655,
-            activeCustomers: 1423,
-            inactiveCustomers: 124,
-            avgLifetimeValue: 125000,
-            avgSatisfactionScore: 8.7
-          }
         },
         message: 'Customers retrieved successfully'
       };
@@ -210,151 +92,52 @@ export class CRMController {
     }
   }
 
+ 
   // =================== LEAD MANAGEMENT ===================
 
   @Get('leads')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get all leads',
     description: 'Retrieve all leads with scoring and qualification status'
   })
   @ApiQuery({ name: 'status', required: false })
   @ApiQuery({ name: 'source', required: false })
   @ApiQuery({ name: 'score', required: false, type: Number })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Leads retrieved successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing')
   async getAllLeads(
     @Query('status') status?: string,
     @Query('source') source?: string,
     @Query('score') score?: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('assignedTo') assignedTo?: string,
+    @Query('search') search?: string,
   ) {
     try {
+      const currentPage = Number(page) || 1;
+      const itemsPerPage = Number(limit) || 10;
+      const result = await this.leadService.findAll({
+        page: currentPage,
+        limit: itemsPerPage,
+        status,
+        source,
+        minScore: score,
+        assignedTo,
+        search,
+      } as any);
+
+      const mapped = result.data.map((lead) => this.mapLeadToDto(lead));
+
       return {
         success: true,
-        data: {
-          leads: [
-            {
-              id: 'LEAD-001',
-              leadNumber: 'L-2024-001',
-              status: 'qualified',
-              source: 'website_form',
-              score: 85,
-              grade: 'A',
-              contact: {
-                firstName: 'David',
-                lastName: 'Chen',
-                title: 'Operations Manager',
-                email: 'david.chen@innovation-inc.com',
-                phone: '+1-555-0789',
-                company: 'Innovation Inc'
-              },
-              demographics: {
-                industry: 'technology',
-                companySize: 'medium',
-                annualRevenue: 50000000,
-                location: 'Seattle, WA, USA',
-                employeeCount: 500
-              },
-              behaviorData: {
-                websiteVisits: 15,
-                pageViews: 47,
-                emailOpens: 8,
-                emailClicks: 3,
-                formSubmissions: 2,
-                contentDownloads: 5,
-                demoRequests: 1
-              },
-              leadScoring: {
-                demographicScore: 40,
-                behaviorScore: 35,
-                engagementScore: 10,
-                totalScore: 85,
-                lastUpdated: '2024-02-16T10:30:00Z'
-              },
-              qualification: {
-                budget: 'qualified',
-                authority: 'qualified',
-                need: 'qualified',
-                timeline: 'qualified',
-                bantScore: 100,
-                qualifiedBy: 'AI_SYSTEM',
-                qualifiedDate: '2024-02-15'
-              },
-              assignedTo: 'Sarah Johnson',
-              salesStage: 'discovery',
-              nextAction: {
-                type: 'demo_call',
-                scheduledDate: '2024-02-20T14:00:00Z',
-                description: 'Product demonstration call'
-              },
-              createdAt: '2024-02-10T09:15:00Z',
-              lastContactDate: '2024-02-15T16:30:00Z',
-              estimatedValue: 125000,
-              probability: 75,
-              expectedCloseDate: '2024-03-15'
-            },
-            {
-              id: 'LEAD-002',
-              leadNumber: 'L-2024-002',
-              status: 'new',
-              source: 'linkedin_campaign',
-              score: 45,
-              grade: 'C',
-              contact: {
-                firstName: 'Emily',
-                lastName: 'Watson',
-                title: 'Procurement Director',
-                email: 'emily.watson@globalcorp.com',
-                phone: '+44-20-7890-1234',
-                company: 'Global Corp'
-              },
-              demographics: {
-                industry: 'manufacturing',
-                companySize: 'large',
-                annualRevenue: 200000000,
-                location: 'Manchester, UK',
-                employeeCount: 2000
-              },
-              behaviorData: {
-                websiteVisits: 3,
-                pageViews: 8,
-                emailOpens: 2,
-                socialInteractions: 5
-              },
-              leadScoring: {
-                demographicScore: 30,
-                behaviorScore: 10,
-                engagementScore: 5,
-                totalScore: 45
-              },
-              qualification: {
-                budget: 'unknown',
-                authority: 'qualified',
-                need: 'investigating',
-                timeline: 'unknown',
-                bantScore: 50
-              },
-              assignedTo: 'Michael Brown',
-              salesStage: 'prospecting',
-              createdAt: '2024-02-14T11:20:00Z',
-              estimatedValue: 75000,
-              probability: 25
-            }
-          ],
-          summary: {
-            totalLeads: 1247,
-            newLeads: 156,
-            qualifiedLeads: 324,
-            convertedLeads: 89,
-            avgScore: 62.5,
-            avgConversionTime: 18.5,
-            topSources: [
-              { source: 'website_form', count: 345, conversion: 22.5 },
-              { source: 'linkedin_campaign', count: 289, conversion: 18.2 },
-              { source: 'google_ads', count: 234, conversion: 15.8 },
-              { source: 'referral', count: 189, conversion: 35.4 }
-            ]
-          }
-        },
+        data: mapped,
+        total: result.total,
+        page: currentPage,
+        limit: itemsPerPage,
+        totalPages: Math.ceil(result.total / itemsPerPage) || 0,
         message: 'Leads retrieved successfully'
       };
     } catch (error) {
@@ -363,8 +146,171 @@ export class CRMController {
     }
   }
 
+  @Get('leads/stats')
+  @ApiOperation({ summary: 'Get lead stats', description: 'Retrieve aggregated lead statistics' })
+  @ApiResponse({ status: 200, description: 'Lead stats retrieved successfully' })
+  @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing')
+  async getLeadStats() {
+    try {
+      const stats = await this.leadService.getStats();
+      return { success: true, data: stats, message: 'Lead stats retrieved successfully' };
+    } catch (error) {
+      this.logger.error('Error getting lead stats:', error);
+      throw new HttpException('Failed to retrieve lead stats', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get('leads/:id')
+  @ApiOperation({ summary: 'Get lead by ID', description: 'Retrieve a specific lead' })
+  @ApiParam({ name: 'id', description: 'Lead UUID' })
+  @ApiResponse({ status: 200, description: 'Lead retrieved successfully' })
+  @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing')
+  async getLead(@Param('id') id: string) {
+    try {
+      if (!isUuid(id)) {
+        throw new NotFoundException('Lead not found');
+      }
+      const lead = await this.leadService.findOne(id);
+      return { success: true, data: this.mapLeadToDto(lead), message: 'Lead retrieved successfully' };
+    } catch (error) {
+      this.logger.error(`Error getting lead ${id}:`, error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new HttpException('Failed to retrieve lead', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get('leads/:id/score')
+  @ApiOperation({ summary: 'Get lead score', description: 'Retrieve lead scoring breakdown' })
+  @ApiParam({ name: 'id', description: 'Lead UUID' })
+  @ApiResponse({ status: 200, description: 'Lead score retrieved successfully' })
+  @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing')
+  async getLeadScore(@Param('id') id: string) {
+    try {
+      const lead = await this.leadService.findOne(id);
+      const scoring: any = lead.leadScoring || {};
+      return {
+        success: true,
+        data: {
+          totalScore: scoring.totalScore ?? lead.score ?? 0,
+          breakdown: {
+            engagement: scoring.engagementScore ?? 0,
+            demographics: scoring.demographicScore ?? 0,
+            behavior: scoring.behaviorScore ?? 0,
+            firmographics: 0,
+          },
+        },
+        message: 'Lead score retrieved successfully',
+      };
+    } catch (error) {
+      this.logger.error(`Error getting lead score ${id}:`, error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new HttpException('Failed to retrieve lead score', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Put('leads/:id')
+  @ApiOperation({ summary: 'Update lead', description: 'Update an existing lead' })
+  @ApiParam({ name: 'id', description: 'Lead UUID' })
+  @ApiResponse({ status: 200, description: 'Lead updated successfully' })
+  @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing')
+  async updateLead(@Param('id') id: string, @Body() updateLeadDto: any) {
+    try {
+      const existing = await this.leadService.findOne(id);
+
+      const normalizedContact = updateLeadDto.contact || {
+        firstName: updateLeadDto.firstName ?? existing.contact?.firstName,
+        lastName: updateLeadDto.lastName ?? existing.contact?.lastName,
+        email: updateLeadDto.email ?? existing.contact?.email,
+        phone: updateLeadDto.phone ?? existing.contact?.phone,
+        company: updateLeadDto.company ?? existing.contact?.company,
+        title: updateLeadDto.jobTitle ?? existing.contact?.title,
+      };
+
+      const demographics = updateLeadDto.demographics ?? existing.demographics ?? {
+        industry: '',
+        companySize: 'small',
+        annualRevenue: 0,
+        location: '',
+        employeeCount: 0,
+      };
+
+      const behaviorData = updateLeadDto.behaviorData ?? existing.behaviorData ?? {
+        websiteVisits: 0,
+        pageViews: 0,
+        emailOpens: 0,
+        emailClicks: 0,
+        formSubmissions: 0,
+        contentDownloads: 0,
+        demoRequests: 0,
+        socialInteractions: 0,
+      };
+
+      const source = updateLeadDto.source
+        ? this.normalizeLeadSource(updateLeadDto.source)
+        : existing.source;
+
+      const payload = {
+        ...updateLeadDto,
+        contact: normalizedContact,
+        demographics,
+        behaviorData,
+        source,
+        updatedBy: updateLeadDto.updatedBy || 'system_user',
+      };
+
+      const lead = await this.leadService.update(id, payload);
+
+      return { success: true, data: this.mapLeadToDto(lead), message: 'Lead updated successfully' };
+    } catch (error) {
+      this.logger.error(`Error updating lead ${id}:`, error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(error?.message || 'Failed to update lead', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Delete('leads/:id')
+  @ApiOperation({ summary: 'Delete lead', description: 'Delete a lead by ID' })
+  @ApiParam({ name: 'id', description: 'Lead UUID' })
+  @ApiResponse({ status: 200, description: 'Lead deleted successfully' })
+  @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing')
+  async deleteLead(@Param('id') id: string) {
+    try {
+      await this.leadService.remove(id);
+      return { success: true, message: 'Lead deleted successfully' };
+    } catch (error) {
+      this.logger.error(`Error deleting lead ${id}:`, error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(error?.message || 'Failed to delete lead', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  private mapLeadToDto(lead: any) {
+    const contact = lead.contact || {};
+    const fullName = [contact.firstName, contact.lastName].filter(Boolean).join(' ').trim();
+    return {
+      id: lead.id,
+      leadCode: lead.leadNumber,
+      fullName: fullName || contact.email || '',
+      email: contact.email || '',
+      company: lead.company || contact.company || '',
+      phone: contact.phone || '',
+      status: lead.status,
+      source: lead.source,
+      score: lead.score ?? 0,
+      createdAt: lead.createdAt,
+      updatedAt: lead.updatedAt,
+    };
+  }
   @Post('leads')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Create new lead',
     description: 'Create a new lead with automatic scoring and qualification'
   })
@@ -372,33 +318,83 @@ export class CRMController {
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing')
   async createLead(@Body() createLeadDto: any) {
     try {
+      if (!createLeadDto.contact?.email && !createLeadDto.email) {
+        throw new HttpException('Contact email is required', HttpStatus.BAD_REQUEST);
+      }
+
+      const normalizedContact = createLeadDto.contact || {
+        firstName: createLeadDto.firstName,
+        lastName: createLeadDto.lastName,
+        email: createLeadDto.email,
+        phone: createLeadDto.phone,
+        company: createLeadDto.company,
+        title: createLeadDto.jobTitle,
+      };
+
+      const demographics = createLeadDto.demographics ?? {
+        industry: '',
+        companySize: 'small',
+        annualRevenue: 0,
+        location: '',
+        employeeCount: 0,
+      };
+
+      const behaviorData = createLeadDto.behaviorData ?? {
+        websiteVisits: 0,
+        pageViews: 0,
+        emailOpens: 0,
+        emailClicks: 0,
+        formSubmissions: 0,
+        contentDownloads: 0,
+        demoRequests: 0,
+        socialInteractions: 0,
+      };
+
       const leadScore = this.calculateLeadScore(createLeadDto);
       const qualification = this.qualifyLead(createLeadDto, leadScore);
-      
+      const leadNumber = createLeadDto.leadNumber || `L-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
+      const source = this.normalizeLeadSource(createLeadDto.source);
+
+      const lead = await this.leadService.create({
+        ...createLeadDto,
+        contact: normalizedContact,
+        demographics,
+        behaviorData,
+        leadNumber,
+        source,
+        status: createLeadDto.status || LeadStatus.NEW,
+        createdBy: createLeadDto.createdBy || 'system_user',
+        updatedBy: createLeadDto.updatedBy || 'system_user',
+        score: leadScore,
+        leadScoring: {
+          demographicScore: leadScore,
+          behaviorScore: 0,
+          engagementScore: 0,
+          totalScore: leadScore,
+          lastUpdated: new Date().toISOString(),
+        },
+        qualification,
+        assignedTo: createLeadDto.assignedTo || this.assignLead(createLeadDto),
+      });
+
       return {
         success: true,
-        data: {
-          id: 'lead-' + Date.now(),
-          leadNumber: 'L-2024-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
-          ...createLeadDto,
-          score: leadScore,
-          qualification: qualification,
-          status: 'new',
-          createdAt: new Date(),
-          assignedTo: this.assignLead(createLeadDto)
-        },
+        data: lead,
         message: 'Lead created successfully'
       };
     } catch (error) {
       this.logger.error('Error creating lead:', error);
-      throw new HttpException('Failed to create lead', HttpStatus.INTERNAL_SERVER_ERROR);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(error?.message || 'Failed to create lead', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   // =================== SALES PIPELINE ===================
 
   @Get('pipeline')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get sales pipeline',
     description: 'Retrieve sales pipeline with opportunities and forecasting'
   })
@@ -526,7 +522,7 @@ export class CRMController {
   // =================== CUSTOMER ANALYTICS ===================
 
   @Get('analytics/overview')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get CRM analytics overview',
     description: 'Comprehensive CRM analytics and customer insights'
   })
@@ -626,7 +622,7 @@ export class CRMController {
   // =================== CUSTOMER INTERACTIONS ===================
 
   @Get('customers/:id/interactions')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get customer interaction history',
     description: 'Complete interaction timeline for a specific customer'
   })
@@ -723,32 +719,32 @@ export class CRMController {
 
   private calculateLeadScore(leadData: any): number {
     let score = 0;
-    
+
     // Demographic scoring
     if (leadData.company?.annualRevenue > 100000000) score += 30;
     else if (leadData.company?.annualRevenue > 10000000) score += 20;
     else if (leadData.company?.annualRevenue > 1000000) score += 10;
-    
+
     if (leadData.company?.employeeCount > 1000) score += 20;
     else if (leadData.company?.employeeCount > 100) score += 15;
     else if (leadData.company?.employeeCount > 50) score += 10;
-    
+
     // Behavioral scoring
     if (leadData.behavior?.websiteVisits > 10) score += 15;
     else if (leadData.behavior?.websiteVisits > 5) score += 10;
     else if (leadData.behavior?.websiteVisits > 1) score += 5;
-    
+
     if (leadData.behavior?.formSubmissions > 2) score += 20;
     else if (leadData.behavior?.formSubmissions > 0) score += 10;
-    
+
     return Math.min(score, 100);
   }
 
   private qualifyLead(leadData: any, score: number): any {
     return {
       budget: score > 70 ? 'qualified' : 'investigating',
-      authority: leadData.contact?.title?.toLowerCase().includes('director') || 
-                leadData.contact?.title?.toLowerCase().includes('manager') ? 'qualified' : 'unknown',
+      authority: leadData.contact?.title?.toLowerCase().includes('director') ||
+        leadData.contact?.title?.toLowerCase().includes('manager') ? 'qualified' : 'unknown',
       need: score > 60 ? 'qualified' : 'investigating',
       timeline: score > 80 ? 'qualified' : 'unknown',
       bantScore: score,
@@ -762,5 +758,47 @@ export class CRMController {
     const salesReps = ['Sarah Johnson', 'Michael Brown', 'Emily Davis', 'David Wilson'];
     const hash = leadData.contact?.email?.length || 0;
     return salesReps[hash % salesReps.length];
+  }
+
+  private normalizeLeadSource(source?: string): LeadSource {
+    const normalized = (source || '').toLowerCase();
+    switch (normalized) {
+      case 'website':
+      case 'website_form':
+      case 'web':
+        return LeadSource.WEBSITE_FORM;
+      case 'linkedin':
+      case 'linkedin_campaign':
+        return LeadSource.LINKEDIN_CAMPAIGN;
+      case 'google_ads':
+      case 'google':
+        return LeadSource.GOOGLE_ADS;
+      case 'facebook':
+      case 'facebook_ads':
+        return LeadSource.FACEBOOK_ADS;
+      case 'referral':
+        return LeadSource.REFERRAL;
+      case 'email':
+      case 'email_campaign':
+        return LeadSource.EMAIL_CAMPAIGN;
+      case 'webinar':
+        return LeadSource.WEBINAR;
+      case 'trade_show':
+      case 'tradeshow':
+        return LeadSource.TRADE_SHOW;
+      case 'cold_call':
+      case 'coldcall':
+        return LeadSource.COLD_CALL;
+      case 'inbound_call':
+      case 'inboundcall':
+        return LeadSource.INBOUND_CALL;
+      case 'content_marketing':
+      case 'content':
+        return LeadSource.CONTENT_MARKETING;
+      case 'partner':
+        return LeadSource.PARTNER;
+      default:
+        return LeadSource.OTHER;
+    }
   }
 }

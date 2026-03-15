@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useForm, type Resolver } from 'react-hook-form';
+import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,15 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useCustomers } from '@/hooks/useCustomers';
+import { useContacts } from '@/hooks/useContacts';
 import type { CreateOpportunityDto, Opportunity } from '@/types/api.types';
 
 // Validation schema
@@ -39,8 +48,15 @@ export function OpportunityForm({
   isLoading, 
   submitLabel = 'Create Opportunity' 
 }: OpportunityFormProps) {
+  const { data: customersData, isLoading: isLoadingCustomers } = useCustomers();
+  const customers = customersData?.data?.customers || [];
+
+  const { data: contactsData, isLoading: isLoadingContacts } = useContacts();
+  const contacts = contactsData?.data?.contacts || [];
+
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<OpportunityFormData>({
@@ -53,7 +69,13 @@ export function OpportunityForm({
       customerId: initialData.customerId,
       contactId: initialData.contactId || '',
       assignedTo: initialData.assignedTo || '',
-      products: initialData.products?.join(', ') || '',
+      products: Array.isArray(initialData.products)
+        ? initialData.products.join(', ')
+        : (initialData as any)?.products?.items
+          ? ((initialData as any).products.items || [])
+              .map((p: any) => p.productId || p.id || p)
+              .join(', ')
+          : '',
     } : {
       expectedCloseDate: new Date().toISOString().split('T')[0],
     },
@@ -139,11 +161,28 @@ export function OpportunityForm({
 
             {/* Customer ID */}
             <div className="space-y-2">
-              <Label htmlFor="customerId">Customer ID *</Label>
-              <Input
-                id="customerId"
-                placeholder="Customer UUID"
-                {...register('customerId')}
+              <Label htmlFor="customerId">Customer *</Label>
+              <Controller
+                control={control}
+                name="customerId"
+                render={({ field }) => (
+                  <Select
+                    disabled={isLoadingCustomers}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger id="customerId" className={errors.customerId ? "border-red-500" : ""}>
+                      <SelectValue placeholder={isLoadingCustomers ? "Loading customers..." : "Select a customer"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers.map((customer) => (
+                        <SelectItem key={customer.id} value={customer.id || customer.customerCode}>
+                          {customer.companyName || customer.primaryContact?.firstName + ' ' + customer.primaryContact?.lastName} ({customer.customerCode})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               />
               {errors.customerId && (
                 <p className="text-sm text-destructive">{errors.customerId.message}</p>
@@ -155,21 +194,53 @@ export function OpportunityForm({
 
             {/* Contact ID */}
             <div className="space-y-2">
-              <Label htmlFor="contactId">Contact ID</Label>
-              <Input
-                id="contactId"
-                placeholder="Contact UUID (optional)"
-                {...register('contactId')}
+              <Label htmlFor="contactId">Contact</Label>
+              <Controller
+                control={control}
+                name="contactId"
+                render={({ field }) => (
+                  <Select
+                    disabled={isLoadingContacts}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger id="contactId">
+                      <SelectValue placeholder={isLoadingContacts ? "Loading contacts..." : "Select a contact (optional)"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {contacts.map((contact) => (
+                        <SelectItem key={contact.id} value={contact.id}>
+                          {contact.firstName} {contact.lastName} ({contact.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               />
             </div>
 
             {/* Assigned To */}
             <div className="space-y-2">
-              <Label htmlFor="assignedTo">Assigned To (User ID)</Label>
-              <Input
-                id="assignedTo"
-                placeholder="User ID"
-                {...register('assignedTo')}
+              <Label htmlFor="assignedTo">Assigned To</Label>
+              <Controller
+                control={control}
+                name="assignedTo"
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger id="assignedTo">
+                      <SelectValue placeholder="Select a user" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="system_user">System Administrator</SelectItem>
+                      <SelectItem value="sales_rep_1">Sales Rep 1</SelectItem>
+                      <SelectItem value="sales_rep_2">Sales Rep 2</SelectItem>
+                      <SelectItem value="manager_1">Sales Manager</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
               />
             </div>
 
