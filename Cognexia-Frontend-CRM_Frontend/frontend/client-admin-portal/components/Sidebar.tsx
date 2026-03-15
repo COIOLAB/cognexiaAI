@@ -82,17 +82,17 @@ const navigationSections = [
           { name: 'Content', href: '/marketing/content', icon: FolderOpen },
         ],
       },
-      {
-        name: 'Support',
-        children: [
-          { name: 'Support Home', href: '/support', icon: Headphones },
-          { name: 'Tickets', href: '/support/tickets', icon: Ticket },
-          { name: 'Live Chat', href: '/support/live-chat', icon: MessageSquare },
-          { name: 'Knowledge Base', href: '/support/knowledge-base', icon: BookOpen },
-          { name: 'SLA', href: '/support/sla', icon: Shield },
-          { name: 'Support Analytics', href: '/support/analytics', icon: BarChart3 },
-        ],
-      },
+      // {
+      //   name: 'Support',
+      //   children: [
+      //     { name: 'Support Home', href: '/support', icon: Headphones },
+      //     { name: 'Tickets', href: '/support/tickets', icon: Ticket },
+      //     { name: 'Live Chat', href: '/support/live-chat', icon: MessageSquare },
+      //     { name: 'Knowledge Base', href: '/support/knowledge-base', icon: BookOpen },
+      //     { name: 'SLA', href: '/support/sla', icon: Shield },
+      //     { name: 'Support Analytics', href: '/support/analytics', icon: BarChart3 },
+      //   ],
+      // },
       { name: 'Products', href: '/products', icon: Package },
       { name: 'Categories', href: '/products/categories', icon: Tags },
       { name: 'Pricing', href: '/pricing', icon: DollarSign },
@@ -117,17 +117,17 @@ const navigationSections = [
           { name: 'Support Analytics', href: '/support/analytics', icon: BarChart3 },
         ],
       },
-      {
-        name: 'Marketing',
-        children: [
-          { name: 'Campaigns', href: '/marketing/campaigns', icon: Megaphone },
-          { name: 'Emails', href: '/marketing/emails', icon: Mail },
-          { name: 'Templates', href: '/marketing/templates', icon: FileText },
-          { name: 'Segments', href: '/marketing/segments', icon: Users },
-          { name: 'ROI', href: '/marketing/roi', icon: DollarSign },
-          { name: 'Content', href: '/marketing/content', icon: FolderOpen },
-        ],
-      },
+      // {
+      //   name: 'Marketing',
+      //   children: [
+      //     { name: 'Campaigns', href: '/marketing/campaigns', icon: Megaphone },
+      //     { name: 'Emails', href: '/marketing/emails', icon: Mail },
+      //     { name: 'Templates', href: '/marketing/templates', icon: FileText },
+      //     { name: 'Segments', href: '/marketing/segments', icon: Users },
+      //     { name: 'ROI', href: '/marketing/roi', icon: DollarSign },
+      //     { name: 'Content', href: '/marketing/content', icon: FolderOpen },
+      //   ],
+      // },
       {
         name: 'Operations',
         children: [
@@ -338,7 +338,7 @@ export function Sidebar() {
             </div>
           </div>
         ))}
-        
+
         {/* CMMI Level 5 Badge at bottom */}
         {!sidebarCollapsed && (
           <div className="sticky bottom-0 mt-auto p-4 border-t-2 border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-gray-900 dark:to-gray-800">

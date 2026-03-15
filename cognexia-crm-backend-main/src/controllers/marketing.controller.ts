@@ -45,7 +45,7 @@ import {
 export class MarketingController {
   private readonly logger = new Logger(MarketingController.name);
 
-  constructor(private readonly marketingService: MarketingService) {}
+  constructor(private readonly marketingService: MarketingService) { }
 
   // ==================== CAMPAIGN MANAGEMENT ====================
 
@@ -72,7 +72,7 @@ export class MarketingController {
       };
     } catch (error) {
       this.logger.error('Error creating marketing campaign:', error);
-      throw new HttpException('Failed to create campaign', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(error.message || 'Failed to create campaign', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -109,6 +109,37 @@ export class MarketingController {
     } catch (error) {
       this.logger.error('Error retrieving campaigns:', error);
       throw new HttpException('Failed to retrieve campaigns', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get('campaigns/stats')
+  @ApiOperation({
+    summary: 'Get campaign statistics',
+    description: 'Retrieve summary statistics for marketing campaigns'
+  })
+  @ApiResponse({ status: 200, description: 'Campaign stats retrieved successfully' })
+  @Roles('admin', 'manager', 'marketing_manager', 'marketing_specialist', 'viewer')
+  async getCampaignStats() {
+    try {
+      const campaigns = await this.marketingService.getAllCampaigns();
+
+      const stats = {
+        totalCampaigns: campaigns.length,
+        activeCampaigns: campaigns.filter(c => c.status === CampaignStatus.ACTIVE).length,
+        scheduledCampaigns: campaigns.filter(c => c.status === CampaignStatus.SCHEDULED).length,
+        completedCampaigns: campaigns.filter(c => c.status === CampaignStatus.COMPLETED).length,
+        totalBudget: campaigns.reduce((sum, c) => sum + Number(c.budget || 0), 0),
+        totalSpent: campaigns.reduce((sum, c) => sum + Number(c.spentAmount || 0), 0)
+      };
+
+      return {
+        success: true,
+        data: stats,
+        message: 'Campaign stats retrieved successfully',
+      };
+    } catch (error) {
+      this.logger.error('Error retrieving campaign stats:', error);
+      throw new HttpException('Failed to retrieve campaign stats', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -213,6 +244,8 @@ export class MarketingController {
       throw new HttpException('Failed to activate campaign', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+
 
   @Get('campaigns/:id/roi')
   @ApiOperation({

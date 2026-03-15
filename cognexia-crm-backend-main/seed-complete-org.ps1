@@ -176,7 +176,7 @@ Write-Host ""
 
 # Step 5: Create Marketing Campaigns
 Write-Host "STEP 5: Creating Marketing Campaigns (6)..." -ForegroundColor Cyan
-$campaignTypes = @("email", "social", "webinar", "content", "event", "advertising")
+$campaignTypes = @("email", "social_media", "webinar", "content_marketing", "event", "display_ads")
 foreach ($type in $campaignTypes) {
     $campaignData = @{
         name = "$type Campaign 2026"
@@ -187,7 +187,6 @@ foreach ($type in $campaignTypes) {
         endDate = (Get-Date).AddMonths(3).ToString("yyyy-MM-dd")
         budget = (Get-Random -Minimum 5000 -Maximum 50000)
         organizationId = $orgId
-        targetAudience = "Enterprise customers"
     }
     
     $campaignJson = $campaignData | ConvertTo-Json -Depth 3

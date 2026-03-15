@@ -25,7 +25,7 @@ export default function CampaignsPage() {
   const activateCampaign = useActivateCampaign();
   const pauseCampaign = usePauseCampaign();
 
-  const campaigns = campaignsData?.data?.campaigns || [];
+  const campaigns = Array.isArray(campaignsData?.data) ? campaignsData.data : (campaignsData?.data?.campaigns || []);
   const stats = statsData?.data || {
     totalCampaigns: 0,
     activeCampaigns: 0,

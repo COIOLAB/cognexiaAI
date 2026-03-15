@@ -986,7 +986,7 @@ export enum CampaignType {
   DISPLAY_ADS = 'display_ads',
   CONTENT_MARKETING = 'content_marketing',
   WEBINAR = 'webinar',
-  MIXED = 'mixed',
+  EVENT = 'event',
 }
 
 export enum CampaignStatus {

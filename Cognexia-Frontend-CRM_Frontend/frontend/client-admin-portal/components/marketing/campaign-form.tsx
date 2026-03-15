@@ -19,7 +19,6 @@ const campaignSchema = z.object({
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().optional(),
   budget: z.coerce.number().positive().optional(),
-  targetAudience: z.string().optional(),
 });
 
 type CampaignFormData = z.infer<typeof campaignSchema>;
@@ -61,11 +60,12 @@ export function CampaignForm({ initialData, onSubmit, isLoading, submitLabel = '
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="email">Email</SelectItem>
-                  <SelectItem value="social">Social Media</SelectItem>
-                  <SelectItem value="content">Content Marketing</SelectItem>
-                  <SelectItem value="paid">Paid Advertising</SelectItem>
-                  <SelectItem value="event">Event</SelectItem>
+                  <SelectItem value="sms">SMS</SelectItem>
+                  <SelectItem value="social_media">Social Media</SelectItem>
+                  <SelectItem value="display_ads">Display Ads</SelectItem>
+                  <SelectItem value="content_marketing">Content Marketing</SelectItem>
                   <SelectItem value="webinar">Webinar</SelectItem>
+                  <SelectItem value="event">Event</SelectItem>
                 </SelectContent>
               </Select>
               {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
@@ -82,10 +82,6 @@ export function CampaignForm({ initialData, onSubmit, isLoading, submitLabel = '
             <div className="space-y-2">
               <Label htmlFor="endDate">End Date</Label>
               <Input id="endDate" type="date" {...register('endDate')} />
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="targetAudience">Target Audience</Label>
-              <Input id="targetAudience" placeholder="Enterprise customers, SMBs" {...register('targetAudience')} />
             </div>
           </div>
         </CardContent>
