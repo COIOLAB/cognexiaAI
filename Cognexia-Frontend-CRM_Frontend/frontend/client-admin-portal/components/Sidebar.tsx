@@ -96,9 +96,9 @@ const navigationSections = [
       { name: 'Products', href: '/products', icon: Package },
       { name: 'Categories', href: '/products/categories', icon: Tags },
       { name: 'Pricing', href: '/pricing', icon: DollarSign },
-      { name: 'Inventory', href: '/inventory', icon: Warehouse },
-      { name: 'Reports', href: '/reports', icon: FileText },
-      { name: 'Dashboards', href: '/dashboards', icon: LayoutDashboard },
+
+      // { name: 'Reports', href: '/reports', icon: FileText },
+      // { name: 'Dashboards', href: '/dashboards', icon: LayoutDashboard },
       { name: 'Settings', href: '/settings', icon: Settings },
     ],
   },
@@ -115,6 +115,7 @@ const navigationSections = [
           { name: 'Knowledge Base', href: '/support/knowledge-base', icon: BookOpen },
           { name: 'SLA', href: '/support/sla', icon: Shield },
           { name: 'Support Analytics', href: '/support/analytics', icon: BarChart3 },
+          { name: 'Inventory', href: '/inventory', icon: Warehouse },
         ],
       },
       // {
