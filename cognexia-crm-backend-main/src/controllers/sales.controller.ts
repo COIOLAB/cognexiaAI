@@ -13,6 +13,7 @@ import {
   HttpStatus,
   Header,
   NotFoundException,
+  Request,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -52,6 +53,7 @@ export class SalesController {
   @ApiResponse({ status: 200, description: 'Opportunities retrieved successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'viewer', 'org_admin')
   async getAllOpportunities(
+    @Request() req,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('stage') stage?: string,
@@ -60,6 +62,7 @@ export class SalesController {
     @Query('search') search?: string,
   ) {
     try {
+      const organizationId = req?.user?.organizationId || req?.user?.tenantId;
       const opportunities = await this.salesService.getOpportunities({
         page,
         limit,
@@ -67,6 +70,7 @@ export class SalesController {
         salesRep,
         minValue,
         search,
+        organizationId,
       });
 
       return {
@@ -87,11 +91,14 @@ export class SalesController {
   })
   @ApiResponse({ status: 201, description: 'Opportunity created successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
-  async createOpportunity(@Body() createOpportunityDto: any) {
+  async createOpportunity(@Body() createOpportunityDto: any, @Request() req) {
     try {
+      const createdBy = req?.user?.email || req?.user?.id || 'system_user';
+      const organizationId = req?.user?.organizationId || req?.user?.tenantId;
       const opportunity = await this.salesService.createOpportunity(
         createOpportunityDto,
-        'system_user' // In real implementation, get from JWT token
+        createdBy,
+        organizationId
       );
 
       return {
@@ -115,13 +122,14 @@ export class SalesController {
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
   async updateOpportunityStage(
     @Param('id') id: string,
-    @Body() updateStageDto: { stage: string }
+    @Body() updateStageDto: { stage: string },
+    @Request() req
   ) {
     try {
       const opportunity = await this.salesService.updateOpportunityStage(
         id,
         updateStageDto.stage as any,
-        'system_user'
+        req?.user?.email || req?.user?.id || 'system_user'
       );
 
       return {
@@ -145,17 +153,20 @@ export class SalesController {
   @ApiResponse({ status: 200, description: 'Opportunities exported successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
   async exportOpportunities(
+    @Request() req,
     @Query('stage') stage?: string,
     @Query('salesRep') salesRep?: string,
     @Query('minValue') minValue?: number,
     @Query('search') search?: string,
   ) {
     try {
+      const organizationId = req?.user?.organizationId || req?.user?.tenantId;
       const opportunities = await this.salesService.findAllOpportunities({
         stage,
         salesRep,
         minValue,
         search,
+        organizationId,
       });
       const headers = ['opportunityNumber', 'name', 'stage', 'value', 'probability'];
       const rows = opportunities.map((opp: any) =>
@@ -201,9 +212,13 @@ export class SalesController {
   @ApiParam({ name: 'id', description: 'Opportunity UUID' })
   @ApiResponse({ status: 200, description: 'Opportunity updated successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
-  async updateOpportunity(@Param('id') id: string, @Body() updateDto: any) {
+  async updateOpportunity(@Param('id') id: string, @Body() updateDto: any, @Request() req) {
     try {
-      const opportunity = await this.salesService.updateOpportunity(id, updateDto, 'system_user');
+      const opportunity = await this.salesService.updateOpportunity(
+        id,
+        updateDto,
+        req?.user?.email || req?.user?.id || 'system_user'
+      );
       return {
         success: true,
         data: opportunity,

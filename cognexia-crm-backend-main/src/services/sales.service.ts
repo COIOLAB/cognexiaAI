@@ -22,7 +22,12 @@ export class SalesService {
   async findAllOpportunities(filters: any = {}) {
     try {
       const queryBuilder = this.opportunityRepository.createQueryBuilder('opportunity')
-        .leftJoinAndSelect('opportunity.customer', 'customer');
+        .leftJoinAndSelect('opportunity.customer', 'customer')
+        .leftJoinAndSelect('opportunity.lead', 'lead');
+
+      if (filters.organizationId) {
+        queryBuilder.andWhere('opportunity.organizationId = :organizationId', { organizationId: filters.organizationId });
+      }
 
       if (filters.stage) {
         queryBuilder.andWhere('opportunity.stage = :stage', { stage: filters.stage });
@@ -48,7 +53,12 @@ export class SalesService {
     const page = Number(filters.page) || 1;
     const limit = Number(filters.limit) || 20;
     const queryBuilder = this.opportunityRepository.createQueryBuilder('opportunity')
-      .leftJoinAndSelect('opportunity.customer', 'customer');
+      .leftJoinAndSelect('opportunity.customer', 'customer')
+      .leftJoinAndSelect('opportunity.lead', 'lead');
+
+    if (filters.organizationId) {
+      queryBuilder.andWhere('opportunity.organizationId = :organizationId', { organizationId: filters.organizationId });
+    }
 
     if (filters.stage) {
       queryBuilder.andWhere('opportunity.stage = :stage', { stage: filters.stage });
@@ -82,7 +92,7 @@ export class SalesService {
     };
   }
 
-  async createOpportunity(opportunityData: any, createdBy: string) {
+  async createOpportunity(opportunityData: any, createdBy: string, organizationId?: string) {
     try {
       const opportunityNumber = await this.generateOpportunityNumber();
       const value = Number(opportunityData.value || opportunityData.amount) || 0;
@@ -125,6 +135,7 @@ export class SalesService {
 
       const opportunity = this.opportunityRepository.create({
         ...opportunityData,
+        organizationId: opportunityData.organizationId || organizationId,
         customerId,
         opportunityNumber,
         name: opportunityData.name || 'New Opportunity',
@@ -465,7 +476,7 @@ export class SalesService {
     try {
       const opportunity = await this.opportunityRepository.findOne({ 
         where: { id },
-        relations: ['customer'] 
+        relations: ['customer', 'lead'] 
       });
       if (!opportunity) {
         return null;
