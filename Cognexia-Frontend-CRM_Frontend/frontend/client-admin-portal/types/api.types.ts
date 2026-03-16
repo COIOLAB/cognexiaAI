@@ -549,6 +549,7 @@ export enum OpportunityStatus {
 }
 
 export interface Opportunity {
+  opportunityNumber: String;
   id: string;
   opportunityCode: string;
   name: string;

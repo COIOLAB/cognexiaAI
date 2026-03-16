@@ -68,7 +68,7 @@ export default function OpportunitiesPage() {
       header: 'Opportunity Code',
       cell: ({ row }) => (
         <span className="font-medium text-blue-600 dark:text-blue-400">
-          {row.original.opportunityCode}
+          {row.original.opportunityNumber}
         </span>
       ),
     },

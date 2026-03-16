@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Copy, Send, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +25,7 @@ import { TemplateCategory } from '@/types/api.types';
 
 export default function TemplateDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const templateId = params.id as string;
   const { data, isLoading } = useGetTemplate(templateId);
   const { data: usageData } = useTemplateUsage(templateId);
@@ -43,6 +44,7 @@ export default function TemplateDetailPage() {
   const [bodyText, setBodyText] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [testEmail, setTestEmail] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     if (template) {
@@ -81,7 +83,35 @@ export default function TemplateDetailPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => duplicateTemplate.mutate(templateId)}
+              onClick={() => {
+                if (isEditing && template) {
+                  // Reset to original values on cancel
+                  setName(template.name || '');
+                  setCategory(template.category || TemplateCategory.NEWSLETTER);
+                  setSubject(template.subject || '');
+                  setBodyHtml(template.bodyHtml || '');
+                  setBodyText(template.bodyText || '');
+                  setIsActive(Boolean(template.isActive));
+                }
+                setIsEditing(!isEditing);
+              }}
+            >
+              {isEditing ? 'Cancel Edit' : 'Edit'}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() =>
+                duplicateTemplate.mutate(templateId, {
+                  onSuccess: (resp: any) => {
+                    const newId = resp?.data?.id || resp?.id;
+                    if (newId) {
+                      router.push(`/marketing/templates/${newId}`);
+                    } else {
+                      router.refresh();
+                    }
+                  },
+                })
+              }
               disabled={duplicateTemplate.isPending}
             >
               <Copy className="mr-2 h-4 w-4" />
@@ -91,7 +121,11 @@ export default function TemplateDetailPage() {
               variant="destructive"
               onClick={() => {
                 if (confirm('Delete this template?')) {
-                  deleteTemplate.mutate(templateId);
+                  deleteTemplate.mutate(templateId, {
+                    onSuccess: () => {
+                      router.push('/marketing/templates');
+                    },
+                  });
                 }
               }}
               disabled={deleteTemplate.isPending}
@@ -139,11 +173,19 @@ export default function TemplateDetailPage() {
         <CardContent className="space-y-4">
           <div>
             <label className="text-sm font-medium">Template Name</label>
-            <Input value={name} onChange={(event) => setName(event.target.value)} />
+            <Input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              disabled={!isEditing}
+            />
           </div>
           <div>
             <label className="text-sm font-medium">Category</label>
-            <Select value={category} onValueChange={(value) => setCategory(value as TemplateCategory)}>
+            <Select
+              value={category}
+              onValueChange={(value) => setCategory(value as TemplateCategory)}
+              disabled={!isEditing}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -158,43 +200,64 @@ export default function TemplateDetailPage() {
           </div>
           <div>
             <label className="text-sm font-medium">Subject</label>
-            <Input value={subject} onChange={(event) => setSubject(event.target.value)} />
+            <Input
+              value={subject}
+              onChange={(event) => setSubject(event.target.value)}
+              disabled={!isEditing}
+            />
           </div>
           <div>
             <label className="text-sm font-medium">Body HTML</label>
-            <Textarea value={bodyHtml} onChange={(event) => setBodyHtml(event.target.value)} rows={6} />
+            <Textarea
+              value={bodyHtml}
+              onChange={(event) => setBodyHtml(event.target.value)}
+              rows={6}
+              disabled={!isEditing}
+            />
           </div>
           <div>
             <label className="text-sm font-medium">Body Text</label>
-            <Textarea value={bodyText} onChange={(event) => setBodyText(event.target.value)} rows={4} />
+            <Textarea
+              value={bodyText}
+              onChange={(event) => setBodyText(event.target.value)}
+              rows={4}
+              disabled={!isEditing}
+            />
           </div>
           <div className="flex items-center justify-between rounded-lg border px-3 py-2">
             <div>
               <div className="text-sm font-medium">Active</div>
               <div className="text-xs text-muted-foreground">Enable this template for campaigns.</div>
             </div>
-            <Switch checked={isActive} onCheckedChange={setIsActive} />
+            <Switch checked={isActive} onCheckedChange={setIsActive} disabled={!isEditing} />
           </div>
-          <div className="flex justify-end">
-            <Button
-              onClick={() =>
-                updateTemplate.mutate({
-                  id: templateId,
-                  data: {
-                    name: name.trim(),
-                    category,
-                    subject: subject.trim(),
-                    bodyHtml,
-                    bodyText: bodyText || undefined,
-                    isActive,
-                  },
-                })
-              }
-              disabled={!isFormValid || updateTemplate.isPending}
-            >
-              {updateTemplate.isPending ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </div>
+          {isEditing && (
+            <div className="flex justify-end">
+              <Button
+                onClick={() =>
+                  updateTemplate.mutate(
+                    {
+                      id: templateId,
+                      data: {
+                        name: name.trim(),
+                        category,
+                        subject: subject.trim(),
+                        bodyHtml,
+                        bodyText: bodyText || undefined,
+                        isActive,
+                      },
+                    },
+                    {
+                      onSuccess: () => setIsEditing(false),
+                    },
+                  )
+                }
+                disabled={!isFormValid || updateTemplate.isPending}
+              >
+                {updateTemplate.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -58,7 +58,7 @@ export default function AccountsPage() {
   const resolvedType = typeFilter === 'all' ? undefined : (typeFilter as AccountType);
   const resolvedStatus = statusFilter === 'all' ? undefined : (statusFilter as AccountStatus);
 
-  const { data, error } = useAccounts({
+  const { data, error, isPending } = useAccounts({
     page: 1,
     limit: 25,
     search: search || undefined,
@@ -327,6 +327,7 @@ export default function AccountsPage() {
           <DataTable
             columns={columns}
             data={accounts}
+            isLoading={isPending}
             onRowClick={(row) => router.push(`/accounts/${row.id}`)}
             enableRowSelection
             onRowSelectionChange={(rows) => setSelectedRows(rows.map((row) => row.id))}
