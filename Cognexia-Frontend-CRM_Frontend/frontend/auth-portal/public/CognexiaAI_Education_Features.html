@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CognexiaAI Education - AI-Powered Learning Platform | CMMI Level 5</title>
+    <meta name="description" content="Revolutionary AI-powered learning platform for students, teachers, and institutions with personalized learning, intelligent tutoring, and institutional management. CMMI Level 5 certified.">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #1e293b; background: #ffffff; }
+        .header { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; z-index: 1000; }
+        .header-content { max-width: 1400px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center; height: 7rem; }
+        .logo { display: flex; align-items: center; }
+        .logo img { transition: opacity 0.3s; }
+        .logo:hover img { opacity: 0.9; }
+        .nav-links { display: flex; gap: 2rem; align-items: center; }
+        .nav-links a { font-size: 0.875rem; font-weight: 500; color: #374151; text-decoration: none; transition: color 0.3s; }
+        .nav-links a:hover { color: #2563eb; }
+        .auth-buttons { display: flex; gap: 0.75rem; align-items: center; }
+        .btn-signin { padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; color: #374151; background: transparent; border: none; cursor: pointer; transition: background-color 0.3s; border-radius: 0.375rem; text-decoration: none; display: inline-block; }
+        .btn-signin:hover { background-color: #f3f4f6; }
+        .btn-getstarted { padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; color: white; background: linear-gradient(135deg, #2563eb, #06b6d4); border: none; cursor: pointer; border-radius: 0.375rem; text-decoration: none; display: inline-block; transition: all 0.3s; }
+        .btn-getstarted:hover { background: linear-gradient(135deg, #1e40af, #0891b2); }
+        @media (max-width: 768px) { .nav-links { display: none; } }
+        .hero { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 5rem 2rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 50px 50px; }
+        .hero-content { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+        .hero h1 { font-size: 3.5rem; font-weight: 800; margin-bottom: 1rem; }
+        .hero .tagline { font-size: 1.75rem; font-weight: 300; margin-bottom: 1rem; font-style: italic; opacity: 0.95; }
+        .hero .description { font-size: 1.25rem; max-width: 900px; margin: 0 auto 3rem; line-height: 1.8; opacity: 0.9; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-top: 3rem; }
+        .stat-card { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 2rem; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.2); }
+        .stat-number { font-size: 3rem; font-weight: 800; margin-bottom: 0.5rem; }
+        .stat-label { font-size: 1rem; font-weight: 600; opacity: 0.9; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 2rem; }
+        .section { padding: 4rem 0; }
+        .section-title { font-size: 2.5rem; font-weight: 800; color: #0f172a; margin-bottom: 1rem; text-align: center; }
+        .section-subtitle { font-size: 1.25rem; color: #64748b; text-align: center; max-width: 800px; margin: 0 auto 3rem; }
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; margin-top: 2rem; }
+        .feature-card { background: #ffffff; border: 2px solid #e2e8f0; border-radius: 1rem; padding: 2rem; transition: all 0.3s ease; }
+        .feature-card:hover { border-color: #667eea; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.15); transform: translateY(-5px); }
+        .feature-icon { width: 60px; height: 60px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; color: white; margin-bottom: 1.5rem; }
+        .feature-title { font-size: 1.5rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; }
+        .feature-list { list-style: none; }
+        .feature-list li { padding: 0.5rem 0; display: flex; align-items: flex-start; gap: 0.75rem; color: #475569; }
+        .feature-list li::before { content: '✓'; color: #667eea; font-weight: 900; font-size: 1.25rem; flex-shrink: 0; }
+        .ai-section { background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); }
+        .ai-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
+        .ai-card { background: white; border-radius: 1rem; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .ai-icon { width: 50px; height: 50px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1rem; }
+        .compliance-section { background: #0f172a; color: white; padding: 4rem 2rem; }
+        .compliance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; max-width: 1400px; margin: 3rem auto 0; }
+        .compliance-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; padding: 2rem; text-align: center; }
+        .compliance-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .compliance-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .cta-section { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 5rem 2rem; text-align: center; }
+        .cta-title { font-size: 3rem; font-weight: 800; margin-bottom: 1rem; }
+        .cta-buttons { display: flex; gap: 1rem; justify-content: center; margin-top: 2rem; flex-wrap: wrap; }
+        .btn { padding: 1rem 2.5rem; border-radius: 0.75rem; font-size: 1.125rem; font-weight: 600; text-decoration: none; transition: all 0.3s ease; display: inline-block; }
+        .btn-primary { background: white; color: #764ba2; }
+        .btn-primary:hover { background: #f1f5f9; transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .btn-secondary { background: transparent; color: white; border: 2px solid white; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+        .footer { background: #0f172a; color: #94a3b8; padding: 3rem 2rem; text-align: center; }
+        .footer-links { display: flex; gap: 2rem; justify-content: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .footer-links a { color: #94a3b8; text-decoration: none; transition: color 0.3s; }
+        .footer-links a:hover { color: #818cf8; }
+        @media (max-width: 768px) { .hero h1 { font-size: 2.5rem; } .feature-grid { grid-template-columns: 1fr; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo"><img src="/cognexiaai-logo.png" alt="CognexiaAI Logo" style="height: 96px; width: auto;" /></a>
+            <div class="nav-links">
+                <a href="/products">Products</a><a href="/features">Features</a><a href="/pricing">Pricing</a><a href="/about">About</a><a href="/contact">Contact</a>
+            </div>
+            <div class="auth-buttons">
+                <a href="/login" class="btn-signin">Sign In</a><a href="/register" class="btn-getstarted">Get Started</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>🎓 CognexiaAI Education</h1>
+            <p class="tagline">"Learning Reimagined"</p>
+            <p class="description">Revolutionary AI-Powered Learning Platform for Students, Teachers, and Institutions with Personalized Learning, Adaptive Assessments, Intelligent Tutoring, and Complete Institutional Management. CMMI Level 5 Certified.</p>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-number">50M+</div><div class="stat-label">Learning Resources</div></div>
+                <div class="stat-card"><div class="stat-number">10,000+</div><div class="stat-label">Course Templates</div></div>
+                <div class="stat-card"><div class="stat-number">98%</div><div class="stat-label">Learning Improvement</div></div>
+                <div class="stat-card"><div class="stat-number">95%</div><div class="stat-label">Student Engagement</div></div>
+                <div class="stat-card"><div class="stat-number">150+</div><div class="stat-label">Countries Supported</div></div>
+                <div class="stat-card"><div class="stat-number">200+</div><div class="stat-label">Subjects & Disciplines</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Personalized Learning Section -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">Personalized Learning & AI Tutoring</h2>
+            <p class="section-subtitle">Adaptive AI-powered learning experiences tailored to every student</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3 class="feature-title">AI Personal Tutor</h3>
+                    <ul class="feature-list">
+                        <li>24/7 AI Tutor</li>
+                        <li>Personalized Learning Paths</li>
+                        <li>Adaptive Difficulty Levels</li>
+                        <li>Multi-Language Support (150+ Languages)</li>
+                        <li>Context-Aware Explanations</li>
+                        <li>Step-by-Step Problem Solving</li>
+                        <li>Real-Time Doubt Clarification</li>
+                        <li>Learning Style Recognition</li>
+                        <li>Voice & Text Interaction</li>
+                        <li>Progress-Based Recommendations</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">Intelligent Assessment</h3>
+                    <ul class="feature-list">
+                        <li>Adaptive Testing Engine</li>
+                        <li>Auto-Grading (Essays, MCQs, Code)</li>
+                        <li>Plagiarism Detection</li>
+                        <li>Learning Gap Analysis</li>
+                        <li>Skill Proficiency Mapping</li>
+                        <li>Predictive Performance Analytics</li>
+                        <li>Personalized Question Banks</li>
+                        <li>Formative & Summative Assessments</li>
+                        <li>Bloom's Taxonomy Alignment</li>
+                        <li>Instant Feedback Generation</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📚</div>
+                    <h3 class="feature-title">Smart Content Library</h3>
+                    <ul class="feature-list">
+                        <li>50M+ Curated Resources</li>
+                        <li>10,000+ Course Templates</li>
+                        <li>Interactive Video Lessons</li>
+                        <li>AI-Generated Study Materials</li>
+                        <li>Multimedia Content (Videos, Podcasts, eBooks)</li>
+                        <li>Subject-Specific Simulations</li>
+                        <li>3D Models & Visualizations</li>
+                        <li>Gamified Learning Modules</li>
+                        <li>Open Educational Resources (OER)</li>
+                        <li>Content Difficulty Adaptation</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3 class="feature-title">Learning Analytics</h3>
+                    <ul class="feature-list">
+                        <li>Real-Time Progress Tracking</li>
+                        <li>Learning Behavior Analysis</li>
+                        <li>Engagement Metrics Dashboard</li>
+                        <li>Skill Mastery Visualization</li>
+                        <li>Predictive Early Warning System</li>
+                        <li>Time-on-Task Analytics</li>
+                        <li>Peer Comparison Insights</li>
+                        <li>Goal Setting & Tracking</li>
+                        <li>Intervention Recommendations</li>
+                        <li>Parent/Teacher Reports</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3 class="feature-title">Cognitive Learning Tools</h3>
+                    <ul class="feature-list">
+                        <li>Spaced Repetition Algorithm</li>
+                        <li>Memory Retention Optimization</li>
+                        <li>Concept Mapping Tools</li>
+                        <li>Mind Map Generator</li>
+                        <li>Flashcard Auto-Generation</li>
+                        <li>Active Recall Techniques</li>
+                        <li>Interleaved Practice</li>
+                        <li>Retrieval Practice Sessions</li>
+                        <li>Metacognitive Strategy Training</li>
+                        <li>Learning Efficiency Optimizer</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3 class="feature-title">Collaborative Learning</h3>
+                    <ul class="feature-list">
+                        <li>Virtual Study Groups</li>
+                        <li>Peer-to-Peer Learning</li>
+                        <li>Real-Time Collaboration Tools</li>
+                        <li>Discussion Forums</li>
+                        <li>Group Project Management</li>
+                        <li>Live Video Classrooms</li>
+                        <li>Whiteboard & Screen Sharing</li>
+                        <li>Social Learning Networks</li>
+                        <li>Knowledge Sharing Platform</li>
+                        <li>Team Performance Analytics</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Teacher & Educator Tools Section -->
+    <section class="section ai-section">
+        <div class="container">
+            <h2 class="section-title">Teacher & Educator Empowerment</h2>
+            <p class="section-subtitle">AI-powered tools to enhance teaching effectiveness and reduce administrative burden</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">👨‍🏫</div>
+                    <h3 class="feature-title">AI Teaching Assistant</h3>
+                    <ul class="feature-list">
+                        <li>Lesson Plan Generator</li>
+                        <li>Curriculum Design Automation</li>
+                        <li>Assignment Creation Tools</li>
+                        <li>Quiz & Test Generator</li>
+                        <li>Rubric Builder</li>
+                        <li>Content Recommendation Engine</li>
+                        <li>Differentiated Instruction Plans</li>
+                        <li>Learning Objective Alignment</li>
+                        <li>Resource Curation</li>
+                        <li>Teaching Strategy Suggestions</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📝</div>
+                    <h3 class="feature-title">Auto-Grading & Feedback</h3>
+                    <ul class="feature-list">
+                        <li>Essay Auto-Grading</li>
+                        <li>Code Assignment Grading</li>
+                        <li>MCQ & Short Answer Grading</li>
+                        <li>Personalized Feedback Generation</li>
+                        <li>Rubric-Based Assessment</li>
+                        <li>Handwriting Recognition</li>
+                        <li>Math Problem Grading</li>
+                        <li>Bulk Grading & Analytics</li>
+                        <li>Feedback Quality Analysis</li>
+                        <li>Grade Distribution Insights</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3 class="feature-title">Classroom Management</h3>
+                    <ul class="feature-list">
+                        <li>Attendance Tracking (AI & Biometric)</li>
+                        <li>Behavior Monitoring</li>
+                        <li>Participation Analytics</li>
+                        <li>Seating Arrangement Optimizer</li>
+                        <li>Student Engagement Tracking</li>
+                        <li>Discipline Management</li>
+                        <li>Communication Hub (Parents/Students)</li>
+                        <li>Timetable & Schedule Management</li>
+                        <li>Resource Allocation</li>
+                        <li>Classroom Activity Logs</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎥</div>
+                    <h3 class="feature-title">Virtual Classroom Tools</h3>
+                    <ul class="feature-list">
+                        <li>Live Video Teaching</li>
+                        <li>Interactive Whiteboard</li>
+                        <li>Screen Sharing & Recording</li>
+                        <li>Breakout Rooms</li>
+                        <li>Poll & Quiz Integration</li>
+                        <li>Hand Raise & Q&A Management</li>
+                        <li>Annotation & Drawing Tools</li>
+                        <li>Session Recording & Playback</li>
+                        <li>Virtual Lab Simulations</li>
+                        <li>Attendance Auto-Tracking</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Subject-Specific Learning Section -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">Subject-Specific AI Solutions</h2>
+            <p class="section-subtitle">Specialized AI tools for Mathematics, Science, Languages, and more</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔢</div>
+                    <h3 class="feature-title">Mathematics AI</h3>
+                    <ul class="feature-list">
+                        <li>Step-by-Step Problem Solving</li>
+                        <li>Equation Solver (Algebra, Calculus, Statistics)</li>
+                        <li>Graph Plotting & Visualization</li>
+                        <li>Geometry Theorem Prover</li>
+                        <li>Word Problem Interpreter</li>
+                        <li>Handwritten Math Recognition</li>
+                        <li>Interactive Math Simulations</li>
+                        <li>Practice Problem Generator</li>
+                        <li>Concept Visualization Tools</li>
+                        <li>Math Competition Preparation</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔬</div>
+                    <h3 class="feature-title">Science Lab Simulations</h3>
+                    <ul class="feature-list">
+                        <li>Virtual Physics Lab</li>
+                        <li>Chemistry Experiment Simulator</li>
+                        <li>Biology Dissection & Models</li>
+                        <li>3D Molecular Visualization</li>
+                        <li>Scientific Calculator & Tools</li>
+                        <li>Periodic Table Interactive</li>
+                        <li>Astronomy & Space Simulations</li>
+                        <li>Ecosystem & Environmental Models</li>
+                        <li>Lab Report Generation</li>
+                        <li>Safety Protocol Training</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌍</div>
+                    <h3 class="feature-title">Language Learning AI</h3>
+                    <ul class="feature-list">
+                        <li>150+ Language Support</li>
+                        <li>AI Conversation Practice</li>
+                        <li>Grammar & Syntax Checker</li>
+                        <li>Pronunciation Coach (Voice AI)</li>
+                        <li>Vocabulary Builder</li>
+                        <li>Translation & Interpretation</li>
+                        <li>Writing Enhancement Tools</li>
+                        <li>Reading Comprehension Analysis</li>
+                        <li>Culture & Context Learning</li>
+                        <li>Language Proficiency Testing</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💻</div>
+                    <h3 class="feature-title">Coding & Computer Science</h3>
+                    <ul class="feature-list">
+                        <li>AI Code Tutor</li>
+                        <li>Interactive Coding Exercises</li>
+                        <li>Code Error Detection & Fixes</li>
+                        <li>Algorithm Visualization</li>
+                        <li>Project-Based Learning</li>
+                        <li>50+ Programming Languages</li>
+                        <li>Code Review & Feedback</li>
+                        <li>Debugging Assistant</li>
+                        <li>Data Structure Simulations</li>
+                        <li>Competitive Programming Prep</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3 class="feature-title">Arts & Humanities</h3>
+                    <ul class="feature-list">
+                        <li>Creative Writing Assistant</li>
+                        <li>Art History Database</li>
+                        <li>Music Theory & Composition</li>
+                        <li>Literature Analysis Tools</li>
+                        <li>Historical Timeline Visualization</li>
+                        <li>Philosophy Discussion AI</li>
+                        <li>Cultural Studies Resources</li>
+                        <li>Digital Art Creation Tools</li>
+                        <li>Drama & Theatre Scripts</li>
+                        <li>Poetry Analysis & Generation</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏛️</div>
+                    <h3 class="feature-title">Social Sciences</h3>
+                    <ul class="feature-list">
+                        <li>Geography & Mapping Tools</li>
+                        <li>Historical Document Analysis</li>
+                        <li>Economics Simulation Models</li>
+                        <li>Political Science Case Studies</li>
+                        <li>Sociology Research Tools</li>
+                        <li>Psychology Experiment Simulations</li>
+                        <li>Civics & Government Education</li>
+                        <li>Current Events Integration</li>
+                        <li>Research Paper Assistance</li>
+                        <li>Data Analysis for Social Research</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Compliance & Standards Section -->
+    <section class="compliance-section">
+        <div class="container">
+            <h2 class="section-title" style="color: white;">Compliance & Educational Standards</h2>
+            <p class="section-subtitle" style="color: #cbd5e1;">Meeting global educational standards and regulations</p>
+            <div class="compliance-grid">
+                <div class="compliance-card">
+                    <div class="compliance-icon">🌐</div>
+                    <h3 class="compliance-title">Global Standards</h3>
+                    <p style="color: #cbd5e1; font-size: 0.9rem;">Common Core, NGSS, IB, Cambridge, CEFR Standards</p>
+                </div>
+                <div class="compliance-card">
+                    <div class="compliance-icon">🔒</div>
+                    <h3 class="compliance-title">Data Privacy</h3>
+                    <p style="color: #cbd5e1; font-size: 0.9rem;">FERPA, COPPA, CIPA, GDPR, Student Privacy Pledge</p>
+                </div>
+                <div class="compliance-card">
+                    <div class="compliance-icon">♿</div>
+                    <h3 class="compliance-title">Accessibility</h3>
+                    <p style="color: #cbd5e1; font-size: 0.9rem;">WCAG 2.1 AA, Section 508, ADA, UDL Compliance</p>
+                </div>
+                <div class="compliance-card">
+                    <div class="compliance-icon">📜</div>
+                    <h3 class="compliance-title">Accreditation</h3>
+                    <p style="color: #cbd5e1; font-size: 0.9rem;">Quality Matters, SCORM, xAPI, ISO 27001, SOC 2</p>
+                </div>
+                <div class="compliance-card">
+                    <div class="compliance-icon">🌍</div>
+                    <h3 class="compliance-title">International</h3>
+                    <p style="color: #cbd5e1; font-size: 0.9rem;">UNESCO, OECD, National Curriculum Frameworks</p>
+                </div>
+                <div class="compliance-card">
+                    <div class="compliance-icon">🔐</div>
+                    <h3 class="compliance-title">Security</h3>
+                    <p style="color: #cbd5e1; font-size: 0.9rem;">ISO 27001, NIST, PCI DSS, HITRUST, CSA</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <h2 class="cta-title">Transform Education with AI</h2>
+            <p style="font-size: 1.25rem; margin-bottom: 2rem;">Join thousands of institutions worldwide revolutionizing learning experiences</p>
+            <div class="cta-buttons">
+                <a href="/contact" class="btn btn-primary">Request a Demo</a>
+                <a href="/products" class="btn btn-secondary">Explore All Products</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="/">Home</a>
+                <a href="/products">Products</a>
+                <a href="/features">Features</a>
+                <a href="/pricing">Pricing</a>
+                <a href="/about">About</a>
+                <a href="/contact">Contact</a>
+            </div>
+            <p>&copy; 2024 CognexiaAI. All rights reserved.</p>
+            <p style="margin-top: 0.5rem;">Empowering Education Through Artificial Intelligence</p>
+        </div>
+    </footer>
+</body>
+</html>

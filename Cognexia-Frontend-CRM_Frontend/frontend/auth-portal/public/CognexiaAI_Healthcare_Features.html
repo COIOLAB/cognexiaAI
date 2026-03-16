@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CognexiaAI Healthcare - AI-Powered Medical Intelligence Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+        }
+
+        .header { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; z-index: 1000; }
+        .header-content { max-width: 1400px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center; height: 7rem; }
+        .logo { display: flex; align-items: center; }
+        .logo img { transition: opacity 0.3s; }
+        .logo:hover img { opacity: 0.9; }
+        .nav-links { display: flex; gap: 2rem; align-items: center; }
+        .nav-links a { font-size: 0.875rem; font-weight: 500; color: #374151; text-decoration: none; transition: color 0.3s; }
+        .nav-links a:hover { color: #2563eb; }
+        .auth-buttons { display: flex; gap: 0.75rem; align-items: center; }
+        .btn-signin { padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; color: #374151; background: transparent; border: none; cursor: pointer; transition: background-color 0.3s; border-radius: 0.375rem; text-decoration: none; display: inline-block; }
+        .btn-signin:hover { background-color: #f3f4f6; }
+        .btn-getstarted { padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; color: white; background: linear-gradient(135deg, #2563eb, #06b6d4); border: none; cursor: pointer; border-radius: 0.375rem; text-decoration: none; display: inline-block; transition: all 0.3s; }
+        .btn-getstarted:hover { background: linear-gradient(135deg, #1e40af, #0891b2); }
+        @media (max-width: 768px) { .nav-links { display: none; } }
+
+        .hero {
+            background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+            color: white;
+            padding: 6rem 2rem;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            margin-bottom: 3rem;
+            opacity: 0.95;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .section {
+            padding: 5rem 0;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #2d3748;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #718096;
+            margin-bottom: 3rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #2d3748;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .feature-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: #4a5568;
+        }
+
+        .feature-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #06b6d4;
+            font-weight: bold;
+        }
+
+        .ai-section {
+            background: linear-gradient(135deg, #06b6d415 0%, #3b82f615 100%);
+        }
+
+        .compliance-section {
+            background: #f7fafc;
+            padding: 5rem 0;
+        }
+
+        .compliance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .compliance-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            border-left: 4px solid #06b6d4;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .compliance-card h3 {
+            color: #06b6d4;
+            margin-bottom: 1rem;
+        }
+
+        .cta-section {
+            background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+            color: white;
+            padding: 5rem 2rem;
+            text-align: center;
+        }
+
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .cta-section p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 3rem;
+            background: white;
+            color: #06b6d4;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .footer {
+            background: #2d3748;
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo"><img src="/cognexiaai-logo.png" alt="CognexiaAI Logo" style="height: 96px; width: auto;" /></a>
+            <div class="nav-links">
+                <a href="/products">Products</a><a href="/features">Features</a><a href="/pricing">Pricing</a><a href="/about">About</a><a href="/contact">Contact</a>
+            </div>
+            <div class="auth-buttons">
+                <a href="/login" class="btn-signin">Sign In</a><a href="/register" class="btn-getstarted">Get Started</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero">
+        <h1>🏥 CognexiaAI Healthcare</h1>
+        <p>Revolutionary AI-Powered Medical Intelligence & Patient Care Platform</p>
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">100M+</div>
+                <div class="stat-label">Medical Records Analyzed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">97%</div>
+                <div class="stat-label">Diagnostic Accuracy</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">10,000+</div>
+                <div class="stat-label">Disease Conditions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">85%</div>
+                <div class="stat-label">Time Savings</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">500+</div>
+                <div class="stat-label">Healthcare Facilities</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">50+</div>
+                <div class="stat-label">Medical Specialties</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Diagnostics & Clinical Decision Support -->
+    <section class="section" id="features">
+        <div class="container">
+            <h2 class="section-title">AI Diagnostics & Clinical Decision Support</h2>
+            <p class="section-subtitle">Advanced AI-powered diagnostic tools and clinical intelligence</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3 class="feature-title">AI Medical Diagnosis</h3>
+                    <ul class="feature-list">
+                        <li>97% Diagnostic Accuracy (FDA-Approved)</li>
+                        <li>10,000+ Disease Recognition</li>
+                        <li>Symptom Analysis Engine</li>
+                        <li>Differential Diagnosis Generator</li>
+                        <li>Evidence-Based Recommendations</li>
+                        <li>Risk Stratification & Scoring</li>
+                        <li>Clinical Pathway Guidance</li>
+                        <li>Second Opinion AI Assistant</li>
+                        <li>Multi-Modal Data Integration</li>
+                        <li>Real-Time Clinical Alerts</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔬</div>
+                    <h3 class="feature-title">Medical Imaging AI</h3>
+                    <ul class="feature-list">
+                        <li>X-Ray Analysis & Detection</li>
+                        <li>CT Scan Interpretation</li>
+                        <li>MRI Analysis & Segmentation</li>
+                        <li>Ultrasound Image Processing</li>
+                        <li>Mammography Screening</li>
+                        <li>Pathology Slide Analysis</li>
+                        <li>Retinal Imaging (Diabetic Retinopathy)</li>
+                        <li>Tumor Detection & Classification</li>
+                        <li>3D Image Reconstruction</li>
+                        <li>PACS Integration</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💊</div>
+                    <h3 class="feature-title">Clinical Decision Support</h3>
+                    <ul class="feature-list">
+                        <li>Evidence-Based Guidelines (10,000+)</li>
+                        <li>Treatment Protocol Recommendations</li>
+                        <li>Drug Interaction Checker</li>
+                        <li>Dosage Calculation & Optimization</li>
+                        <li>Contraindication Alerts</li>
+                        <li>Clinical Trials Matching</li>
+                        <li>Personalized Treatment Plans</li>
+                        <li>Outcome Prediction Models</li>
+                        <li>Care Pathway Optimization</li>
+                        <li>Quality Measure Tracking</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧬</div>
+                    <h3 class="feature-title">Genomics & Precision Medicine</h3>
+                    <ul class="feature-list">
+                        <li>Genetic Sequencing Analysis</li>
+                        <li>Pharmacogenomics Integration</li>
+                        <li>Disease Risk Prediction</li>
+                        <li>Biomarker Discovery</li>
+                        <li>Personalized Treatment Matching</li>
+                        <li>Hereditary Disease Screening</li>
+                        <li>Cancer Genomics Analysis</li>
+                        <li>Rare Disease Identification</li>
+                        <li>Gene Therapy Recommendations</li>
+                        <li>Genomic Data Privacy</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">Predictive Analytics</h3>
+                    <ul class="feature-list">
+                        <li>Patient Deterioration Prediction</li>
+                        <li>Readmission Risk Assessment</li>
+                        <li>Sepsis Early Warning System</li>
+                        <li>ICU Transfer Prediction</li>
+                        <li>Mortality Risk Scoring</li>
+                        <li>Disease Progression Modeling</li>
+                        <li>Epidemic Outbreak Forecasting</li>
+                        <li>Resource Utilization Prediction</li>
+                        <li>Length of Stay Estimation</li>
+                        <li>Population Health Analytics</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🩺</div>
+                    <h3 class="feature-title">Virtual Medical Assistant</h3>
+                    <ul class="feature-list">
+                        <li>24/7 AI Medical Chatbot</li>
+                        <li>Symptom Checker & Triage</li>
+                        <li>Patient Education Materials</li>
+                        <li>Medication Reminders</li>
+                        <li>Appointment Scheduling</li>
+                        <li>Health Risk Assessment</li>
+                        <li>Post-Discharge Follow-Up</li>
+                        <li>Chronic Disease Management</li>
+                        <li>Mental Health Support</li>
+                        <li>Multi-Language Support (100+)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Patient Care & Management -->
+    <section class="section ai-section">
+        <div class="container">
+            <h2 class="section-title">Patient Care & Management</h2>
+            <p class="section-subtitle">Comprehensive patient-centric care solutions</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3 class="feature-title">Electronic Health Records (EHR)</h3>
+                    <ul class="feature-list">
+                        <li>Comprehensive Patient Profiles</li>
+                        <li>Medical History Management</li>
+                        <li>Clinical Notes & Documentation</li>
+                        <li>Problem List & Diagnosis Tracking</li>
+                        <li>Medication Management</li>
+                        <li>Allergy & Adverse Event Tracking</li>
+                        <li>Immunization Records</li>
+                        <li>Lab Results Integration</li>
+                        <li>Document Scanning & Archiving</li>
+                        <li>HL7 FHIR Compliance</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💉</div>
+                    <h3 class="feature-title">Clinical Workflow Automation</h3>
+                    <ul class="feature-list">
+                        <li>Automated Order Entry (CPOE)</li>
+                        <li>E-Prescribing (eRx)</li>
+                        <li>Lab Order Management</li>
+                        <li>Radiology Order Workflow</li>
+                        <li>Nursing Documentation</li>
+                        <li>Care Plan Management</li>
+                        <li>Clinical Task Assignment</li>
+                        <li>Handoff Communication</li>
+                        <li>Rounding Checklists</li>
+                        <li>Discharge Planning</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏥</div>
+                    <h3 class="feature-title">Hospital Management System</h3>
+                    <ul class="feature-list">
+                        <li>Patient Registration & Admission</li>
+                        <li>Bed Management & Allocation</li>
+                        <li>OPD/IPD Management</li>
+                        <li>Emergency Department Workflow</li>
+                        <li>Operating Room Scheduling</li>
+                        <li>ICU Management System</li>
+                        <li>Pharmacy Inventory</li>
+                        <li>Blood Bank Management</li>
+                        <li>Ambulance Tracking</li>
+                        <li>Facility Management</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3 class="feature-title">Patient Engagement Portal</h3>
+                    <ul class="feature-list">
+                        <li>Patient Mobile App</li>
+                        <li>Online Appointment Booking</li>
+                        <li>Telemedicine & Video Consultations</li>
+                        <li>Health Records Access</li>
+                        <li>Lab Results Viewing</li>
+                        <li>Prescription Refill Requests</li>
+                        <li>Billing & Payment Portal</li>
+                        <li>Health Tracking & Wearables</li>
+                        <li>Secure Messaging with Providers</li>
+                        <li>Educational Resources</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📞</div>
+                    <h3 class="feature-title">Telemedicine & Remote Care</h3>
+                    <ul class="feature-list">
+                        <li>HD Video Consultations</li>
+                        <li>Virtual Waiting Room</li>
+                        <li>Remote Patient Monitoring</li>
+                        <li>Wearable Device Integration</li>
+                        <li>Store-and-Forward Telehealth</li>
+                        <li>E-Prescription Integration</li>
+                        <li>Remote Chronic Care Management</li>
+                        <li>Telepsychiatry Support</li>
+                        <li>Home Health Integration</li>
+                        <li>HIPAA-Compliant Communication</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚠️</div>
+                    <h3 class="feature-title">Patient Safety & Quality</h3>
+                    <ul class="feature-list">
+                        <li>Medication Error Prevention</li>
+                        <li>Adverse Event Reporting</li>
+                        <li>Infection Control Monitoring</li>
+                        <li>Fall Risk Assessment</li>
+                        <li>Pressure Ulcer Prevention</li>
+                        <li>Patient Identification Verification</li>
+                        <li>Clinical Alert System</li>
+                        <li>Quality Metrics Dashboard</li>
+                        <li>Incident Management</li>
+                        <li>Root Cause Analysis Tools</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Specialized Medical Departments -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">Specialized Medical Departments</h2>
+            <p class="section-subtitle">AI solutions for every medical specialty</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">❤️</div>
+                    <h3 class="feature-title">Cardiology AI</h3>
+                    <ul class="feature-list">
+                        <li>ECG/EKG Analysis & Interpretation</li>
+                        <li>Cardiac Arrhythmia Detection</li>
+                        <li>Heart Failure Risk Prediction</li>
+                        <li>Echocardiogram Analysis</li>
+                        <li>Cardiac Catheterization Planning</li>
+                        <li>Stroke Risk Assessment</li>
+                        <li>Hypertension Management</li>
+                        <li>Pacemaker Monitoring</li>
+                        <li>Cardiovascular Risk Scoring</li>
+                        <li>Cardiac Rehabilitation Programs</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🫁</div>
+                    <h3 class="feature-title">Radiology & Imaging</h3>
+                    <ul class="feature-list">
+                        <li>Chest X-Ray Analysis</li>
+                        <li>Lung Nodule Detection</li>
+                        <li>Fracture Detection</li>
+                        <li>Brain Hemorrhage Identification</li>
+                        <li>Spine Alignment Analysis</li>
+                        <li>Abdomen CT Interpretation</li>
+                        <li>Bone Density Assessment</li>
+                        <li>Contrast Enhancement Optimization</li>
+                        <li>Radiation Dose Optimization</li>
+                        <li>Radiology Report Generation</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧪</div>
+                    <h3 class="feature-title">Oncology & Cancer Care</h3>
+                    <ul class="feature-list">
+                        <li>Cancer Detection & Staging</li>
+                        <li>Tumor Board Management</li>
+                        <li>Chemotherapy Protocol Selection</li>
+                        <li>Radiation Therapy Planning</li>
+                        <li>Cancer Genomics Analysis</li>
+                        <li>Immunotherapy Matching</li>
+                        <li>Clinical Trials Enrollment</li>
+                        <li>Survivorship Care Plans</li>
+                        <li>Palliative Care Integration</li>
+                        <li>Cancer Registry Management</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🩸</div>
+                    <h3 class="feature-title">Laboratory Information System</h3>
+                    <ul class="feature-list">
+                        <li>Sample Tracking & Management</li>
+                        <li>Test Order Entry & Processing</li>
+                        <li>Result Verification & Reporting</li>
+                        <li>Quality Control Monitoring</li>
+                        <li>Instrument Integration (LIS)</li>
+                        <li>Critical Value Alerts</li>
+                        <li>Microbiology Culture Management</li>
+                        <li>Blood Bank Inventory</li>
+                        <li>Reference Range Management</li>
+                        <li>Lab Analytics & Turnaround Time</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3 class="feature-title">Neurology & Psychiatry</h3>
+                    <ul class="feature-list">
+                        <li>Neurological Exam Documentation</li>
+                        <li>EEG Analysis & Seizure Detection</li>
+                        <li>Stroke Assessment (NIHSS)</li>
+                        <li>Dementia & Alzheimer's Screening</li>
+                        <li>Mental Health Assessments (PHQ-9, GAD-7)</li>
+                        <li>Psychiatric Medication Management</li>
+                        <li>Cognitive Behavioral Therapy Tools</li>
+                        <li>Suicide Risk Assessment</li>
+                        <li>Sleep Disorder Analysis</li>
+                        <li>Neuro-Rehabilitation Programs</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🤰</div>
+                    <h3 class="feature-title">Obstetrics & Gynecology</h3>
+                    <ul class="feature-list">
+                        <li>Prenatal Care Management</li>
+                        <li>Fetal Monitoring & Analysis</li>
+                        <li>High-Risk Pregnancy Tracking</li>
+                        <li>Labor & Delivery Documentation</li>
+                        <li>Ultrasound OB Measurements</li>
+                        <li>Contraception Counseling</li>
+                        <li>Fertility Treatment Management</li>
+                        <li>Gynecological Cancer Screening</li>
+                        <li>Menopause Management</li>
+                        <li>Maternal Health Analytics</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">👶</div>
+                    <h3 class="feature-title">Pediatrics</h3>
+                    <ul class="feature-list">
+                        <li>Growth Chart Tracking</li>
+                        <li>Vaccination Schedule Management</li>
+                        <li>Developmental Milestone Tracking</li>
+                        <li>Pediatric Dosage Calculators</li>
+                        <li>Newborn Screening Management</li>
+                        <li>Childhood Illness Protocols</li>
+                        <li>Pediatric Emergency Care</li>
+                        <li>Well-Child Visit Templates</li>
+                        <li>Adolescent Health Management</li>
+                        <li>Parent Education Materials</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🦴</div>
+                    <h3 class="feature-title">Orthopedics & Surgery</h3>
+                    <ul class="feature-list">
+                        <li>Surgical Planning & Simulation</li>
+                        <li>Pre-Operative Assessment</li>
+                        <li>Intra-Operative Navigation</li>
+                        <li>Post-Operative Care Protocols</li>
+                        <li>Joint Replacement Tracking</li>
+                        <li>Fracture Classification</li>
+                        <li>Rehabilitation Exercise Programs</li>
+                        <li>Sports Medicine Management</li>
+                        <li>Implant Registry</li>
+                        <li>Surgical Outcome Analysis</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">👁️</div>
+                    <h3 class="feature-title">Ophthalmology & Optometry</h3>
+                    <ul class="feature-list">
+                        <li>Diabetic Retinopathy Screening</li>
+                        <li>Glaucoma Detection</li>
+                        <li>Cataract Assessment</li>
+                        <li>Macular Degeneration Monitoring</li>
+                        <li>Vision Testing & Refraction</li>
+                        <li>Contact Lens Management</li>
+                        <li>Retinal Imaging Analysis</li>
+                        <li>Visual Field Testing</li>
+                        <li>Pediatric Vision Screening</li>
+                        <li>Refractive Surgery Planning</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🦷</div>
+                    <h3 class="feature-title">Dentistry</h3>
+                    <ul class="feature-list">
+                        <li>Dental Charting & Odontogram</li>
+                        <li>X-Ray Analysis & Storage</li>
+                        <li>Treatment Planning & Estimates</li>
+                        <li>Periodontal Assessment</li>
+                        <li>Orthodontic Case Management</li>
+                        <li>Dental Implant Planning</li>
+                        <li>Oral Cancer Screening</li>
+                        <li>Hygiene & Recall Management</li>
+                        <li>Dental Lab Integration</li>
+                        <li>Insurance Claims Processing</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏥</div>
+                    <h3 class="feature-title">Emergency Medicine</h3>
+                    <ul class="feature-list">
+                        <li>Triage & Acuity Assessment</li>
+                        <li>Trauma Documentation</li>
+                        <li>Emergency Protocols (ACLS, PALS)</li>
+                        <li>Toxicology & Overdose Management</li>
+                        <li>Fast-Track Patient Flow</li>
+                        <li>Critical Care Alerts</li>
+                        <li>ED Dashboard & Metrics</li>
+                        <li>Ambulance Pre-Arrival Notifications</li>
+                        <li>Disaster Preparedness</li>
+                        <li>Transfer & Handoff Tools</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🩹</div>
+                    <h3 class="feature-title">Chronic Disease Management</h3>
+                    <ul class="feature-list">
+                        <li>Diabetes Management (Type 1 & 2)</li>
+                        <li>Hypertension Control Programs</li>
+                        <li>Asthma & COPD Management</li>
+                        <li>Chronic Kidney Disease Tracking</li>
+                        <li>Heart Failure Programs</li>
+                        <li>Arthritis & Rheumatology</li>
+                        <li>HIV/AIDS Care Management</li>
+                        <li>Cancer Survivorship</li>
+                        <li>Care Coordination</li>
+                        <li>Patient Self-Management Tools</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Administrative & Revenue Cycle -->
+    <section class="section ai-section">
+        <div class="container">
+            <h2 class="section-title">Administrative & Revenue Cycle Management</h2>
+            <p class="section-subtitle">Streamline operations and maximize revenue</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">💰</div>
+                    <h3 class="feature-title">Medical Billing & Coding</h3>
+                    <ul class="feature-list">
+                        <li>Automated ICD-10 Coding</li>
+                        <li>CPT Code Recommendation</li>
+                        <li>Charge Capture Automation</li>
+                        <li>Claims Generation & Submission</li>
+                        <li>Insurance Eligibility Verification</li>
+                        <li>Prior Authorization Management</li>
+                        <li>Denial Management & Appeals</li>
+                        <li>Payment Posting</li>
+                        <li>Patient Billing Statements</li>
+                        <li>Revenue Cycle Analytics</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📅</div>
+                    <h3 class="feature-title">Practice Management</h3>
+                    <ul class="feature-list">
+                        <li>Appointment Scheduling</li>
+                        <li>Provider Calendar Management</li>
+                        <li>Patient Registration</li>
+                        <li>Insurance Card Scanning</li>
+                        <li>Co-Pay Collection</li>
+                        <li>Check-In/Check-Out Workflow</li>
+                        <li>Waitlist Management</li>
+                        <li>Referral Management</li>
+                        <li>Provider Credentialing</li>
+                        <li>Staff Scheduling</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">Healthcare Analytics</h3>
+                    <ul class="feature-list">
+                        <li>Clinical Quality Measures (CQM)</li>
+                        <li>Population Health Analytics</li>
+                        <li>Financial Performance Dashboards</li>
+                        <li>Operational Efficiency Metrics</li>
+                        <li>Provider Productivity Analysis</li>
+                        <li>Patient Satisfaction Surveys</li>
+                        <li>Benchmarking & Peer Comparison</li>
+                        <li>Predictive Modeling</li>
+                        <li>Custom Report Builder</li>
+                        <li>Data Warehouse & BI Tools</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📄</div>
+                    <h3 class="feature-title">Medical Documentation</h3>
+                    <ul class="feature-list">
+                        <li>Voice-to-Text Transcription</li>
+                        <li>Clinical Note Templates</li>
+                        <li>Specialty-Specific Forms</li>
+                        <li>E-Signature & Authentication</li>
+                        <li>Document Management System</li>
+                        <li>Medical Transcription Services</li>
+                        <li>Addendum & Amendment Tracking</li>
+                        <li>Auto-Documentation from Data</li>
+                        <li>Compliance Checking</li>
+                        <li>Note Review & Co-Signing</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Research & Innovation -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">Medical Research & Innovation</h2>
+            <p class="section-subtitle">AI-powered research tools and drug discovery</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔬</div>
+                    <h3 class="feature-title">Clinical Research Management</h3>
+                    <ul class="feature-list">
+                        <li>Clinical Trial Design & Protocol</li>
+                        <li>Patient Recruitment & Screening</li>
+                        <li>Informed Consent Management</li>
+                        <li>Electronic Data Capture (EDC)</li>
+                        <li>Adverse Event Reporting</li>
+                        <li>Regulatory Compliance (FDA, IRB)</li>
+                        <li>Source Document Verification</li>
+                        <li>Trial Master File Management</li>
+                        <li>Statistical Analysis Planning</li>
+                        <li>Clinical Study Reports</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💊</div>
+                    <h3 class="feature-title">Drug Discovery AI</h3>
+                    <ul class="feature-list">
+                        <li>Molecular Structure Prediction</li>
+                        <li>Drug-Target Interaction Modeling</li>
+                        <li>Toxicity Prediction</li>
+                        <li>Clinical Trial Outcome Prediction</li>
+                        <li>Repurposing Existing Drugs</li>
+                        <li>Biomarker Discovery</li>
+                        <li>Protein Folding Analysis</li>
+                        <li>Drug Formulation Optimization</li>
+                        <li>Pharmacokinetics Modeling</li>
+                        <li>Patent & Literature Search</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📚</div>
+                    <h3 class="feature-title">Medical Literature & Knowledge</h3>
+                    <ul class="feature-list">
+                        <li>PubMed & Research Database Access</li>
+                        <li>Literature Summarization</li>
+                        <li>Clinical Guidelines Repository</li>
+                        <li>Medical Journal Integration</li>
+                        <li>Evidence Synthesis Tools</li>
+                        <li>Systematic Review Assistance</li>
+                        <li>Meta-Analysis Tools</li>
+                        <li>Citation Management</li>
+                        <li>Continuing Medical Education (CME)</li>
+                        <li>Knowledge Graph Building</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3 class="feature-title">AI/ML Research Platform</h3>
+                    <ul class="feature-list">
+                        <li>Federated Learning Infrastructure</li>
+                        <li>Model Training & Validation</li>
+                        <li>Explainable AI (XAI) Tools</li>
+                        <li>Synthetic Data Generation</li>
+                        <li>Transfer Learning Framework</li>
+                        <li>Real-World Evidence Analysis</li>
+                        <li>Natural Language Processing (NLP)</li>
+                        <li>Computer Vision for Medical Imaging</li>
+                        <li>Algorithm Bias Detection</li>
+                        <li>Model Performance Monitoring</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Compliance & Security -->
+    <section class="compliance-section">
+        <div class="container">
+            <h2 class="section-title">Healthcare Compliance & Security</h2>
+            <p class="section-subtitle">Meeting global healthcare standards and regulations</p>
+            <div class="compliance-grid">
+                <div class="compliance-card">
+                    <h3>🔒 HIPAA Compliance</h3>
+                    <ul class="feature-list">
+                        <li>Patient Privacy Protection</li>
+                        <li>PHI Encryption (End-to-End)</li>
+                        <li>Access Control & Audit Logs</li>
+                        <li>Business Associate Agreements</li>
+                        <li>Breach Notification System</li>
+                    </ul>
+                </div>
+                <div class="compliance-card">
+                    <h3>✅ Medical Standards</h3>
+                    <ul class="feature-list">
+                        <li>HL7 & FHIR Interoperability</li>
+                        <li>DICOM Imaging Standards</li>
+                        <li>ICD-10/ICD-11 Coding</li>
+                        <li>CPT & HCPCS Compliance</li>
+                        <li>LOINC Lab Standards</li>
+                    </ul>
+                </div>
+                <div class="compliance-card">
+                    <h3>🏥 Quality Certifications</h3>
+                    <ul class="feature-list">
+                        <li>CCHIT Certified EHR</li>
+                        <li>ONC Health IT Certification</li>
+                        <li>Meaningful Use Compliance</li>
+                        <li>MIPS & MACRA Reporting</li>
+                        <li>Joint Commission Standards</li>
+                    </ul>
+                </div>
+                <div class="compliance-card">
+                    <h3>🌍 International Standards</h3>
+                    <ul class="feature-list">
+                        <li>GDPR Compliance (EU)</li>
+                        <li>ISO 27001 Certified</li>
+                        <li>SOC 2 Type II Audited</li>
+                        <li>FDA 21 CFR Part 11</li>
+                        <li>NABH/JCI Accreditation Support</li>
+                    </ul>
+                </div>
+                <div class="compliance-card">
+                    <h3>🔐 Security Standards</h3>
+                    <ul class="feature-list">
+                        <li>256-bit AES Encryption</li>
+                        <li>Multi-Factor Authentication</li>
+                        <li>Role-Based Access Control</li>
+                        <li>Penetration Testing</li>
+                        <li>24/7 Security Monitoring</li>
+                    </ul>
+                </div>
+                <div class="compliance-card">
+                    <h3>📋 Regulatory Compliance</h3>
+                    <ul class="feature-list">
+                        <li>FDA Medical Device Compliance</li>
+                        <li>Clinical Laboratory Improvement (CLIA)</li>
+                        <li>OSHA Safety Standards</li>
+                        <li>DEA Controlled Substances</li>
+                        <li>State Medical Board Regulations</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <h2>Transform Healthcare with AI</h2>
+            <p>Join leading healthcare organizations using CognexiaAI to improve patient outcomes</p>
+            <a href="/contact" class="cta-button">Request a Demo</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 CognexiaAI. All rights reserved.</p>
+            <p>Advancing Healthcare Through Artificial Intelligence</p>
+        </div>
+    </footer>
+</body>
+</html>

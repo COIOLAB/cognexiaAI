@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CognexiaAI CRM - Enterprise Customer Relationship Management | CMMI Level 5</title>
+    <meta name="description" content="Enterprise-grade CRM platform with 83 database entities, quantum intelligence, and Industry 5.0 capabilities. CMMI Level 5 certified.">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            background: #ffffff;
+        }
+        
+        /* Enterprise Header - Match Homepage Navbar */
+        .header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid #e5e7eb;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 7rem;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo img {
+            transition: opacity 0.3s;
+        }
+        
+        .logo:hover img {
+            opacity: 0.9;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+        
+        .nav-links a {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover {
+            color: #2563eb;
+        }
+        
+        .auth-buttons {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+        
+        .btn-signin {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border-radius: 0.375rem;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-signin:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .btn-getstarted {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: white;
+            background: linear-gradient(135deg, #2563eb, #06b6d4);
+            border: none;
+            cursor: pointer;
+            border-radius: 0.375rem;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+        
+        .btn-getstarted:hover {
+            background: linear-gradient(135deg, #1e40af, #0891b2);
+        }
+        
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            color: white;
+            padding: 5rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #60a5fa, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero .tagline {
+            font-size: 1.75rem;
+            color: #93c5fd;
+            font-weight: 300;
+            margin-bottom: 1rem;
+            font-style: italic;
+        }
+        
+        .hero .description {
+            font-size: 1.25rem;
+            color: #cbd5e1;
+            max-width: 900px;
+            margin: 0 auto 3rem;
+            line-height: 1.8;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #60a5fa;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #cbd5e1;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        /* Content Sections */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        .section {
+            padding: 4rem 0;
+        }
+        
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .section-subtitle {
+            font-size: 1.25rem;
+            color: #64748b;
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 3rem;
+        }
+        
+        /* Feature Grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .feature-card {
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.1);
+            transform: translateY(-5px);
+        }
+        
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            color: white;
+            margin-bottom: 1.5rem;
+        }
+        
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-list {
+            list-style: none;
+        }
+        
+        .feature-list li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            color: #475569;
+        }
+        
+        .feature-list li::before {
+            content: '✓';
+            color: #10b981;
+            font-weight: 900;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        
+        /* AI Features Section */
+        .ai-section {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        }
+        
+        .ai-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .ai-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        .ai-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        /* Compliance Section */
+        .compliance-section {
+            background: #0f172a;
+            color: white;
+            padding: 4rem 2rem;
+        }
+        
+        .compliance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 3rem auto 0;
+        }
+        
+        .compliance-card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .compliance-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .compliance-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            padding: 5rem 2rem;
+            text-align: center;
+        }
+        
+        .cta-title {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 1rem 2.5rem;
+            border-radius: 0.75rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: white;
+            color: #1e40af;
+        }
+        
+        .btn-primary:hover {
+            background: #f1f5f9;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        /* Footer */
+        .footer {
+            background: #0f172a;
+            color: #94a3b8;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .footer-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-links a:hover {
+            color: #60a5fa;
+        }
+        
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">
+                <img src="/cognexiaai-logo.png" alt="CognexiaAI Logo" style="height: 96px; width: auto;" />
+            </a>
+            
+            <div class="nav-links">
+                <a href="/products">Products</a>
+                <a href="/features">Features</a>
+                <a href="/pricing">Pricing</a>
+                <a href="/about">About</a>
+                <a href="/contact">Contact</a>
+            </div>
+            
+            <div class="auth-buttons">
+                <a href="/login" class="btn-signin">Sign In</a>
+                <a href="/register" class="btn-getstarted">Get Started</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>CognexiaAI CRM</h1>
+            <p class="tagline">"Cognition Meets Precision"</p>
+            <p class="description">
+                Enterprise-Grade Industry 5.0 Customer Relationship Management Platform with Quantum Intelligence, 
+                Holographic Experiences, and Predictive Analytics. Trusted by Fortune 500 companies worldwide.
+            </p>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">83</div>
+                    <div class="stat-label">Database Entities</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">200+</div>
+                    <div class="stat-label">API Endpoints</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">60+</div>
+                    <div class="stat-label">AI Services</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">99.9%</div>
+                    <div class="stat-label">Uptime SLA</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">10K+</div>
+                    <div class="stat-label">Concurrent Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">100+</div>
+                    <div class="stat-label">Integrations</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Core Features -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">Core CRM Features</h2>
+            <p class="section-subtitle">
+                Comprehensive customer relationship management with 83 database entities covering every aspect of your business
+            </p>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">👥</div>
+                    <h3 class="feature-title">Customer Management</h3>
+                    <ul class="feature-list">
+                        <li>360° Customer View with Complete Interaction History</li>
+                        <li>Customer Segmentation & Tiering (SMALL, MEDIUM, LARGE, ENTERPRISE)</li>
+                        <li>Customer Lifecycle Tracking</li>
+                        <li>Customer Digital Twin Technology</li>
+                        <li>Customer Quantum Entanglement Analysis</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3 class="feature-title">Lead Management</h3>
+                    <ul class="feature-list">
+                        <li>AI-Powered Lead Scoring (Predictive ML Models)</li>
+                        <li>Lead Qualification Workflows</li>
+                        <li>Lead Routing & Assignment</li>
+                        <li>Lead Source Tracking</li>
+                        <li>Automated Lead Nurturing</li>
+                        <li>Lead-to-Customer Conversion Tracking</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">Sales Pipeline</h3>
+                    <ul class="feature-list">
+                        <li>Visual Pipeline Management</li>
+                        <li>Deal Probability Analysis</li>
+                        <li>Win/Loss Analysis</li>
+                        <li>Revenue Forecasting</li>
+                        <li>Weighted Value Calculations</li>
+                        <li>Sales Forecasting Engine</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📞</div>
+                    <h3 class="feature-title">Contact Management</h3>
+                    <ul class="feature-list">
+                        <li>Contact Hierarchies</li>
+                        <li>Role-Based Organization</li>
+                        <li>Influence Scoring</li>
+                        <li>Budget Authority Tracking</li>
+                        <li>Skills, Interests, Languages Tracking</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🏢</div>
+                    <h3 class="feature-title">Account Management</h3>
+                    <ul class="feature-list">
+                        <li>Organizational Account Management</li>
+                        <li>Account Hierarchies</li>
+                        <li>Territory Management</li>
+                        <li>Account Segmentation</li>
+                        <li>Parent-Child Account Relationships</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎫</div>
+                    <h3 class="feature-title">Support & Ticketing</h3>
+                    <ul class="feature-list">
+                        <li>Multi-Channel Support (Email, Phone, Chat, Web, Portal)</li>
+                        <li>SLA Tracking & Management</li>
+                        <li>Priority Levels (Low → Critical)</li>
+                        <li>Automated Escalation Workflows</li>
+                        <li>Tag System</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI & Machine Learning -->
+    <section class="section ai-section">
+        <div class="container">
+            <h2 class="section-title">Advanced AI & Machine Learning</h2>
+            <p class="section-subtitle">
+                10+ specialized AI services with quantum intelligence and cognitive computing
+            </p>
+            
+            <div class="ai-grid">
+                <div class="ai-card">
+                    <div class="ai-icon">🧠</div>
+                    <h3 class="feature-title">AI Customer Intelligence</h3>
+                    <ul class="feature-list">
+                        <li>Deep Learning Customer Analysis</li>
+                        <li>Predictive Lead Scoring (ML-based)</li>
+                        <li>Customer Sentiment Analysis (NLP)</li>
+                        <li>Behavioral Pattern Recognition</li>
+                        <li>Churn Prediction & Prevention</li>
+                        <li>Customer Lifetime Value Prediction</li>
+                    </ul>
+                </div>
+                
+                <div class="ai-card">
+                    <div class="ai-icon">✨</div>
+                    <h3 class="feature-title">Quantum Intelligence</h3>
+                    <ul class="feature-list">
+                        <li>Cognitive Computing with Neural Processing</li>
+                        <li>Knowledge Graph Intelligence</li>
+                        <li>Semantic Analysis Engine</li>
+                        <li>Contextual Reasoning Engine</li>
+                        <li>Consciousness Simulation</li>
+                    </ul>
+                </div>
+                
+                <div class="ai-card">
+                    <div class="ai-icon">💝</div>
+                    <h3 class="feature-title">Emotional Intelligence AI</h3>
+                    <ul class="feature-list">
+                        <li>Emotion Detection (Facial, Voice, Text, Behavioral)</li>
+                        <li>Sentiment Analysis (Advanced NLP)</li>
+                        <li>Empathy Modeling System</li>
+                        <li>Emotional Journey Mapping</li>
+                        <li>Emotional Predictive Modeling</li>
+                    </ul>
+                </div>
+                
+                <div class="ai-card">
+                    <div class="ai-icon">🎮</div>
+                    <h3 class="feature-title">AR/VR Sales Experience</h3>
+                    <ul class="feature-list">
+                        <li>Holographic Customer Experience</li>
+                        <li>Virtual Showrooms (Immersive 3D)</li>
+                        <li>AR Product Demonstrations</li>
+                        <li>3D Product Configurators</li>
+                        <li>Spatial Commerce Interface</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Analytics & Reporting -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">Analytics & Real-Time Intelligence</h2>
+            <p class="section-subtitle">
+                199+ analytics methods with real-time dashboards and predictive insights
+            </p>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📈</div>
+                    <h3 class="feature-title">Advanced Analytics</h3>
+                    <ul class="feature-list">
+                        <li>Real-Time Dashboards</li>
+                        <li>Custom Report Builder</li>
+                        <li>Cohort Analysis</li>
+                        <li>Funnel Analysis</li>
+                        <li>Revenue Forecasting</li>
+                        <li>Pipeline Analytics</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎛️</div>
+                    <h3 class="feature-title">Executive Dashboards</h3>
+                    <ul class="feature-list">
+                        <li>Admin Dashboard (59+ metrics)</li>
+                        <li>User Dashboard</li>
+                        <li>Sales Dashboard</li>
+                        <li>Support Dashboard</li>
+                        <li>Marketing Dashboard</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3 class="feature-title">Marketing Automation</h3>
+                    <ul class="feature-list">
+                        <li>Email Campaign Management</li>
+                        <li>Sequence Engine (Automated Workflows)</li>
+                        <li>Lead Nurturing Campaigns</li>
+                        <li>Behavioral Triggers</li>
+                        <li>Multi-Channel Campaigns</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Compliance Section -->
+    <section class="compliance-section">
+        <div class="container">
+            <h2 class="section-title" style="color: white;">Enterprise Security & Compliance</h2>
+            <p class="section-subtitle" style="color: #cbd5e1;">
+                Military-grade security with comprehensive compliance and certifications
+            </p>
+            
+            <div class="compliance-grid">
+                <div class="compliance-card">
+                    <div class="compliance-icon">🛡️</div>
+                    <h3 class="compliance-title">CMMI Level 5</h3>
+                    <p>Optimizing process excellence with quantitative management</p>
+                </div>
+                <div class="compliance-card">
+                    <div class="compliance-icon">🔐</div>
+                    <h3 class="compliance-title">ISO 27001</h3>
+                    <p>Information security management certified</p>
+                </div>
+                <div class="compliance-card">
+                    <div class="compliance-icon">✓</div>
+                    <h3 class="compliance-title">SOC 2 Type II</h3>
+                    <p>Security, availability, and confidentiality audited</p>
+                </div>
+                <div class="compliance-card">
+                    <div class="compliance-icon">🌍</div>
+                    <h3 class="compliance-title">GDPR Compliant</h3>
+                    <p>Full data protection compliance</p>
+                </div>
+                <div class="compliance-card">
+                    <div class="compliance-icon">🏥</div>
+                    <h3 class="compliance-title">HIPAA Ready</h3>
+                    <p>Healthcare data protection standards</p>
+                </div>
+                <div class="compliance-card">
+                    <div class="compliance-icon">🔒</div>
+                    <h3 class="compliance-title">Military-Grade Encryption</h3>
+                    <p>230+ security methods implemented</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Integration -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">Universal Data Migration & Integration</h2>
+            <p class="section-subtitle">
+                One-click migration from any CRM platform with 200+ ERP integration fields
+            </p>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3 class="feature-title">Universal Migration</h3>
+                    <ul class="feature-list">
+                        <li>One-Click Migration</li>
+                        <li>Salesforce, HubSpot, SAP, Oracle, Zoho</li>
+                        <li>CSV Import/Export</li>
+                        <li>Field Mapping Engine</li>
+                        <li>Rollback Capability</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔌</div>
+                    <h3 class="feature-title">Integration Hub</h3>
+                    <ul class="feature-list">
+                        <li>100+ Pre-built Integrations</li>
+                        <li>Gmail/Outlook Calendar Sync</li>
+                        <li>Slack Integration</li>
+                        <li>Microsoft Teams Integration</li>
+                        <li>WhatsApp Integration</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📦</div>
+                    <h3 class="feature-title">ERP Integration</h3>
+                    <ul class="feature-list">
+                        <li>200+ ERP Integration Fields</li>
+                        <li>External ID Mapping</li>
+                        <li>External System Sync</li>
+                        <li>Sync Status Tracking</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+        <div class="container">
+            <h2 class="cta-title">Transform Your Business Today</h2>
+            <p style="font-size: 1.25rem; margin-bottom: 1rem;">
+                Join Fortune 500 companies using CognexiaAI CRM
+            </p>
+            <p style="font-size: 1rem; opacity: 0.9;">
+                14-day Enterprise Trial • No Credit Card Required • 24/7 Support
+            </p>
+            <div class="cta-buttons">
+                <a href="mailto:sales@cognexiaai.com" class="btn btn-primary">Contact Sales</a>
+                <a href="tel:+919167422630" class="btn btn-secondary">+91-9167422630</a>
+                <a href="http://localhost:3010/register" class="btn btn-secondary">Start Free Trial</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="mailto:sales@cognexiaai.com">sales@cognexiaai.com</a>
+            <a href="mailto:support@cognexiaai.com">support@cognexiaai.com</a>
+            <a href="tel:+919167422630">+91-9167422630</a>
+            <a href="http://www.cognexiaai.com/demo">www.cognexiaai.com/demo</a>
+        </div>
+        <p>&copy; 2026 CognexiaAI. All rights reserved. | CMMI Level 5 Certified | ISO 27001 | SOC 2 Type II</p>
+    </footer>
+</body>
+</html>

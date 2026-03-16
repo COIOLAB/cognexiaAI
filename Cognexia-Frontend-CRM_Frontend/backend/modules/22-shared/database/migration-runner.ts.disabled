@@ -1,0 +1,382 @@
+import { DataSource } from 'typeorm';
+import { logger } from '../utils/logger';
+import { DatabaseConnection } from './connection';
+
+// Import all HR migrations in the correct order
+import { CreateCoreHRTables1707123456001 } from './migrations/hr/001_create_core_hr_tables';
+import { CreatePerformanceManagementTables1707123456002 } from './migrations/hr/002_create_performance_management_tables';
+import { CreateTalentAcquisitionTables1707123456003 } from './migrations/hr/003_create_talent_acquisition_tables';
+import { CreateCompensationBenefitsTables1707123456004 } from './migrations/hr/004_create_compensation_benefits_tables';
+import { CreatePayrollExitTables1707123456005 } from './migrations/hr/005_create_payroll_exit_tables';
+
+export class MigrationRunner {
+  private dataSource: DataSource;
+  
+  // Define migration order - CRITICAL: Must be in correct dependency order
+  private static readonly HR_MIGRATIONS = [
+    CreateCoreHRTables1707123456001,
+    CreatePerformanceManagementTables1707123456002,
+    CreateTalentAcquisitionTables1707123456003,
+    CreateCompensationBenefitsTables1707123456004,
+    CreatePayrollExitTables1707123456005
+  ];
+
+  constructor(dataSource?: DataSource) {
+    this.dataSource = dataSource || DatabaseConnection.getPostgresDataSource();
+  }
+
+  /**
+   * Run all HR migrations in the correct order
+   */
+  async runHRMigrations(): Promise<void> {
+    logger.info('🚀 Starting HR migrations...');
+    
+    try {
+      // Ensure database connection is established
+      if (!this.dataSource.isInitialized) {
+        await this.dataSource.initialize();
+        logger.info('📡 Database connection initialized for migrations');
+      }
+
+      // Create migrations table if it doesn't exist
+      await this.ensureMigrationsTable();
+
+      let migrationsRun = 0;
+      let migrationsSkipped = 0;
+
+      for (const MigrationClass of MigrationRunner.HR_MIGRATIONS) {
+        const migration = new MigrationClass();
+        const migrationName = migration.name || MigrationClass.name;
+
+        try {
+          // Check if migration has already been run
+          const hasBeenRun = await this.hasMigrationBeenRun(migrationName);
+          
+          if (hasBeenRun) {
+            logger.info(`⏩ Skipping migration: ${migrationName} (already executed)`);
+            migrationsSkipped++;
+            continue;
+          }
+
+          logger.info(`⚡ Running migration: ${migrationName}`);
+          
+          // Start transaction for the migration
+          await this.dataSource.transaction(async (queryRunner) => {
+            // Run the migration
+            await migration.up(queryRunner);
+            
+            // Record that the migration has been run
+            await this.recordMigrationRun(queryRunner, migrationName);
+            
+            logger.info(`✅ Migration completed: ${migrationName}`);
+          });
+
+          migrationsRun++;
+          
+        } catch (error) {
+          logger.error(`❌ Migration failed: ${migrationName}`, error);
+          throw new Error(`Migration ${migrationName} failed: ${error.message}`);
+        }
+      }
+
+      logger.info(`🎉 HR migrations completed successfully! Run: ${migrationsRun}, Skipped: ${migrationsSkipped}`);
+      
+    } catch (error) {
+      logger.error('❌ HR migrations failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Rollback all HR migrations (in reverse order)
+   */
+  async rollbackHRMigrations(): Promise<void> {
+    logger.warn('🔄 Starting HR migrations rollback...');
+    
+    try {
+      if (!this.dataSource.isInitialized) {
+        await this.dataSource.initialize();
+      }
+
+      const reversedMigrations = [...MigrationRunner.HR_MIGRATIONS].reverse();
+      let migrationsRolledBack = 0;
+
+      for (const MigrationClass of reversedMigrations) {
+        const migration = new MigrationClass();
+        const migrationName = migration.name || MigrationClass.name;
+
+        try {
+          // Check if migration has been run
+          const hasBeenRun = await this.hasMigrationBeenRun(migrationName);
+          
+          if (!hasBeenRun) {
+            logger.info(`⏩ Skipping rollback: ${migrationName} (not executed)`);
+            continue;
+          }
+
+          logger.warn(`🔄 Rolling back migration: ${migrationName}`);
+          
+          await this.dataSource.transaction(async (queryRunner) => {
+            // Rollback the migration
+            await migration.down(queryRunner);
+            
+            // Remove the migration record
+            await this.removeMigrationRecord(queryRunner, migrationName);
+            
+            logger.info(`✅ Rollback completed: ${migrationName}`);
+          });
+
+          migrationsRolledBack++;
+          
+        } catch (error) {
+          logger.error(`❌ Rollback failed: ${migrationName}`, error);
+          throw new Error(`Rollback ${migrationName} failed: ${error.message}`);
+        }
+      }
+
+      logger.info(`🎉 HR migrations rollback completed! Rolled back: ${migrationsRolledBack} migrations`);
+      
+    } catch (error) {
+      logger.error('❌ HR migrations rollback failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get the status of all HR migrations
+   */
+  async getMigrationStatus(): Promise<MigrationStatus[]> {
+    try {
+      if (!this.dataSource.isInitialized) {
+        await this.dataSource.initialize();
+      }
+
+      await this.ensureMigrationsTable();
+
+      const status: MigrationStatus[] = [];
+
+      for (const MigrationClass of MigrationRunner.HR_MIGRATIONS) {
+        const migration = new MigrationClass();
+        const migrationName = migration.name || MigrationClass.name;
+
+        const hasBeenRun = await this.hasMigrationBeenRun(migrationName);
+        const executedAt = hasBeenRun ? await this.getMigrationExecutionTime(migrationName) : null;
+
+        status.push({
+          name: migrationName,
+          executed: hasBeenRun,
+          executedAt: executedAt,
+          order: status.length + 1
+        });
+      }
+
+      return status;
+      
+    } catch (error) {
+      logger.error('❌ Failed to get migration status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Ensure the migrations tracking table exists
+   */
+  private async ensureMigrationsTable(): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    
+    try {
+      await queryRunner.query(`
+        CREATE TABLE IF NOT EXISTS "migrations" (
+          "id" SERIAL PRIMARY KEY,
+          "name" VARCHAR(255) NOT NULL UNIQUE,
+          "executed_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /**
+   * Check if a specific migration has been run
+   */
+  private async hasMigrationBeenRun(migrationName: string): Promise<boolean> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    
+    try {
+      const result = await queryRunner.query(
+        'SELECT COUNT(*) as count FROM "migrations" WHERE "name" = $1',
+        [migrationName]
+      );
+      
+      return parseInt(result[0].count) > 0;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /**
+   * Record that a migration has been run
+   */
+  private async recordMigrationRun(queryRunner: any, migrationName: string): Promise<void> {
+    await queryRunner.query(
+      'INSERT INTO "migrations" ("name", "executed_at") VALUES ($1, CURRENT_TIMESTAMP)',
+      [migrationName]
+    );
+  }
+
+  /**
+   * Remove a migration record (for rollback)
+   */
+  private async removeMigrationRecord(queryRunner: any, migrationName: string): Promise<void> {
+    await queryRunner.query(
+      'DELETE FROM "migrations" WHERE "name" = $1',
+      [migrationName]
+    );
+  }
+
+  /**
+   * Get migration execution time
+   */
+  private async getMigrationExecutionTime(migrationName: string): Promise<Date | null> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    
+    try {
+      const result = await queryRunner.query(
+        'SELECT "executed_at" FROM "migrations" WHERE "name" = $1',
+        [migrationName]
+      );
+      
+      return result.length > 0 ? result[0].executed_at : null;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /**
+   * Run a specific migration by name
+   */
+  async runSpecificMigration(migrationName: string): Promise<void> {
+    logger.info(`🎯 Running specific migration: ${migrationName}`);
+    
+    const MigrationClass = MigrationRunner.HR_MIGRATIONS.find(
+      (Migration) => {
+        const migration = new Migration();
+        return (migration.name || Migration.name) === migrationName;
+      }
+    );
+
+    if (!MigrationClass) {
+      throw new Error(`Migration not found: ${migrationName}`);
+    }
+
+    const migration = new MigrationClass();
+
+    try {
+      if (!this.dataSource.isInitialized) {
+        await this.dataSource.initialize();
+      }
+
+      await this.ensureMigrationsTable();
+
+      const hasBeenRun = await this.hasMigrationBeenRun(migrationName);
+      
+      if (hasBeenRun) {
+        logger.warn(`⚠️ Migration ${migrationName} has already been executed`);
+        return;
+      }
+
+      await this.dataSource.transaction(async (queryRunner) => {
+        await migration.up(queryRunner);
+        await this.recordMigrationRun(queryRunner, migrationName);
+      });
+
+      logger.info(`✅ Migration completed: ${migrationName}`);
+      
+    } catch (error) {
+      logger.error(`❌ Migration failed: ${migrationName}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Force refresh all migrations (dangerous - only for development)
+   */
+  async forceRefreshMigrations(): Promise<void> {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Force refresh is not allowed in production environment');
+    }
+
+    logger.warn('⚠️ Force refreshing all HR migrations (DEVELOPMENT ONLY)');
+    
+    try {
+      // First rollback all migrations
+      await this.rollbackHRMigrations();
+      
+      // Wait a moment
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Then run all migrations
+      await this.runHRMigrations();
+      
+      logger.info('✅ Force refresh completed successfully');
+      
+    } catch (error) {
+      logger.error('❌ Force refresh failed:', error);
+      throw error;
+    }
+  }
+}
+
+// Type definitions
+export interface MigrationStatus {
+  name: string;
+  executed: boolean;
+  executedAt: Date | null;
+  order: number;
+}
+
+// CLI utility functions for easy access
+export class MigrationCLI {
+  
+  static async run(): Promise<void> {
+    const runner = new MigrationRunner();
+    await runner.runHRMigrations();
+  }
+
+  static async rollback(): Promise<void> {
+    const runner = new MigrationRunner();
+    await runner.rollbackHRMigrations();
+  }
+
+  static async status(): Promise<void> {
+    const runner = new MigrationRunner();
+    const status = await runner.getMigrationStatus();
+    
+    console.log('\n📊 HR Migration Status:');
+    console.log('='.repeat(80));
+    
+    status.forEach((migration, index) => {
+      const statusIcon = migration.executed ? '✅' : '❌';
+      const executedAt = migration.executedAt 
+        ? migration.executedAt.toISOString().split('T')[0] 
+        : 'Not executed';
+      
+      console.log(`${statusIcon} ${index + 1}. ${migration.name}`);
+      console.log(`   Executed: ${migration.executed ? 'Yes' : 'No'} | Date: ${executedAt}`);
+    });
+    
+    console.log('='.repeat(80));
+    
+    const executed = status.filter(m => m.executed).length;
+    const total = status.length;
+    console.log(`📈 Progress: ${executed}/${total} migrations executed\n`);
+  }
+
+  static async refresh(): Promise<void> {
+    const runner = new MigrationRunner();
+    await runner.forceRefreshMigrations();
+  }
+}
+
+export default MigrationRunner;

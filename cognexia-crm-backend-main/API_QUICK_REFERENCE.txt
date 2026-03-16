@@ -1,0 +1,100 @@
+============================================================
+COGNEXIA AI CRM - API QUICK REFERENCE
+Base URL: http://localhost:3003/api/v1
+Authentication: Bearer Token Required
+============================================================
+
+1. QUANTUM INTELLIGENCE (5 endpoints)
+   POST   /quantum/personality-profile
+   GET    /quantum/entanglement/{customerId}
+   POST   /quantum/consciousness-simulation
+   GET    /quantum/predict-behavior/{customerId}
+   GET    /quantum/emotional-resonance/{customerId}
+
+2. HOLOGRAPHIC EXPERIENCE (6 endpoints)
+   POST   /holographic/projections
+   GET    /holographic/projections
+   POST   /holographic/spatial-sessions
+   GET    /holographic/spatial-sessions
+   POST   /holographic/enable-spatial-computing
+   POST   /holographic/sync-multi-user
+
+3. AR/VR SALES (8 endpoints)
+   POST   /arvr/showrooms
+   GET    /arvr/showrooms
+   POST   /arvr/meetings
+   GET    /arvr/meetings
+   POST   /arvr/product-demos
+   GET    /arvr/product-demos
+   GET    /arvr/configurator/{productId}
+   GET    /arvr/analytics
+
+4. CONTRACT MANAGEMENT (10 endpoints)
+   POST   /contracts
+   GET    /contracts
+   GET    /contracts/{id}
+   PATCH  /contracts/{id}
+   POST   /contracts/renewals
+   POST   /contracts/amendments
+   POST   /contracts/e-signature
+   GET    /contracts/e-signature/{contractId}
+   POST   /contracts/approvals
+   GET    /contracts/templates
+
+5. INVENTORY MANAGEMENT (9 endpoints)
+   GET    /inventory/stock-levels
+   PATCH  /inventory/stock-levels/{productId}
+   POST   /inventory/warehouses
+   GET    /inventory/warehouses
+   POST   /inventory/transfers
+   GET    /inventory/transfers
+   GET    /inventory/reorder-points
+   POST   /inventory/audits
+   GET    /inventory/analytics
+
+6. CATALOG MANAGEMENT (10 endpoints)
+   POST   /catalogs
+   GET    /catalogs
+   GET    /catalogs/{id}
+   PATCH  /catalogs/{id}
+   POST   /catalogs/products
+   DELETE /catalogs/products
+   POST   /catalogs/publish
+   GET    /catalogs/{id}/versions
+   POST   /catalogs/duplicate
+   DELETE /catalogs/{id}
+
+7. LLM INTEGRATION (9 endpoints)
+   POST   /llm/conversations
+   GET    /llm/conversations
+   POST   /llm/messages
+   GET    /llm/messages/{conversationId}
+   POST   /llm/generate-content
+   POST   /llm/analyze
+   POST   /llm/sentiment
+   POST   /llm/email-copy
+   POST   /llm/summarize
+
+8. REAL-TIME ANALYTICS (8 endpoints)
+   GET    /real-time/metrics
+   POST   /real-time/events
+   GET    /real-time/dashboards/{dashboardId}
+   POST   /real-time/alerts
+   GET    /real-time/alerts
+   PATCH  /real-time/alerts/{id}
+   GET    /real-time/live-activity
+   GET    /real-time/live-conversions
+
+============================================================
+WEBSOCKET
+   Namespace: /analytics
+   URL: ws://localhost:3003/analytics
+============================================================
+
+TOTAL: 65+ REST Endpoints + 1 WebSocket
+
+DOCUMENTATION:
+- Detailed Guide: POSTMAN_API_ENDPOINTS.md
+- Test Report: E2E_TEST_REPORT.md
+- Test Script: test-all-apis.js
+- Swagger UI: http://localhost:3003/api/docs

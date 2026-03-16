@@ -1,0 +1,9 @@
+# Nixpacks config for Railway (Node 20 + native module build deps)
+# https://nixpacks.com/docs/configuration/file
+
+[phases.setup]
+# Keep default Node provider packages and add build tools for better-sqlite3 etc.
+nixPkgs = ["...", "python3", "gnumake", "gcc"]
+
+[variables]
+NIXPACKS_NODE_VERSION = "20"

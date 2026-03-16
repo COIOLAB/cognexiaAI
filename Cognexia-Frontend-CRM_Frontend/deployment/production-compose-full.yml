@@ -1,0 +1,527 @@
+version: '3.8'
+
+# EzAi-MFGNINJA Production-Grade Docker Compose
+# Government Certification Ready - Full Backend Services
+# AI-Powered Manufacturing Intelligence Platform
+
+services:
+  # ==================== DATABASES ====================
+  
+  # PostgreSQL - Primary Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: ezai-postgres-prod
+    environment:
+      POSTGRES_DB: ezai_mfgninja
+      POSTGRES_USER: ezai_admin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ezai_secure_2025!}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ezai_admin -d ezai_mfgninja"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    command: >
+      postgres 
+      -c ssl=on 
+      -c ssl_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem 
+      -c ssl_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
+      -c shared_preload_libraries=pg_stat_statements
+      -c log_statement=all
+      -c log_connections=on
+      -c log_disconnections=on
+
+  # MongoDB - Document Database
+  mongodb:
+    image: mongo:7-jammy
+    container_name: ezai-mongodb-prod
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ezai_admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD:-ezai_mongo_2025!}
+      MONGO_INITDB_DATABASE: ezai_mfgninja
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    command: mongod --auth --bind_ip_all --replSet rs0
+
+  # Redis - Cache & Session Store
+  redis:
+    image: redis:7-alpine
+    container_name: ezai-redis-prod
+    command: >
+      redis-server 
+      --requirepass ${REDIS_PASSWORD:-ezai_redis_2025!}
+      --appendonly yes
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD:-ezai_redis_2025!}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==================== BACKEND SERVICES ====================
+
+  # HR Service - Human Resources Management (85% Complete)
+  hr-service:
+    build:
+      context: ../backend/hr
+      dockerfile: Dockerfile
+    container_name: ezai-hr-service
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=hr
+      - PORT=3001
+      - DATABASE_URL=postgresql://ezai_admin:${POSTGRES_PASSWORD:-ezai_secure_2025!}@postgres:5432/ezai_mfgninja
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-ezai_redis_2025!}@redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/hr/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # Finance & Accounting Service (90% Complete)
+  finance-service:
+    build:
+      context: ../backend/finance-accounting
+      dockerfile: Dockerfile
+    container_name: ezai-finance-service
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=finance-accounting
+      - PORT=3002
+      - DATABASE_URL=postgresql://ezai_admin:${POSTGRES_PASSWORD:-ezai_secure_2025!}@postgres:5432/ezai_mfgninja
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-ezai_redis_2025!}@redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/api/v1/finance-accounting/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # Manufacturing Service (90% Complete)
+  manufacturing-service:
+    build:
+      context: ../backend/manufacturing
+      dockerfile: Dockerfile
+    container_name: ezai-manufacturing-service
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=manufacturing
+      - PORT=3003
+      - DATABASE_URL=postgresql://ezai_admin:${POSTGRES_PASSWORD:-ezai_secure_2025!}@postgres:5432/ezai_mfgninja
+      - MONGODB_URL=mongodb://ezai_admin:${MONGODB_PASSWORD:-ezai_mongo_2025!}@mongodb:27017/ezai_mfgninja?authSource=admin
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-ezai_redis_2025!}@redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+    ports:
+      - "3003:3003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/api/v1/manufacturing/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # Supply Chain Service (75% Complete)
+  supply-chain-service:
+    build:
+      context: ../backend/supply-chain
+      dockerfile: Dockerfile
+    container_name: ezai-supply-chain-service
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=supply-chain
+      - PORT=3004
+      - DATABASE_URL=postgresql://ezai_admin:${POSTGRES_PASSWORD:-ezai_secure_2025!}@postgres:5432/ezai_mfgninja
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-ezai_redis_2025!}@redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+    ports:
+      - "3004:3004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/api/v1/supply-chain/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Inventory Service (90% Complete)
+  inventory-service:
+    build:
+      context: ../backend/inventory
+      dockerfile: Dockerfile
+    container_name: ezai-inventory-service
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=inventory
+      - PORT=3005
+      - DATABASE_URL=postgresql://ezai_admin:${POSTGRES_PASSWORD:-ezai_secure_2025!}@postgres:5432/ezai_mfgninja
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-ezai_redis_2025!}@redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+    ports:
+      - "3005:3005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3005/api/v1/inventory/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Production Planning Service (85% Complete)
+  production-planning-service:
+    build:
+      context: ../backend/production-planning
+      dockerfile: Dockerfile
+    container_name: ezai-production-planning-service
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=production-planning
+      - PORT=3006
+      - DATABASE_URL=postgresql://ezai_admin:${POSTGRES_PASSWORD:-ezai_secure_2025!}@postgres:5432/ezai_mfgninja
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-ezai_redis_2025!}@redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+    ports:
+      - "3006:3006"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3006/api/v1/production-planning/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # CRM Service (88% Complete)
+  crm-service:
+    build:
+      context: ../backend/crm
+      dockerfile: Dockerfile
+    container_name: ezai-crm-service
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=crm
+      - PORT=3007
+      - DATABASE_URL=postgresql://ezai_admin:${POSTGRES_PASSWORD:-ezai_secure_2025!}@postgres:5432/ezai_mfgninja
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-ezai_redis_2025!}@redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+    ports:
+      - "3007:3007"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3007/api/v1/crm/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Procurement Service (85% Complete)
+  procurement-service:
+    build:
+      context: ../backend/procurement
+      dockerfile: Dockerfile
+    container_name: ezai-procurement-service
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=procurement
+      - PORT=3008
+      - DATABASE_URL=postgresql://ezai_admin:${POSTGRES_PASSWORD:-ezai_secure_2025!}@postgres:5432/ezai_mfgninja
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-ezai_redis_2025!}@redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+    ports:
+      - "3008:3008"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3008/api/v1/procurement/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Sales & Marketing Service (95% Complete)
+  sales-marketing-service:
+    build:
+      context: ../backend/sales-marketing
+      dockerfile: Dockerfile
+    container_name: ezai-sales-marketing-service
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=sales-marketing
+      - PORT=3009
+      - DATABASE_URL=postgresql://ezai_admin:${POSTGRES_PASSWORD:-ezai_secure_2025!}@postgres:5432/ezai_mfgninja
+      - MONGODB_URL=mongodb://ezai_admin:${MONGODB_PASSWORD:-ezai_mongo_2025!}@mongodb:27017/ezai_mfgninja?authSource=admin
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-ezai_redis_2025!}@redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+    ports:
+      - "3009:3009"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3009/api/v1/sales-marketing/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==================== INFRASTRUCTURE SERVICES ====================
+
+  # API Gateway (Nginx with Load Balancing)
+  api-gateway:
+    image: nginx:alpine
+    container_name: ezai-api-gateway
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-prod.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - hr-service
+      - finance-service
+      - manufacturing-service
+      - supply-chain-service
+      - inventory-service
+      - production-planning-service
+      - crm-service
+      - procurement-service
+      - sales-marketing-service
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend Application
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: ezai-frontend
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_BASE_URL=https://localhost
+      - NEXT_PUBLIC_WS_BASE_URL=wss://localhost
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==================== MONITORING & ANALYTICS ====================
+
+  # Prometheus - Metrics Collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ezai-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus-prod.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+      - '--storage.tsdb.retention.time=30d'
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Grafana - Analytics Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ezai-grafana
+    ports:
+      - "3010:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-ezai_grafana_2025!}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3010
+      - GF_SECURITY_SECRET_KEY=${GRAFANA_SECRET_KEY}
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ElasticSearch - Log Storage
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: ezai-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Kibana - Log Analysis
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: ezai-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# ==================== VOLUMES ====================
+volumes:
+  postgres_data:
+    driver: local
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+
+# ==================== NETWORKS ====================
+networks:
+  default:
+    name: ezai-production-network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16

@@ -1,0 +1,183 @@
+# ===============================================================================
+# EzAi-MFGNINJA CodeQL Configuration
+# Government-Grade Security Analysis Configuration
+# 
+# This configuration provides enhanced security scanning for government
+# compliance requirements with comprehensive vulnerability detection
+# ===============================================================================
+
+name: "Government Security Analysis"
+
+# Disable default security queries and use only high-precision queries
+disable-default-queries: false
+
+# Add additional query packs for comprehensive security coverage
+queries:
+  # Security and vulnerability queries
+  - uses: security-and-quality
+  - uses: security-extended
+  
+  # Custom queries for government compliance
+  - name: Government Security Queries
+    uses: ./.github/codeql/queries/
+
+# Path filters to focus analysis on critical code paths
+paths:
+  - "backend/**"
+  - "frontend/src/**" 
+  - "shared/**"
+  - "deployment/**"
+
+# Paths to ignore during analysis
+paths-ignore:
+  - "**/node_modules/**"
+  - "**/tests/**"
+  - "**/test/**"
+  - "**/*.test.js"
+  - "**/*.spec.js"
+  - "**/coverage/**"
+  - "**/build/**"
+  - "**/dist/**"
+  - "**/.git/**"
+
+# Language-specific configurations
+languages:
+  - javascript
+  - typescript
+  - python
+
+# Build configuration for compiled languages
+build:
+  # No specific build commands needed for interpreted languages
+  commands: []
+
+# Advanced analysis options for government security
+analysis:
+  # Enable all available security analysis
+  enable-experimental-features: true
+  
+  # Maximum memory usage (in MB)
+  max-memory: 4096
+  
+  # Analysis timeout (in minutes)  
+  timeout: 45
+  
+  # Thread configuration
+  threads: 0  # Use all available threads
+
+# External data configuration
+external-data:
+  # CVE database for vulnerability correlation
+  - type: cve
+    location: https://nvd.nist.gov/feeds/json/cve/1.1/
+  
+  # OWASP data
+  - type: owasp
+    location: https://owasp.org/www-project-top-ten/
+
+# Custom security rules for government compliance
+rules:
+  # Authentication and authorization
+  - id: missing-authentication
+    severity: error
+    description: "Missing authentication checks"
+    
+  - id: weak-encryption
+    severity: error
+    description: "Weak encryption algorithms detected"
+    
+  - id: hardcoded-secrets
+    severity: error
+    description: "Hardcoded secrets or credentials"
+    
+  - id: sql-injection
+    severity: error
+    description: "Potential SQL injection vulnerability"
+    
+  - id: xss-vulnerability
+    severity: error
+    description: "Cross-site scripting vulnerability"
+    
+  - id: csrf-missing
+    severity: warning
+    description: "Missing CSRF protection"
+    
+  - id: insecure-randomness
+    severity: warning
+    description: "Use of insecure random number generation"
+    
+  - id: path-traversal
+    severity: error
+    description: "Path traversal vulnerability"
+    
+  - id: command-injection
+    severity: error
+    description: "Command injection vulnerability"
+    
+  - id: deserialization-attack
+    severity: error
+    description: "Unsafe deserialization"
+
+# Compliance-specific configurations
+compliance:
+  frameworks:
+    - iso27001
+    - soc2
+    - nist
+    - fedramp
+    - gdpr
+    - sox
+  
+  # Data classification rules
+  data-classification:
+    - type: pii
+      patterns:
+        - "email"
+        - "ssn"
+        - "social_security"
+        - "phone_number"
+        - "address"
+    
+    - type: financial
+      patterns:
+        - "credit_card"
+        - "bank_account"
+        - "financial_data"
+        - "payment_info"
+    
+    - type: health
+      patterns:
+        - "medical_record"
+        - "health_data"
+        - "hipaa"
+
+# Output configuration
+output:
+  format: sarif
+  include-source-code: false
+  max-results: 1000
+  
+# Integration settings
+integrations:
+  github:
+    upload-results: true
+    create-issues: true
+    issue-labels:
+      - security
+      - vulnerability
+      - government-compliance
+  
+  # Slack notifications for critical findings
+  slack:
+    webhook-url: "${SLACK_WEBHOOK_URL}"
+    channel: "#security-alerts"
+    notify-on:
+      - error
+      - critical
+
+# Custom metadata
+metadata:
+  version: "2.0"
+  description: "Government-grade security analysis for EzAi-MFGNINJA"
+  compliance-level: "maximum"
+  security-clearance: "government"

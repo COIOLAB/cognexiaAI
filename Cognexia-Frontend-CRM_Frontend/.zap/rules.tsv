@@ -1,0 +1,296 @@
+# ===============================================================================
+# EzAi-MFGNINJA OWASP ZAP Security Rules
+# Government-Grade Web Application Security Testing Rules
+# 
+# This file defines security scanning rules for OWASP ZAP automated
+# security testing with government compliance focus
+# ===============================================================================
+
+# Rule Format: RULE_ID	ACTION	PARAMETER
+# Actions: IGNORE, WARN, FAIL
+# Parameters: Specific to each rule
+
+# ============================================================================
+# AUTHENTICATION & SESSION MANAGEMENT
+# ============================================================================
+
+# Authentication bypass attempts
+10023	FAIL	# Authentication Bypass
+10021	FAIL	# Authentication Detection
+10008	FAIL	# Session Management Issues
+
+# Session fixation
+40018	FAIL	# Session Fixation
+40014	FAIL	# HTTP Parameter Override
+
+# Weak authentication
+40029	FAIL	# Weak Authentication Method
+40027	FAIL	# Weak HTTP Authentication
+40033	FAIL	# Loosely Scoped Cookie
+
+# ============================================================================
+# INJECTION VULNERABILITIES 
+# ============================================================================
+
+# SQL Injection
+40018	FAIL	# SQL Injection - MySQL
+40019	FAIL	# SQL Injection - PostgreSQL  
+40020	FAIL	# SQL Injection - Oracle
+40021	FAIL	# SQL Injection - SQLite
+40022	FAIL	# SQL Injection - Time Based
+40032	FAIL	# SQL Injection - Boolean Based
+
+# NoSQL Injection
+90036	FAIL	# NoSQL Injection - MongoDB
+
+# Command Injection
+90020	FAIL	# Command Injection
+90019	FAIL	# Code Injection
+
+# LDAP Injection
+40015	FAIL	# LDAP Injection
+
+# XPath Injection
+90035	FAIL	# XPath Injection
+
+# Script Injection
+40012	FAIL	# Cross Site Scripting (Reflected)
+40014	FAIL	# Cross Site Scripting (Persistent) 
+40016	FAIL	# Cross Site Scripting (DOM Based)
+40017	FAIL	# Source Code Disclosure
+
+# ============================================================================
+# CROSS-SITE SCRIPTING (XSS)
+# ============================================================================
+
+40012	FAIL	# Cross Site Scripting (Reflected)
+40014	FAIL	# Cross Site Scripting (Persistent)
+40016	FAIL	# Cross Site Scripting (DOM Based)
+40017	FAIL	# HTML Injection
+40018	FAIL	# CSS Injection
+
+# ============================================================================
+# SECURITY MISCONFIGURATIONS
+# ============================================================================
+
+# Directory Traversal
+6	FAIL	# Path Traversal
+7	FAIL	# Remote File Inclusion
+
+# Information Disclosure
+10048	FAIL	# Remote Code Execution - Shell Shock
+10049	FAIL	# Shellshock Bug - CVE-2014-6271
+10050	FAIL	# Retrieved from Cache
+10051	FAIL	# Relative Path Confusion
+10052	FAIL	# X-ChromeLogger-Data Header Information Leak
+10053	FAIL	# Apache Range Header DoS (CVE-2011-3192)
+10054	FAIL	# Cookie No HttpOnly Flag
+10055	FAIL	# CSP Scanner
+10056	FAIL	# X-Debug-Token Information Leak
+10057	FAIL	# Username Hash Found
+10058	FAIL	# GET for POST
+10061	FAIL	# X-AspNet-Version Response Header
+10062	FAIL	# PII Scanner
+10063	FAIL	# Sensitive Information in HTTP Referrer Header
+10096	FAIL	# Timestamp Disclosure
+10097	FAIL	# Hash Disclosure
+10098	FAIL	# Cross-Domain Misconfiguration
+
+# Server Information Disclosure
+10036	WARN	# Server Header Information Leak
+10038	WARN	# Content Type Missing
+10040	WARN	# Secure Pages Include Mixed Content
+10041	WARN	# HTTP to HTTPS Insecure Transition
+10042	WARN	# HTTPS to HTTP Insecure Transition
+
+# ============================================================================
+# SECURITY HEADERS & TRANSPORT
+# ============================================================================
+
+# Missing Security Headers  
+10020	FAIL	# X-Frame-Options Missing
+10021	FAIL	# X-Content-Type-Options Missing
+10023	FAIL	# Information Disclosure - Debug Errors
+10024	FAIL	# Information Disclosure - Sensitive Information in URL
+10025	FAIL	# Information Disclosure - Sensitive Information in HTTP Referrer
+10026	FAIL	# HTTP Parameter Override
+10027	FAIL	# Information Disclosure - Suspicious Comments
+10028	FAIL	# Open Redirect
+10029	FAIL	# Cookie Poisoning
+10030	FAIL	# User Controllable Charset
+10031	FAIL	# User Controllable HTML Element Attribute
+10032	FAIL	# Viewstate Scanner
+10033	FAIL	# Directory Browsing
+10034	FAIL	# Heartbleed OpenSSL Vulnerability
+10035	FAIL	# Strict-Transport-Security Missing
+
+# Content Security Policy
+10038	FAIL	# Content Security Policy Missing
+10039	FAIL	# Content Security Policy Misconfigured
+
+# HTTPS/TLS Issues
+10041	FAIL	# HTTP to HTTPS Insecure Transition in Form Post
+10042	FAIL	# HTTPS to HTTP Insecure Transition in Form Post
+10043	FAIL	# User Controllable JavaScript Event
+
+# Cookie Security
+10054	FAIL	# Cookie without Secure flag
+10055	FAIL	# Cookie without HttpOnly flag
+10056	FAIL	# Cookie without SameSite Attribute
+
+# ============================================================================
+# GOVERNMENT COMPLIANCE SPECIFIC
+# ============================================================================
+
+# GDPR Compliance
+90001	FAIL	# Personally Identifiable Information (PII) in URL
+90002	FAIL	# Personal Data in Response
+90003	FAIL	# Privacy Policy Missing
+90004	FAIL	# Cookie Consent Missing
+
+# SOX Compliance  
+90010	FAIL	# Financial Data Exposure
+90011	FAIL	# Audit Trail Missing
+90012	FAIL	# Data Integrity Issues
+
+# NIST Compliance
+90020	FAIL	# Weak Cryptography
+90021	FAIL	# Insufficient Access Controls
+90022	FAIL	# Missing Multi-Factor Authentication
+
+# FedRAMP Compliance
+90030	FAIL	# Government Data Classification Missing
+90031	FAIL	# Encryption at Rest Missing
+90032	FAIL	# Encryption in Transit Missing
+
+# ============================================================================
+# BUSINESS LOGIC VULNERABILITIES
+# ============================================================================
+
+# Authorization Issues
+40001	FAIL	# Missing Authorization
+40002	FAIL	# Broken Authorization
+40003	FAIL	# Vertical Privilege Escalation
+40004	FAIL	# Horizontal Privilege Escalation
+
+# Rate Limiting
+40010	WARN	# Missing Rate Limiting
+40011	WARN	# Insufficient Rate Limiting
+
+# Input Validation
+40020	FAIL	# Missing Input Validation
+40021	FAIL	# Insufficient Input Validation
+40022	FAIL	# Buffer Overflow
+
+# ============================================================================
+# API SECURITY
+# ============================================================================
+
+# REST API Security
+50001	FAIL	# API Key Exposure
+50002	FAIL	# Sensitive Data in API Response
+50003	FAIL	# Missing API Authentication
+50004	FAIL	# API Rate Limiting Missing
+50005	FAIL	# API Version Disclosure
+50006	FAIL	# GraphQL Introspection Enabled
+50007	FAIL	# API Documentation Exposed
+
+# ============================================================================
+# CRYPTOGRAPHY
+# ============================================================================
+
+# Weak Cryptography
+60001	FAIL	# Weak SSL/TLS Configuration
+60002	FAIL	# Insecure Cryptographic Algorithm
+60003	FAIL	# Weak Random Number Generator
+60004	FAIL	# Hardcoded Cryptographic Key
+60005	FAIL	# Certificate Issues
+60006	FAIL	# Weak Hashing Algorithm (MD5, SHA1)
+
+# ============================================================================
+# MOBILE SECURITY (if applicable)
+# ============================================================================
+
+# Mobile App Security
+70001	FAIL	# Insecure Data Storage
+70002	FAIL	# Weak Cryptography
+70003	FAIL	# Insecure Communication
+70004	FAIL	# Insecure Authentication
+70005	FAIL	# Insufficient Cryptography
+
+# ============================================================================
+# CLOUD SECURITY
+# ============================================================================
+
+# Cloud Misconfigurations
+80001	FAIL	# Publicly Accessible Storage
+80002	FAIL	# Weak IAM Policies
+80003	FAIL	# Missing Encryption
+80004	FAIL	# Insecure API Gateway
+80005	FAIL	# Container Security Issues
+
+# ============================================================================
+# COMPLIANCE SCANNING RULES
+# ============================================================================
+
+# ISO 27001 Requirements
+100001	FAIL	# Asset Management Missing
+100002	FAIL	# Information Classification Missing
+100003	FAIL	# Risk Assessment Documentation Missing
+
+# SOC 2 Type II Requirements  
+100010	FAIL	# Security Monitoring Missing
+100011	FAIL	# Change Management Process Missing
+100012	FAIL	# Incident Response Plan Missing
+
+# NIST Framework Requirements
+100020	FAIL	# Identify Function Missing
+100021	FAIL	# Protect Function Missing  
+100022	FAIL	# Detect Function Missing
+100023	FAIL	# Respond Function Missing
+100024	FAIL	# Recover Function Missing
+
+# FedRAMP Requirements
+100030	FAIL	# Government Security Requirements Missing
+100031	FAIL	# Continuous Monitoring Missing
+100032	FAIL	# Security Assessment Missing
+
+# ============================================================================
+# CUSTOM EZAI-MFGNINJA RULES
+# ============================================================================
+
+# Manufacturing Intelligence Security
+200001	FAIL	# Industrial Control System Exposure
+200002	FAIL	# SCADA System Vulnerability
+200003	FAIL	# Manufacturing Data Exposure
+200004	FAIL	# Supply Chain Data Leak
+200005	FAIL	# IoT Device Security Issues
+
+# AI/ML Security
+200010	FAIL	# Model Inversion Attack
+200011	FAIL	# Training Data Extraction
+200012	FAIL	# Adversarial Attack Vector
+200013	FAIL	# AI Bias Detection Missing
+200014	FAIL	# ML Pipeline Security Gap
+
+# Blockchain Security (for supply chain)
+200020	FAIL	# Smart Contract Vulnerability
+200021	FAIL	# Private Key Exposure
+200022	FAIL	# Blockchain Transaction Issues
+200023	FAIL	# Consensus Mechanism Weakness
+
+# ============================================================================
+# REPORTING CONFIGURATION
+# ============================================================================
+
+# Report only critical and high severity issues as FAIL
+# Medium severity as WARN
+# Low severity can be IGNORE for production scans
+
+# Government compliance requires ZERO tolerance for:
+# - Authentication bypasses
+# - SQL injection
+# - XSS vulnerabilities  
+# - Sensitive data exposure
+# - Cryptographic weaknesses
+# - Missing security headers

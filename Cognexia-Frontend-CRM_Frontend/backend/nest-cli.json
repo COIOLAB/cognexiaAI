@@ -1,0 +1,26 @@
+{
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "webpack": true,
+    "tsConfigPath": "tsconfig.json",
+    "assets": [
+      {
+        "include": "**/*.json",
+        "outDir": "dist"
+      }
+    ],
+    "watchAssets": true
+  },
+  "generateOptions": {
+    "spec": {
+      "type": "jest",
+      "environment": "node"
+    }
+  },
+  "monorepo": false,
+  "root": ".",
+  "entryFile": "main",
+  "projects": {}
+}

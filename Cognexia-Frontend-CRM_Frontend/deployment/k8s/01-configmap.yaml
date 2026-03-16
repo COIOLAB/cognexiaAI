@@ -1,0 +1,380 @@
+# ===============================================================================
+# EzAi-MFGNINJA Government-Grade Kubernetes ConfigMap
+# AI-Powered Manufacturing Intelligence Platform
+# 
+# Configuration for government compliance and security settings
+# ===============================================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ezai-config
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: configuration
+    compliance: government-grade
+data:
+  # Application Configuration
+  NODE_ENV: "production"
+  GOVERNMENT_CERTIFICATION: "enabled"
+  SECURITY_LEVEL: "maximum"
+  COMPLIANCE_LEVEL: "full"
+  AUDIT_ENABLED: "true"
+  ENCRYPTION_ENABLED: "true"
+  
+  # Compliance Framework Settings
+  ISO27001_COMPLIANCE: "enabled"
+  SOC2_COMPLIANCE: "enabled"
+  NIST_COMPLIANCE: "enabled"
+  FEDRAMP_COMPLIANCE: "enabled"
+  GDPR_COMPLIANCE: "enabled"
+  SOX_COMPLIANCE: "enabled"
+  
+  # Security Settings
+  MFA_ENABLED: "true"
+  MFA_TOKEN_EXPIRY_MINUTES: "5"
+  SESSION_TIMEOUT_MINUTES: "30"
+  FORCE_HTTPS: "true"
+  SECURE_COOKIES: "true"
+  
+  # Password Policy
+  PASSWORD_MIN_LENGTH: "12"
+  PASSWORD_REQUIRE_SPECIAL_CHARS: "true"
+  PASSWORD_REQUIRE_NUMBERS: "true"
+  PASSWORD_REQUIRE_UPPERCASE: "true"
+  PASSWORD_REQUIRE_LOWERCASE: "true"
+  
+  # Rate Limiting
+  RATE_LIMIT_WINDOW_MS: "900000"
+  RATE_LIMIT_MAX_REQUESTS: "100"
+  
+  # Audit and Logging
+  AUDIT_LOG_RETENTION_DAYS: "2557"  # 7 years for SOX compliance
+  AUDIT_LOG_ENCRYPTION: "true"
+  AUDIT_LOG_REMOTE_BACKUP: "true"
+  LOG_LEVEL: "info"
+  LOG_FORMAT: "json"
+  
+  # Health Check Configuration
+  HEALTH_CHECK_TIMEOUT_MS: "5000"
+  HEALTH_CHECK_INTERVAL_MS: "30000"
+  
+  # Metrics Configuration
+  METRICS_ENABLED: "true"
+  METRICS_ENDPOINT: "/metrics"
+  
+  # Backup Configuration
+  BACKUP_ENABLED: "true"
+  BACKUP_SCHEDULE: "0 2 * * *"
+  BACKUP_RETENTION_DAYS: "2557"
+  BACKUP_ENCRYPTION_ENABLED: "true"
+  
+  # AI and ML Configuration
+  AI_ANALYTICS: "enabled"
+  QUANTUM_OPTIMIZATION: "enabled"
+  NEURAL_INTELLIGENCE: "enabled"
+  
+  # Blockchain Configuration
+  BLOCKCHAIN_TRACEABILITY: "enabled"
+  BLOCKCHAIN_SUPPLY_CHAIN: "enabled"
+  BLOCKCHAIN_INVENTORY: "enabled"
+  CONTRACT_BLOCKCHAIN: "enabled"
+  
+  # Data Protection
+  DATA_VALIDATION: "enabled"
+  DATA_RETENTION_POLICY: "enabled"
+  GDPR_DATA_ANONYMIZATION: "enabled"
+  GDPR_RIGHT_TO_DELETE: "enabled"
+  GDPR_DATA_PORTABILITY: "enabled"
+  GDPR_BREACH_NOTIFICATION: "enabled"
+  
+  # Financial Controls (SOX)
+  SOX_AUDIT_TRAIL: "enabled"
+  SOX_DATA_RETENTION: "2557"
+  FINANCIAL_AUDIT: "enabled"
+  FINANCIAL_DATA_ENCRYPTION: "enabled"
+  FINANCIAL_ACCESS_CONTROL: "enabled"
+  FINANCIAL_BACKUP: "enabled"
+  
+  # IoT Integration
+  IOT_INTEGRATION: "enabled"
+  EDGE_COMPUTING_ENABLED: "true"
+  REAL_TIME_TRACKING: "enabled"
+  
+  # Disaster Recovery
+  DR_ENABLED: "true"
+  DR_RPO_MINUTES: "60"
+  DR_RTO_MINUTES: "240"
+  
+  # Service Discovery
+  SERVICE_DISCOVERY: "kubernetes"
+  CLUSTER_MODE: "enabled"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: nginx
+data:
+  nginx.conf: |
+    user nginx;
+    worker_processes auto;
+    error_log /var/log/nginx/error.log warn;
+    pid /var/run/nginx.pid;
+    
+    events {
+        worker_connections 1024;
+        use epoll;
+        multi_accept on;
+    }
+    
+    http {
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+        
+        # Security headers
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "no-referrer-when-downgrade" always;
+        add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        
+        server_tokens off;
+        
+        # Logging
+        log_format government '$remote_addr - $remote_user [$time_local] '
+                             '"$request" $status $body_bytes_sent '
+                             '"$http_referer" "$http_user_agent" '
+                             '$request_time $upstream_response_time '
+                             '$ssl_protocol $ssl_cipher';
+        
+        access_log /var/log/nginx/access.log government;
+        
+        # Performance
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+        keepalive_timeout 65;
+        types_hash_max_size 2048;
+        client_max_body_size 10M;
+        
+        # Rate limiting
+        limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+        limit_req_zone $binary_remote_addr zone=login:10m rate=1r/s;
+        
+        # SSL Configuration
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384;
+        ssl_prefer_server_ciphers on;
+        ssl_session_cache shared:SSL:10m;
+        ssl_session_timeout 10m;
+        
+        # Default server block
+        server {
+            listen 80;
+            server_name _;
+            return 301 https://$host$request_uri;
+        }
+        
+        server {
+            listen 443 ssl http2;
+            server_name _;
+            
+            ssl_certificate /etc/nginx/ssl/tls.crt;
+            ssl_certificate_key /etc/nginx/ssl/tls.key;
+            
+            # Health check endpoint
+            location /health {
+                access_log off;
+                return 200 "healthy\n";
+                add_header Content-Type text/plain;
+            }
+            
+            # API routing with rate limiting
+            location /api/ {
+                limit_req zone=api burst=20 nodelay;
+                proxy_pass http://backend-service:8080;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_connect_timeout 5s;
+                proxy_send_timeout 60s;
+                proxy_read_timeout 60s;
+            }
+            
+            # Frontend routing
+            location / {
+                proxy_pass http://frontend-service:3000;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+        }
+    }
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: monitoring
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        environment: 'government'
+        compliance: 'iso27001-soc2-fedramp'
+        cluster: 'ezai-mfgninja-gov'
+    
+    rule_files:
+      - "/etc/prometheus/rules/*.yml"
+    
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+        scrape_interval: 5s
+      
+      - job_name: 'kubernetes-apiservers'
+        kubernetes_sd_configs:
+        - role: endpoints
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+          action: keep
+          regex: default;kubernetes;https
+      
+      - job_name: 'kubernetes-nodes'
+        kubernetes_sd_configs:
+        - role: node
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+        - action: labelmap
+          regex: __meta_kubernetes_node_label_(.+)
+      
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+        - role: pod
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+          action: keep
+          regex: true
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+          action: replace
+          target_label: __metrics_path__
+          regex: (.+)
+        - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+          action: replace
+          regex: ([^:]+)(?::\d+)?;(\d+)
+          replacement: $1:$2
+          target_label: __address__
+        - action: labelmap
+          regex: __meta_kubernetes_pod_label_(.+)
+        - source_labels: [__meta_kubernetes_namespace]
+          action: replace
+          target_label: kubernetes_namespace
+        - source_labels: [__meta_kubernetes_pod_name]
+          action: replace
+          target_label: kubernetes_pod_name
+      
+      - job_name: 'ezai-services'
+        kubernetes_sd_configs:
+        - role: service
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_namespace]
+          action: keep
+          regex: ezai-mfgninja-gov
+        - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+          action: keep
+          regex: true
+        - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+          action: replace
+          target_label: __scheme__
+          regex: (https?)
+        - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+          action: replace
+          target_label: __metrics_path__
+          regex: (.+)
+        - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+          action: replace
+          target_label: __address__
+          regex: ([^:]+)(?::\d+)?;(\d+)
+          replacement: $1:$2
+        - action: labelmap
+          regex: __meta_kubernetes_service_label_(.+)
+        - source_labels: [__meta_kubernetes_namespace]
+          action: replace
+          target_label: kubernetes_namespace
+        - source_labels: [__meta_kubernetes_service_name]
+          action: replace
+          target_label: kubernetes_name
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: ezai-mfgninja-gov
+  labels:
+    app: ezai-mfgninja
+    component: monitoring
+data:
+  grafana.ini: |
+    [analytics]
+    reporting_enabled = false
+    check_for_updates = false
+    
+    [security]
+    disable_gravatar = true
+    allow_embedding = false
+    cookie_secure = true
+    cookie_samesite = strict
+    disable_brute_force_login_protection = false
+    
+    [auth]
+    disable_login_form = false
+    disable_signout_menu = false
+    
+    [auth.anonymous]
+    enabled = false
+    
+    [users]
+    allow_sign_up = false
+    allow_org_create = false
+    auto_assign_org = true
+    auto_assign_org_role = Viewer
+    
+    [log]
+    mode = console
+    level = info
+    
+    [server]
+    protocol = http
+    http_port = 3000
+    root_url = %(protocol)s://%(domain)s:%(http_port)s/
+    
+    [database]
+    type = sqlite3
+    path = grafana.db
+    
+    [session]
+    provider = memory

@@ -1,0 +1,47 @@
+# EzAi-MFGNINJA Prometheus Configuration
+# Government-Grade Monitoring for AI Manufacturing Intelligence Platform
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # Add alerting rules here if needed
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Frontend monitoring
+  - job_name: 'ezai-frontend'
+    static_configs:
+      - targets: ['frontend:3000']
+    metrics_path: '/api/metrics'
+    scrape_interval: 30s
+
+  # Backend services monitoring
+  - job_name: 'ezai-hr-service'
+    static_configs:
+      - targets: ['hr-service:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  - job_name: 'ezai-manufacturing-service'
+    static_configs:
+      - targets: ['manufacturing-service:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  - job_name: 'ezai-inventory-service'
+    static_configs:
+      - targets: ['inventory-service:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Docker container metrics (if available)
+  - job_name: 'docker'
+    static_configs:
+      - targets: ['host.docker.internal:9323']
+    scrape_interval: 30s

@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CognexiaAI VideoGenX - AI-Powered Video Generation Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+        }
+
+        .header { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; z-index: 1000; }
+        .header-content { max-width: 1400px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center; height: 7rem; }
+        .logo { display: flex; align-items: center; }
+        .logo img { transition: opacity 0.3s; }
+        .logo:hover img { opacity: 0.9; }
+        .nav-links { display: flex; gap: 2rem; align-items: center; }
+        .nav-links a { font-size: 0.875rem; font-weight: 500; color: #374151; text-decoration: none; transition: color 0.3s; }
+        .nav-links a:hover { color: #2563eb; }
+        .auth-buttons { display: flex; gap: 0.75rem; align-items: center; }
+        .btn-signin { padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; color: #374151; background: transparent; border: none; cursor: pointer; transition: background-color 0.3s; border-radius: 0.375rem; text-decoration: none; display: inline-block; }
+        .btn-signin:hover { background-color: #f3f4f6; }
+        .btn-getstarted { padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; color: white; background: linear-gradient(135deg, #2563eb, #06b6d4); border: none; cursor: pointer; border-radius: 0.375rem; text-decoration: none; display: inline-block; transition: all 0.3s; }
+        .btn-getstarted:hover { background: linear-gradient(135deg, #1e40af, #0891b2); }
+        @media (max-width: 768px) { .nav-links { display: none; } }
+
+        .hero {
+            background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
+            color: white;
+            padding: 6rem 2rem;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            margin-bottom: 3rem;
+            opacity: 0.95;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .section {
+            padding: 5rem 0;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #2d3748;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #718096;
+            margin-bottom: 3rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #2d3748;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .feature-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: #4a5568;
+        }
+
+        .feature-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #f97316;
+            font-weight: bold;
+        }
+
+        .ai-section {
+            background: linear-gradient(135deg, #f9731615 0%, #dc262615 100%);
+        }
+
+        .compliance-section {
+            background: #f7fafc;
+            padding: 5rem 0;
+        }
+
+        .compliance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .compliance-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            border-left: 4px solid #f97316;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .compliance-card h3 {
+            color: #f97316;
+            margin-bottom: 1rem;
+        }
+
+        .cta-section {
+            background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
+            color: white;
+            padding: 5rem 2rem;
+            text-align: center;
+        }
+
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .cta-section p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 3rem;
+            background: white;
+            color: #f97316;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .footer {
+            background: #2d3748;
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo"><img src="/cognexiaai-logo.png" alt="CognexiaAI Logo" style="height: 96px; width: auto;" /></a>
+            <div class="nav-links">
+                <a href="/products">Products</a><a href="/features">Features</a><a href="/pricing">Pricing</a><a href="/about">About</a><a href="/contact">Contact</a>
+            </div>
+            <div class="auth-buttons">
+                <a href="/login" class="btn-signin">Sign In</a><a href="/register" class="btn-getstarted">Get Started</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero">
+        <h1>🎬 CognexiaAI VideoGenX</h1>
+        <p>Revolutionary AI-Powered Video Generation & Content Creation Platform</p>
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">1M+</div>
+                <div class="stat-label">Videos Generated</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">99%</div>
+                <div class="stat-label">Generation Quality</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">500+</div>
+                <div class="stat-label">Video Templates</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">90%</div>
+                <div class="stat-label">Time Savings</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">100K+</div>
+                <div class="stat-label">Content Creators</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">8K</div>
+                <div class="stat-label">Max Resolution</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Video Generation -->
+    <section class="section" id="features">
+        <div class="container">
+            <h2 class="section-title">AI-Powered Video Generation</h2>
+            <p class="section-subtitle">Create stunning videos from text, images, or existing footage with advanced AI</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🎥</div>
+                    <h3 class="feature-title">Text-to-Video Generation</h3>
+                    <ul class="feature-list">
+                        <li>Natural Language to Video</li>
+                        <li>Script-Based Video Creation</li>
+                        <li>AI Scene Generation</li>
+                        <li>Character Animation</li>
+                        <li>Background Generation</li>
+                        <li>Dynamic Camera Movements</li>
+                        <li>Cinematic Shot Composition</li>
+                        <li>Style Transfer (Anime, Realistic, Cartoon)</li>
+                        <li>Multi-Scene Narrative Videos</li>
+                        <li>Custom Aspect Ratios (16:9, 9:16, 1:1)</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🖼️</div>
+                    <h3 class="feature-title">Image-to-Video</h3>
+                    <ul class="feature-list">
+                        <li>Static Image Animation</li>
+                        <li>Photo-to-Motion Conversion</li>
+                        <li>3D Depth Mapping</li>
+                        <li>Parallax Effect Generation</li>
+                        <li>Image Sequence to Video</li>
+                        <li>AI Inpainting & Outpainting</li>
+                        <li>Motion Interpolation</li>
+                        <li>Image Enhancement Before Animation</li>
+                        <li>Character Movement from Portraits</li>
+                        <li>Landscape Animation</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3 class="feature-title">AI Video Editing</h3>
+                    <ul class="feature-list">
+                        <li>Intelligent Auto-Editing</li>
+                        <li>Smart Scene Detection</li>
+                        <li>Beat-Synced Editing</li>
+                        <li>Auto Color Grading</li>
+                        <li>Object Removal & Replacement</li>
+                        <li>Background Replacement</li>
+                        <li>AI Video Stabilization</li>
+                        <li>Frame Interpolation (60fps, 120fps)</li>
+                        <li>AI Upscaling (4K, 8K)</li>
+                        <li>Noise Reduction</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎭</div>
+                    <h3 class="feature-title">AI Avatar & Character</h3>
+                    <ul class="feature-list">
+                        <li>Photorealistic AI Avatars</li>
+                        <li>Custom Character Generation</li>
+                        <li>Facial Expression Control</li>
+                        <li>Lip-Sync Automation</li>
+                        <li>Body Movement Animation</li>
+                        <li>Virtual Presenters</li>
+                        <li>Multi-Language Avatar Support</li>
+                        <li>Gesture & Emotion Synthesis</li>
+                        <li>Age, Gender, Ethnicity Customization</li>
+                        <li>Celebrity Lookalike (Ethical Use)</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎬</div>
+                    <h3 class="feature-title">AI Video Enhancement</h3>
+                    <ul class="feature-list">
+                        <li>Video Upscaling (SD to HD, HD to 4K)</li>
+                        <li>Frame Rate Conversion</li>
+                        <li>Old Video Restoration</li>
+                        <li>Black & White to Color</li>
+                        <li>Low-Light Enhancement</li>
+                        <li>Shaky Footage Stabilization</li>
+                        <li>Blur & Artifact Removal</li>
+                        <li>HDR Tone Mapping</li>
+                        <li>Super Resolution Technology</li>
+                        <li>Quality Enhancement AI</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎤</div>
+                    <h3 class="feature-title">Voice & Audio AI</h3>
+                    <ul class="feature-list">
+                        <li>Text-to-Speech (200+ Voices)</li>
+                        <li>Voice Cloning (Ethical)</li>
+                        <li>Multi-Language Voiceovers</li>
+                        <li>Automatic Dubbing</li>
+                        <li>Voice Enhancement & Cleanup</li>
+                        <li>Background Music Generation</li>
+                        <li>Sound Effects Library (10,000+)</li>
+                        <li>AI Audio Mixing</li>
+                        <li>Noise Cancellation</li>
+                        <li>Voice Emotion Modulation</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Professional Video Production -->
+    <section class="section ai-section">
+        <div class="container">
+            <h2 class="section-title">Professional Video Production Tools</h2>
+            <p class="section-subtitle">Complete suite of professional-grade video creation and editing tools</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">✂️</div>
+                    <h3 class="feature-title">Advanced Editing Suite</h3>
+                    <ul class="feature-list">
+                        <li>Multi-Track Timeline Editor</li>
+                        <li>Precision Frame Editing</li>
+                        <li>Keyframe Animation</li>
+                        <li>Masking & Rotoscoping</li>
+                        <li>Chroma Key (Green Screen)</li>
+                        <li>Transitions & Effects (500+)</li>
+                        <li>Speed Control (Slow-Mo, Time-Lapse)</li>
+                        <li>Reverse Video</li>
+                        <li>Picture-in-Picture</li>
+                        <li>Split Screen Layouts</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3 class="feature-title">Color Grading & Effects</h3>
+                    <ul class="feature-list">
+                        <li>Professional Color Wheels</li>
+                        <li>LUT Support (100+ Presets)</li>
+                        <li>HSL Curves & Adjustments</li>
+                        <li>Color Match Between Clips</li>
+                        <li>Cinematic Filters</li>
+                        <li>Film Grain & Vintage Effects</li>
+                        <li>Vignette & Light Leaks</li>
+                        <li>Lens Flare Effects</li>
+                        <li>Glitch & Distortion Effects</li>
+                        <li>Custom LUT Creation</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📝</div>
+                    <h3 class="feature-title">Text & Typography</h3>
+                    <ul class="feature-list">
+                        <li>Animated Text Titles</li>
+                        <li>Lower Thirds Templates</li>
+                        <li>Subtitle & Caption Generator</li>
+                        <li>Kinetic Typography</li>
+                        <li>3D Text Animation</li>
+                        <li>Text Effects (Glow, Shadow, Stroke)</li>
+                        <li>Auto Subtitle Generation (AI)</li>
+                        <li>Multi-Language Subtitles</li>
+                        <li>Custom Font Library</li>
+                        <li>Text-to-Speech Integration</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎵</div>
+                    <h3 class="feature-title">Audio Production</h3>
+                    <ul class="feature-list">
+                        <li>Multi-Track Audio Mixing</li>
+                        <li>Audio Waveform Visualization</li>
+                        <li>EQ & Compression</li>
+                        <li>Reverb & Delay Effects</li>
+                        <li>Audio Ducking</li>
+                        <li>Volume Normalization</li>
+                        <li>Beat Detection & Sync</li>
+                        <li>Podcast Audio Enhancement</li>
+                        <li>Royalty-Free Music Library</li>
+                        <li>Audio Stem Separation</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎞️</div>
+                    <h3 class="feature-title">Motion Graphics</h3>
+                    <ul class="feature-list">
+                        <li>2D & 3D Animation</li>
+                        <li>Particle Effects</li>
+                        <li>Shape Layers & Morphing</li>
+                        <li>Logo Animation Templates</li>
+                        <li>Infographic Animations</li>
+                        <li>Data Visualization</li>
+                        <li>Animated Icons & Elements</li>
+                        <li>Explainer Video Templates</li>
+                        <li>Timeline Animations</li>
+                        <li>Custom Motion Paths</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📹</div>
+                    <h3 class="feature-title">Live Recording & Streaming</h3>
+                    <ul class="feature-list">
+                        <li>Screen Recording (4K)</li>
+                        <li>Webcam Recording</li>
+                        <li>Multi-Camera Setup</li>
+                        <li>Live Streaming Integration</li>
+                        <li>Virtual Background</li>
+                        <li>Real-Time Effects</li>
+                        <li>Teleprompter Mode</li>
+                        <li>Countdown Timer</li>
+                        <li>Recording Pause/Resume</li>
+                        <li>Instant Replay</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Content-Specific Solutions -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">Content-Specific Video Solutions</h2>
+            <p class="section-subtitle">Specialized tools for every type of video content</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3 class="feature-title">Social Media Videos</h3>
+                    <ul class="feature-list">
+                        <li>Instagram Reels & Stories</li>
+                        <li>TikTok Video Creator</li>
+                        <li>YouTube Shorts</li>
+                        <li>Facebook & Twitter Videos</li>
+                        <li>LinkedIn Video Posts</li>
+                        <li>Auto-Resize for All Platforms</li>
+                        <li>Trending Templates</li>
+                        <li>Viral Effect Library</li>
+                        <li>Hashtag Generator</li>
+                        <li>Engagement Optimization</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📢</div>
+                    <h3 class="feature-title">Marketing & Advertising</h3>
+                    <ul class="feature-list">
+                        <li>Product Demo Videos</li>
+                        <li>Commercial Ad Templates</li>
+                        <li>Promotional Video Maker</li>
+                        <li>Testimonial Video Creator</li>
+                        <li>Call-to-Action Overlays</li>
+                        <li>Brand Kit Integration</li>
+                        <li>A/B Testing Variants</li>
+                        <li>Landing Page Videos</li>
+                        <li>Email Marketing Videos</li>
+                        <li>Performance Analytics</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎓</div>
+                    <h3 class="feature-title">Educational Videos</h3>
+                    <ul class="feature-list">
+                        <li>Tutorial Video Templates</li>
+                        <li>Course Content Creator</li>
+                        <li>Whiteboard Animation</li>
+                        <li>Screen Recording with Annotations</li>
+                        <li>Quiz & Interactive Elements</li>
+                        <li>Lecture Video Enhancement</li>
+                        <li>Educational Animation</li>
+                        <li>Student Engagement Tools</li>
+                        <li>Chapter Markers</li>
+                        <li>Course Completion Certificates</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎮</div>
+                    <h3 class="feature-title">Gaming & Entertainment</h3>
+                    <ul class="feature-list">
+                        <li>Gaming Highlight Reels</li>
+                        <li>Live Stream Clips</li>
+                        <li>Montage Creator</li>
+                        <li>Game Overlay Templates</li>
+                        <li>Facecam Integration</li>
+                        <li>Kill/Score Counter</li>
+                        <li>Twitch/YouTube Gaming</li>
+                        <li>Reaction Video Templates</li>
+                        <li>Gaming Intro/Outro Maker</li>
+                        <li>Esports Content</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💼</div>
+                    <h3 class="feature-title">Corporate & Business</h3>
+                    <ul class="feature-list">
+                        <li>Corporate Presentation Videos</li>
+                        <li>Internal Communication Videos</li>
+                        <li>Training & Onboarding</li>
+                        <li>CEO Message Templates</li>
+                        <li>Investor Pitch Videos</li>
+                        <li>Company Culture Videos</li>
+                        <li>Event Recap Videos</li>
+                        <li>Professional Branding</li>
+                        <li>Annual Report Videos</li>
+                        <li>Virtual Meeting Recordings</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎉</div>
+                    <h3 class="feature-title">Personal & Events</h3>
+                    <ul class="feature-list">
+                        <li>Wedding Video Creator</li>
+                        <li>Birthday Video Maker</li>
+                        <li>Travel Vlog Templates</li>
+                        <li>Photo Slideshow with Music</li>
+                        <li>Event Invitation Videos</li>
+                        <li>Family Memory Videos</li>
+                        <li>Holiday Greeting Cards</li>
+                        <li>Anniversary Videos</li>
+                        <li>Baby Milestones</li>
+                        <li>Personal Portfolio</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Advanced AI Features -->
+    <section class="section ai-section">
+        <div class="container">
+            <h2 class="section-title">Next-Generation AI Features</h2>
+            <p class="section-subtitle">Cutting-edge AI technologies for video creation</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3 class="feature-title">AI Content Understanding</h3>
+                    <ul class="feature-list">
+                        <li>Automatic Scene Detection</li>
+                        <li>Object Recognition & Tracking</li>
+                        <li>Face Detection & Blurring</li>
+                        <li>Action Recognition</li>
+                        <li>Sentiment Analysis</li>
+                        <li>Content Categorization</li>
+                        <li>Key Moment Detection</li>
+                        <li>Highlight Reel Generation</li>
+                        <li>Auto-Tagging & Metadata</li>
+                        <li>Content Moderation</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔮</div>
+                    <h3 class="feature-title">AI Video Prediction</h3>
+                    <ul class="feature-list">
+                        <li>Engagement Score Prediction</li>
+                        <li>Viral Potential Analysis</li>
+                        <li>Best Posting Time Suggestions</li>
+                        <li>Thumbnail Optimization</li>
+                        <li>Title & Description Generator</li>
+                        <li>Tag Recommendations</li>
+                        <li>Audience Insights</li>
+                        <li>Retention Analysis</li>
+                        <li>A/B Testing Recommendations</li>
+                        <li>Performance Forecasting</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌍</div>
+                    <h3 class="feature-title">Localization & Translation</h3>
+                    <ul class="feature-list">
+                        <li>Auto Subtitle Translation (100+ Languages)</li>
+                        <li>Voice Dubbing in Multiple Languages</li>
+                        <li>Lip-Sync for Dubbed Videos</li>
+                        <li>Cultural Adaptation</li>
+                        <li>Regional Content Customization</li>
+                        <li>RTL Language Support</li>
+                        <li>Accent & Dialect Options</li>
+                        <li>Multi-Language Export</li>
+                        <li>Translation Memory</li>
+                        <li>Glossary Management</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3 class="feature-title">Smart Automation</h3>
+                    <ul class="feature-list">
+                        <li>Batch Video Processing</li>
+                        <li>Template-Based Mass Production</li>
+                        <li>Scheduled Publishing</li>
+                        <li>Auto-Posting to Social Media</li>
+                        <li>Workflow Automation</li>
+                        <li>Render Queue Management</li>
+                        <li>Cloud Rendering</li>
+                        <li>API Integration</li>
+                        <li>Zapier/Make.com Support</li>
+                        <li>Custom Automation Rules</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">Analytics & Insights</h3>
+                    <ul class="feature-list">
+                        <li>View & Engagement Metrics</li>
+                        <li>Audience Demographics</li>
+                        <li>Watch Time Analysis</li>
+                        <li>Retention Graphs</li>
+                        <li>Traffic Source Tracking</li>
+                        <li>Conversion Tracking</li>
+                        <li>ROI Calculator</li>
+                        <li>Competitor Analysis</li>
+                        <li>Trend Monitoring</li>
+                        <li>Custom Reporting</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔗</div>
+                    <h3 class="feature-title">Collaboration & Workflow</h3>
+                    <ul class="feature-list">
+                        <li>Team Collaboration Workspace</li>
+                        <li>Real-Time Co-Editing</li>
+                        <li>Comment & Review System</li>
+                        <li>Version Control</li>
+                        <li>Asset Library Sharing</li>
+                        <li>Role-Based Permissions</li>
+                        <li>Project Management</li>
+                        <li>Client Approval Workflow</li>
+                        <li>Branded Review Pages</li>
+                        <li>Team Performance Analytics</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Export & Integration -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">Export & Platform Integration</h2>
+            <p class="section-subtitle">Seamless export and integration with all major platforms</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📤</div>
+                    <h3 class="feature-title">Export Options</h3>
+                    <ul class="feature-list">
+                        <li>Multiple Format Support (MP4, MOV, AVI, WebM)</li>
+                        <li>Resolution Options (720p to 8K)</li>
+                        <li>Frame Rate Selection (24, 30, 60, 120fps)</li>
+                        <li>Bitrate Control</li>
+                        <li>Codec Selection (H.264, H.265, VP9, AV1)</li>
+                        <li>Audio Format Options</li>
+                        <li>GIF Export</li>
+                        <li>Image Sequence Export</li>
+                        <li>Transparent Background Support</li>
+                        <li>Lossless Export</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3 class="feature-title">Platform Integration</h3>
+                    <ul class="feature-list">
+                        <li>YouTube Direct Upload</li>
+                        <li>Facebook & Instagram Publishing</li>
+                        <li>TikTok Integration</li>
+                        <li>LinkedIn Video Posts</li>
+                        <li>Twitter Video Upload</li>
+                        <li>Vimeo Publishing</li>
+                        <li>Dropbox & Google Drive</li>
+                        <li>WordPress Integration</li>
+                        <li>Email Marketing Platforms</li>
+                        <li>Custom API Integration</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">☁️</div>
+                    <h3 class="feature-title">Cloud Storage & CDN</h3>
+                    <ul class="feature-list">
+                        <li>Unlimited Cloud Storage</li>
+                        <li>Global CDN Delivery</li>
+                        <li>Auto-Backup</li>
+                        <li>Version History</li>
+                        <li>Trash & Recovery</li>
+                        <li>Smart Organization</li>
+                        <li>Search & Filter</li>
+                        <li>Shared Team Library</li>
+                        <li>Asset Management</li>
+                        <li>Download Protection</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔌</div>
+                    <h3 class="feature-title">Third-Party Integrations</h3>
+                    <ul class="feature-list">
+                        <li>Adobe Creative Cloud</li>
+                        <li>Canva Import</li>
+                        <li>Figma to Video</li>
+                        <li>Stock Media Libraries (Shutterstock, Pexels)</li>
+                        <li>Music Licensing Platforms</li>
+                        <li>CRM Systems</li>
+                        <li>Marketing Automation Tools</li>
+                        <li>Analytics Platforms</li>
+                        <li>Project Management Software</li>
+                        <li>Custom Webhooks</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Compliance & Security -->
+    <section class="compliance-section">
+        <div class="container">
+            <h2 class="section-title">Security & Content Standards</h2>
+            <p class="section-subtitle">Enterprise-grade security and content compliance</p>
+            <div class="compliance-grid">
+                <div class="compliance-card">
+                    <h3>🔒 Security Standards</h3>
+                    <ul class="feature-list">
+                        <li>SOC 2 Type II Certified</li>
+                        <li>ISO 27001 Compliance</li>
+                        <li>GDPR Compliant</li>
+                        <li>End-to-End Encryption</li>
+                        <li>Secure Cloud Infrastructure</li>
+                    </ul>
+                </div>
+                <div class="compliance-card">
+                    <h3>📜 Content Rights</h3>
+                    <ul class="feature-list">
+                        <li>Copyright Protection</li>
+                        <li>Content ID Management</li>
+                        <li>Licensing Compliance</li>
+                        <li>Usage Rights Tracking</li>
+                        <li>DMCA Takedown Support</li>
+                    </ul>
+                </div>
+                <div class="compliance-card">
+                    <h3>✅ Quality Standards</h3>
+                    <ul class="feature-list">
+                        <li>Broadcast Quality (4K/8K)</li>
+                        <li>Color Space Management</li>
+                        <li>Audio Standards Compliance</li>
+                        <li>Platform Specification Adherence</li>
+                        <li>Accessibility Standards (WCAG)</li>
+                    </ul>
+                </div>
+                <div class="compliance-card">
+                    <h3>🛡️ Content Moderation</h3>
+                    <ul class="feature-list">
+                        <li>AI Content Filtering</li>
+                        <li>Profanity Detection</li>
+                        <li>Violence & Harmful Content Detection</li>
+                        <li>Age-Appropriate Content</li>
+                        <li>Brand Safety Tools</li>
+                    </ul>
+                </div>
+                <div class="compliance-card">
+                    <h3>🌍 Regional Compliance</h3>
+                    <ul class="feature-list">
+                        <li>FCC Broadcast Standards</li>
+                        <li>EU Media Regulations</li>
+                        <li>COPPA Compliance</li>
+                        <li>Regional Content Laws</li>
+                        <li>Advertising Standards</li>
+                    </ul>
+                </div>
+                <div class="compliance-card">
+                    <h3>🎯 Enterprise Features</h3>
+                    <ul class="feature-list">
+                        <li>Single Sign-On (SSO)</li>
+                        <li>Role-Based Access Control</li>
+                        <li>Audit Logs</li>
+                        <li>Custom Data Retention</li>
+                        <li>White-Label Options</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <h2>Create Stunning Videos with AI</h2>
+            <p>Join 100,000+ creators producing professional videos with CognexiaAI VideoGenX</p>
+            <a href="/contact" class="cta-button">Start Creating Today</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 CognexiaAI. All rights reserved.</p>
+            <p>Transforming Video Creation Through Artificial Intelligence</p>
+        </div>
+    </footer>
+</body>
+</html>

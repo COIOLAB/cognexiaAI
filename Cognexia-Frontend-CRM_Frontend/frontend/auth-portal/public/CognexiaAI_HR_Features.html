@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CognexiaAI HR - Enterprise Human Resource Management | CMMI Level 5</title>
+    <meta name="description" content="World-class HR platform with AI recruitment, quantum workforce planning, and Industry 5.0 capabilities. CMMI Level 5 certified.">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            background: #ffffff;
+        }
+        
+        /* Enterprise Header - Match Homepage Navbar */
+        .header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid #e5e7eb;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 7rem;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo img {
+            transition: opacity 0.3s;
+        }
+        
+        .logo:hover img {
+            opacity: 0.9;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+        
+        .nav-links a {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover {
+            color: #2563eb;
+        }
+        
+        .auth-buttons {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+        
+        .btn-signin {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border-radius: 0.375rem;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-signin:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .btn-getstarted {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: white;
+            background: linear-gradient(135deg, #2563eb, #06b6d4);
+            border: none;
+            cursor: pointer;
+            border-radius: 0.375rem;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+        
+        .btn-getstarted:hover {
+            background: linear-gradient(135deg, #1e40af, #0891b2);
+        }
+        
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #0f172a 0%, #7c3aed 100%);
+            color: white;
+            padding: 5rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #c084fc, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero .tagline {
+            font-size: 1.75rem;
+            color: #e9d5ff;
+            font-weight: 300;
+            margin-bottom: 1rem;
+            font-style: italic;
+        }
+        
+        .hero .description {
+            font-size: 1.25rem;
+            color: #cbd5e1;
+            max-width: 900px;
+            margin: 0 auto 3rem;
+            line-height: 1.8;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #c084fc;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #cbd5e1;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        /* Content Sections */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        .section {
+            padding: 4rem 0;
+        }
+        
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .section-subtitle {
+            font-size: 1.25rem;
+            color: #64748b;
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 3rem;
+        }
+        
+        /* Feature Grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .feature-card {
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            border-color: #a855f7;
+            box-shadow: 0 10px 30px rgba(168, 85, 247, 0.15);
+            transform: translateY(-5px);
+        }
+        
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            color: white;
+            margin-bottom: 1.5rem;
+        }
+        
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-list {
+            list-style: none;
+        }
+        
+        .feature-list li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            color: #475569;
+        }
+        
+        .feature-list li::before {
+            content: '✓';
+            color: #10b981;
+            font-weight: 900;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        
+        /* AI Features Section */
+        .ai-section {
+            background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+        }
+        
+        .ai-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .ai-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        .ai-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        /* Compliance Section */
+        .compliance-section {
+            background: #0f172a;
+            color: white;
+            padding: 4rem 2rem;
+        }
+        
+        .compliance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 3rem auto 0;
+        }
+        
+        .compliance-card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .compliance-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .compliance-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            color: white;
+            padding: 5rem 2rem;
+            text-align: center;
+        }
+        
+        .cta-title {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 1rem 2.5rem;
+            border-radius: 0.75rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: white;
+            color: #7c3aed;
+        }
+        
+        .btn-primary:hover {
+            background: #f1f5f9;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        /* Footer */
+        .footer {
+            background: #0f172a;
+            color: #94a3b8;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .footer-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-links a:hover {
+            color: #c084fc;
+        }
+        
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">
+                <img src="/cognexiaai-logo.png" alt="CognexiaAI Logo" style="height: 96px; width: auto;" />
+            </a>
+            
+            <div class="nav-links">
+                <a href="/products">Products</a>
+                <a href="/features">Features</a>
+                <a href="/pricing">Pricing</a>
+                <a href="/about">About</a>
+                <a href="/contact">Contact</a>
+            </div>
+            
+            <div class="auth-buttons">
+                <a href="/login" class="btn-signin">Sign In</a>
+                <a href="/register" class="btn-getstarted">Get Started</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>CognexiaAI HR</h1>
+            <p class="tagline">"Intelligence Meets Human Capital"</p>
+            <p class="description">
+                World-Class Human Resource Management Platform with AI-Powered Recruitment, Quantum Workforce Optimization, and Industry 5.0 People Analytics. CMMI Level 5 Certified.
+            </p>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">150+</div>
+                    <div class="stat-label">HR Features</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">100+</div>
+                    <div class="stat-label">API Endpoints</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">20+</div>
+                    <div class="stat-label">AI HR Services</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">99.9%</div>
+                    <div class="stat-label">Uptime SLA</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">50K+</div>
+                    <div class="stat-label">Employees Managed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">75+</div>
+                    <div class="stat-label">HR Integrations</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Core HR Features -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">Core HR Features</h2>
+            <p class="section-subtitle">
+                Comprehensive human capital management with 150+ features covering the entire employee lifecycle
+            </p>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">👤</div>
+                    <h3 class="feature-title">Employee Lifecycle Management</h3>
+                    <ul class="feature-list">
+                        <li>Complete Employee Database with Digital Twin Technology</li>
+                        <li>Onboarding & Offboarding Automation</li>
+                        <li>Employee Self-Service Portal</li>
+                        <li>Document Management & e-Signatures</li>
+                        <li>Career Path Planning & Development</li>
+                        <li>360° Employee Analytics</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3 class="feature-title">AI-Powered Recruitment</h3>
+                    <ul class="feature-list">
+                        <li>Intelligent Resume Parsing & Screening</li>
+                        <li>AI Candidate Matching (95% Accuracy)</li>
+                        <li>Video Interview Analysis with Emotion AI</li>
+                        <li>Automated Interview Scheduling</li>
+                        <li>Candidate Experience Management</li>
+                        <li>Talent Pipeline & Pool Management</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">💰</div>
+                    <h3 class="feature-title">Payroll & Compensation</h3>
+                    <ul class="feature-list">
+                        <li>Multi-Country Payroll Processing</li>
+                        <li>Automated Tax Calculations & Filing</li>
+                        <li>Benefits Administration</li>
+                        <li>Bonus & Incentive Management</li>
+                        <li>Equity & Stock Option Management</li>
+                        <li>Real-Time Payroll Analytics</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">Performance Management</h3>
+                    <ul class="feature-list">
+                        <li>OKR & Goal Tracking</li>
+                        <li>360-Degree Performance Reviews</li>
+                        <li>Continuous Feedback & 1-on-1s</li>
+                        <li>Performance Improvement Plans (PIPs)</li>
+                        <li>AI-Powered Performance Predictions</li>
+                        <li>Competency & Skills Matrix</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📚</div>
+                    <h3 class="feature-title">Learning & Development</h3>
+                    <ul class="feature-list">
+                        <li>Learning Management System (LMS)</li>
+                        <li>Skills Gap Analysis</li>
+                        <li>Personalized Learning Paths</li>
+                        <li>Certification Tracking</li>
+                        <li>Training ROI Analytics</li>
+                        <li>Succession Planning</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">⏰</div>
+                    <h3 class="feature-title">Time & Attendance</h3>
+                    <ul class="feature-list">
+                        <li>Biometric Time Tracking</li>
+                        <li>Shift Scheduling & Management</li>
+                        <li>Leave Management System</li>
+                        <li>Overtime & Holiday Tracking</li>
+                        <li>Geofencing & Mobile Clock-In</li>
+                        <li>Attendance Analytics & Reporting</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI & Advanced Features -->
+    <section class="section ai-section">
+        <div class="container">
+            <h2 class="section-title">AI & Quantum Intelligence</h2>
+            <p class="section-subtitle">
+                20+ specialized AI services with quantum workforce optimization and predictive analytics
+            </p>
+            
+            <div class="ai-grid">
+                <div class="ai-card">
+                    <div class="ai-icon">🧠</div>
+                    <h3 class="feature-title">Quantum Workforce Planning</h3>
+                    <ul class="feature-list">
+                        <li>AI Demand Forecasting</li>
+                        <li>Quantum Optimization Algorithms</li>
+                        <li>Predictive Turnover Analysis</li>
+                        <li>Strategic Headcount Planning</li>
+                        <li>Skills Supply & Demand Modeling</li>
+                        <li>Workforce Cost Optimization</li>
+                    </ul>
+                </div>
+                
+                <div class="ai-card">
+                    <div class="ai-icon">✨</div>
+                    <h3 class="feature-title">Talent Intelligence</h3>
+                    <ul class="feature-list">
+                        <li>AI Talent Insights & Recommendations</li>
+                        <li>Flight Risk Prediction (90% Accuracy)</li>
+                        <li>High Performer Identification</li>
+                        <li>Diversity & Inclusion Analytics</li>
+                        <li>Organizational Network Analysis</li>
+                        <li>Leadership Pipeline Intelligence</li>
+                    </ul>
+                </div>
+                
+                <div class="ai-card">
+                    <div class="ai-icon">💝</div>
+                    <h3 class="feature-title">Employee Experience AI</h3>
+                    <ul class="feature-list">
+                        <li>Sentiment Analysis & Pulse Surveys</li>
+                        <li>Employee Engagement Scoring</li>
+                        <li>Burnout Detection & Prevention</li>
+                        <li>Personalized Employee Journey</li>
+                        <li>Work-Life Balance Analytics</li>
+                        <li>Culture Fit Assessment</li>
+                    </ul>
+                </div>
+                
+                <div class="ai-card">
+                    <div class="ai-icon">🎮</div>
+                    <h3 class="feature-title">AR/VR Training</h3>
+                    <ul class="feature-list">
+                        <li>Immersive Virtual Training</li>
+                        <li>AR On-the-Job Training</li>
+                        <li>3D Skill Simulations</li>
+                        <li>Virtual Onboarding Experiences</li>
+                        <li>Remote Collaboration Spaces</li>
+                        <li>Gamified Learning Modules</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- People Analytics -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">People Analytics & Reporting</h2>
+            <p class="section-subtitle">
+                Real-time workforce intelligence with 100+ pre-built reports and custom dashboards
+            </p>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📈</div>
+                    <h3 class="feature-title">Advanced Analytics</h3>
+                    <ul class="feature-list">
+                        <li>Real-Time HR Dashboards</li>
+                        <li>Workforce Demographics Analysis</li>
+                        <li>Compensation Benchmarking</li>
+                        <li>Diversity Metrics & DEI Reporting</li>
+                        <li>Headcount & Cost Analytics</li>
+                        <li>Productivity Metrics</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎛️</div>
+                    <h3 class="feature-title">Executive HR Dashboards</h3>
+                    <ul class="feature-list">
+                        <li>CHRO Executive Dashboard</li>
+                        <li>Talent Acquisition Metrics</li>
+                        <li>Retention & Turnover Analytics</li>
+                        <li>Learning & Development ROI</li>
+                        <li>Employee Satisfaction Index</li>
+                        <li>Cost-per-Hire Analytics</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3 class="feature-title">Predictive Analytics</h3>
+                    <ul class="feature-list">
+                        <li>Attrition Prediction Models</li>
+                        <li>Performance Forecasting</li>
+                        <li>Skill Gap Predictions</li>
+                        <li>Recruitment Pipeline Health</li>
+                        <li>Training Needs Analysis</li>
+                        <li>Workforce Demand Forecasting</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Compliance Section -->
+    <section class="compliance-section">
+        <div class="container">
+            <h2 class="section-title" style="color: white;">Enterprise Security & Compliance</h2>
+            <p class="section-subtitle" style="color: #cbd5e1;">
+                World-class security with comprehensive HR compliance and data protection
+            </p>
+            
+            <div class="compliance-grid">
+                <div class="compliance-card">
+                    <div class="compliance-icon">🛡️</div>
+                    <h3 class="compliance-title">CMMI Level 5</h3>
+                    <p>Optimizing HR process excellence</p>
+                </div>
+                <div class="compliance-card">
+                    <div class="compliance-icon">🔐</div>
+                    <h3 class="compliance-title">ISO 27001</h3>
+                    <p>Information security certified</p>
+                </div>
+                <div class="compliance-card">
+                    <div class="compliance-icon">✓</div>
+                    <h3 class="compliance-title">SOC 2 Type II</h3>
+                    <p>HR data security audited</p>
+                </div>
+                <div class="compliance-card">
+                    <div class="compliance-icon">🌍</div>
+                    <h3 class="compliance-title">GDPR Compliant</h3>
+                    <p>Full employee data protection</p>
+                </div>
+                <div class="compliance-card">
+                    <div class="compliance-icon">📋</div>
+                    <h3 class="compliance-title">Labor Law Compliance</h3>
+                    <p>100+ country labor regulations</p>
+                </div>
+                <div class="compliance-card">
+                    <div class="compliance-icon">🔒</div>
+                    <h3 class="compliance-title">Data Encryption</h3>
+                    <p>Military-grade HR data security</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Integration -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">HR Integrations & Connectivity</h2>
+            <p class="section-subtitle">
+                75+ pre-built integrations with leading HR, payroll, and business systems
+            </p>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3 class="feature-title">Payroll Systems</h3>
+                    <ul class="feature-list">
+                        <li>ADP Integration</li>
+                        <li>Workday HCM</li>
+                        <li>SAP SuccessFactors</li>
+                        <li>Oracle HCM Cloud</li>
+                        <li>Paychex & Gusto</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔌</div>
+                    <h3 class="feature-title">Productivity Tools</h3>
+                    <ul class="feature-list">
+                        <li>Microsoft 365 Integration</li>
+                        <li>Google Workspace</li>
+                        <li>Slack & Teams</li>
+                        <li>Zoom & Webex</li>
+                        <li>Calendar Sync</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📦</div>
+                    <h3 class="feature-title">Recruitment Platforms</h3>
+                    <ul class="feature-list">
+                        <li>LinkedIn Talent Hub</li>
+                        <li>Indeed Integration</li>
+                        <li>Greenhouse & Lever</li>
+                        <li>Job Board Posting</li>
+                        <li>Applicant Tracking Sync</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+        <div class="container">
+            <h2 class="cta-title">Transform Your Workforce Today</h2>
+            <p style="font-size: 1.25rem; margin-bottom: 1rem;">
+                Join leading enterprises using CognexiaAI HR
+            </p>
+            <p style="font-size: 1rem; opacity: 0.9;">
+                14-day Enterprise Trial • No Credit Card Required • 24/7 Support
+            </p>
+            <div class="cta-buttons">
+                <a href="mailto:sales@cognexiaai.com" class="btn btn-primary">Contact Sales</a>
+                <a href="tel:+919167422630" class="btn btn-secondary">+91-9167422630</a>
+                <a href="http://localhost:3010/register" class="btn btn-secondary">Start Free Trial</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="mailto:sales@cognexiaai.com">sales@cognexiaai.com</a>
+            <a href="mailto:support@cognexiaai.com">support@cognexiaai.com</a>
+            <a href="tel:+919167422630">+91-9167422630</a>
+            <a href="http://www.cognexiaai.com/demo">www.cognexiaai.com/demo</a>
+        </div>
+        <p>&copy; 2026 CognexiaAI. All rights reserved. | CMMI Level 5 Certified | ISO 27001 | SOC 2 Type II</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,28 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'manufacturing-api'
+    static_configs:
+      - targets: ['manufacturing-api:3002']
+
+  - job_name: 'edge-processor'
+    static_configs:
+      - targets: ['edge-processor:3003']
+
+  - job_name: 'digital-twin'
+    static_configs:
+      - targets: ['digital-twin:3004']
+
+  - job_name: 'quantum'
+    static_configs:
+      - targets: ['quantum:5000']
+
+  - job_name: 'blockchain'
+    static_configs:
+      - targets: ['blockchain:8545']
+
+  - job_name: 'mosquitto'
+    static_configs:
+      - targets: ['mosquitto:9001']

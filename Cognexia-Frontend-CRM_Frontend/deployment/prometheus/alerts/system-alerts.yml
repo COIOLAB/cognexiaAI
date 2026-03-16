@@ -1,0 +1,345 @@
+# ===============================================================================
+# EzAi-MFGNINJA System Health & Performance Alert Rules
+# AI-Powered Manufacturing Intelligence Platform
+# 
+# These alerts monitor system health, performance, and availability
+# for government-grade reliability and SLA compliance
+# ===============================================================================
+
+groups:
+  - name: system.critical
+    interval: 30s
+    rules:
+      # Critical System Issues
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: availability
+          sla_impact: "high"
+        annotations:
+          summary: "CRITICAL: Service {{ $labels.instance }} is down"
+          description: "Service {{ $labels.job }} on {{ $labels.instance }} has been down for more than 1 minute"
+          runbook_url: "https://docs.ezai-mfgninja.com/ops/service-recovery"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.9
+        for: 2m
+        labels:
+          severity: critical
+          category: performance
+          sla_impact: "high"
+        annotations:
+          summary: "CRITICAL: High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 90% on {{ $labels.instance }}"
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg(irate(node_cpu_seconds_total{mode="idle"}[5m])) by (instance) * 100) > 90
+        for: 5m
+        labels:
+          severity: critical
+          category: performance
+          sla_impact: "high"
+        annotations:
+          summary: "CRITICAL: High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 90% for more than 5 minutes on {{ $labels.instance }}"
+
+      - alert: DiskSpaceCritical
+        expr: (1 - node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"}) > 0.95
+        for: 1m
+        labels:
+          severity: critical
+          category: storage
+          sla_impact: "high"
+        annotations:
+          summary: "CRITICAL: Disk space critical on {{ $labels.instance }}"
+          description: "Disk usage is above 95% on {{ $labels.instance }} mount {{ $labels.mountpoint }}"
+
+      - alert: DatabaseConnectionPoolExhausted
+        expr: database_connection_pool_active / database_connection_pool_max > 0.95
+        for: 2m
+        labels:
+          severity: critical
+          category: database
+          sla_impact: "high"
+        annotations:
+          summary: "CRITICAL: Database connection pool exhausted"
+          description: "Database connection pool is 95% exhausted on {{ $labels.instance }}"
+
+  - name: system.high
+    interval: 60s
+    rules:
+      # High Priority System Issues
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: high
+          category: availability
+          sla_impact: "medium"
+        annotations:
+          summary: "HIGH: High error rate on {{ $labels.instance }}"
+          description: "Error rate is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1.0
+        for: 5m
+        labels:
+          severity: high
+          category: performance
+          sla_impact: "medium"
+        annotations:
+          summary: "HIGH: High latency on {{ $labels.instance }}"
+          description: "95th percentile latency is {{ $value }}s on {{ $labels.instance }}"
+
+      - alert: MemoryPressure
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.8
+        for: 10m
+        labels:
+          severity: high
+          category: performance
+          sla_impact: "medium"
+        annotations:
+          summary: "HIGH: Memory pressure on {{ $labels.instance }}"
+          description: "Memory usage is above 80% for more than 10 minutes on {{ $labels.instance }}"
+
+      - alert: DiskSpaceWarning
+        expr: (1 - node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"}) > 0.85
+        for: 5m
+        labels:
+          severity: high
+          category: storage
+          sla_impact: "low"
+        annotations:
+          summary: "HIGH: Disk space warning on {{ $labels.instance }}"
+          description: "Disk usage is above 85% on {{ $labels.instance }} mount {{ $labels.mountpoint }}"
+
+      - alert: ContainerHighRestartRate
+        expr: rate(kube_pod_container_status_restarts_total[15m]) > 0
+        for: 5m
+        labels:
+          severity: high
+          category: availability
+          sla_impact: "medium"
+        annotations:
+          summary: "HIGH: Container restart rate high"
+          description: "Container {{ $labels.container }} in pod {{ $labels.pod }} is restarting frequently"
+
+  - name: manufacturing.performance
+    interval: 30s
+    rules:
+      # Manufacturing-specific Performance Alerts
+      - alert: ProductionLineDown
+        expr: production_line_status{status="down"} > 0
+        for: 30s
+        labels:
+          severity: critical
+          category: manufacturing
+          business_impact: "critical"
+        annotations:
+          summary: "CRITICAL: Production line {{ $labels.line_id }} is down"
+          description: "Production line {{ $labels.line_id }} has been down for {{ $labels.downtime_duration }}"
+
+      - alert: QualityControlThresholdExceeded
+        expr: quality_control_defect_rate > 0.05
+        for: 2m
+        labels:
+          severity: high
+          category: manufacturing
+          business_impact: "high"
+        annotations:
+          summary: "HIGH: Quality control threshold exceeded"
+          description: "Defect rate is {{ $value | humanizePercentage }} on line {{ $labels.line_id }}"
+
+      - alert: InventoryLevelCritical
+        expr: inventory_level / inventory_minimum_threshold < 1.1
+        for: 5m
+        labels:
+          severity: high
+          category: manufacturing
+          business_impact: "medium"
+        annotations:
+          summary: "HIGH: Inventory level critical for {{ $labels.item_id }}"
+          description: "Inventory level is {{ $value }} units, below minimum threshold"
+
+      - alert: EquipmentMaintenanceDue
+        expr: equipment_maintenance_days_overdue > 0
+        for: 1h
+        labels:
+          severity: medium
+          category: manufacturing
+          business_impact: "medium"
+        annotations:
+          summary: "MEDIUM: Equipment maintenance overdue"
+          description: "Equipment {{ $labels.equipment_id }} maintenance is {{ $value }} days overdue"
+
+      - alert: OEEBelowThreshold
+        expr: oee_overall_equipment_effectiveness < 0.75
+        for: 10m
+        labels:
+          severity: medium
+          category: manufacturing
+          business_impact: "medium"
+        annotations:
+          summary: "MEDIUM: OEE below threshold"
+          description: "Overall Equipment Effectiveness is {{ $value | humanizePercentage }} on line {{ $labels.line_id }}"
+
+  - name: database.performance
+    interval: 60s
+    rules:
+      # Database Performance Alerts
+      - alert: DatabaseSlowQueries
+        expr: avg(mysql_global_status_slow_queries) > 10
+        for: 5m
+        labels:
+          severity: high
+          category: database
+          sla_impact: "medium"
+        annotations:
+          summary: "HIGH: Database slow queries detected"
+          description: "{{ $value }} slow queries detected on {{ $labels.instance }}"
+
+      - alert: DatabaseReplicationLag
+        expr: mysql_slave_lag_seconds > 60
+        for: 2m
+        labels:
+          severity: high
+          category: database
+          sla_impact: "high"
+        annotations:
+          summary: "HIGH: Database replication lag"
+          description: "Replication lag is {{ $value }}s on {{ $labels.instance }}"
+
+      - alert: DatabaseConnectionsHigh
+        expr: mysql_global_status_threads_connected / mysql_global_variables_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: high
+          category: database
+          sla_impact: "medium"
+        annotations:
+          summary: "HIGH: Database connections high"
+          description: "Database connections are {{ $value | humanizePercentage }} of max on {{ $labels.instance }}"
+
+  - name: network.performance
+    interval: 30s
+    rules:
+      # Network Performance Alerts
+      - alert: HighNetworkTraffic
+        expr: rate(node_network_transmit_bytes_total[5m]) + rate(node_network_receive_bytes_total[5m]) > 100000000  # 100MB/s
+        for: 5m
+        labels:
+          severity: medium
+          category: network
+          sla_impact: "low"
+        annotations:
+          summary: "MEDIUM: High network traffic on {{ $labels.instance }}"
+          description: "Network traffic is {{ $value | humanizeBytes }}/s on {{ $labels.device }}"
+
+      - alert: NetworkPacketLoss
+        expr: rate(node_network_transmit_errs_total[5m]) + rate(node_network_receive_errs_total[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: high
+          category: network
+          sla_impact: "medium"
+        annotations:
+          summary: "HIGH: Network packet loss detected"
+          description: "Network packet loss detected on {{ $labels.device }} at {{ $labels.instance }}"
+
+      - alert: NetworkLatencyHigh
+        expr: probe_duration_seconds{job="blackbox"} > 0.5
+        for: 5m
+        labels:
+          severity: high
+          category: network
+          sla_impact: "medium"
+        annotations:
+          summary: "HIGH: Network latency high"
+          description: "Network latency is {{ $value }}s to {{ $labels.target }}"
+
+  - name: application.performance
+    interval: 30s
+    rules:
+      # Application-specific Performance Alerts
+      - alert: ApplicationResponseTimeHigh
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=~"ezai-.*"}[5m])) > 2.0
+        for: 5m
+        labels:
+          severity: high
+          category: performance
+          sla_impact: "high"
+        annotations:
+          summary: "HIGH: Application response time high"
+          description: "95th percentile response time is {{ $value }}s for {{ $labels.job }}"
+
+      - alert: ApplicationMemoryLeak
+        expr: increase(process_resident_memory_bytes[1h]) > 100000000  # 100MB increase per hour
+        for: 4h
+        labels:
+          severity: medium
+          category: performance
+          sla_impact: "medium"
+        annotations:
+          summary: "MEDIUM: Potential memory leak in {{ $labels.job }}"
+          description: "Memory usage increased by {{ $value | humanizeBytes }} in the last hour"
+
+      - alert: ThreadPoolExhaustion
+        expr: thread_pool_active_threads / thread_pool_max_threads > 0.9
+        for: 5m
+        labels:
+          severity: high
+          category: performance
+          sla_impact: "high"
+        annotations:
+          summary: "HIGH: Thread pool exhaustion"
+          description: "Thread pool is {{ $value | humanizePercentage }} exhausted on {{ $labels.instance }}"
+
+      - alert: GarbageCollectionTimeHigh
+        expr: rate(jvm_gc_collection_seconds_sum[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: medium
+          category: performance
+          sla_impact: "low"
+        annotations:
+          summary: "MEDIUM: Garbage collection time high"
+          description: "GC time is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+
+  - name: business.critical
+    interval: 60s
+    rules:
+      # Business-Critical Alerts
+      - alert: RevenueImpactingOutage
+        expr: sum(rate(http_requests_total{job="sales-marketing-service",status=~"5.."}[5m])) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          category: business
+          business_impact: "critical"
+        annotations:
+          summary: "CRITICAL: Revenue-impacting outage detected"
+          description: "High error rate in sales system may impact revenue generation"
+
+      - alert: CustomerFacingServiceDown
+        expr: probe_success{job="customer-health-check"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: business
+          business_impact: "critical"
+        annotations:
+          summary: "CRITICAL: Customer-facing service unavailable"
+          description: "Customer-facing service {{ $labels.target }} is unavailable"
+
+      - alert: PaymentProcessingFailure
+        expr: rate(payment_processing_failures_total[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: critical
+          category: business
+          business_impact: "critical"
+        annotations:
+          summary: "CRITICAL: Payment processing failures detected"
+          description: "{{ $value | humanizePercentage }} payment processing failure rate"

@@ -1,0 +1,10 @@
+{{title}}
+
+{{message}}
+
+{{#if actionUrl}}
+{{actionText}}: {{actionUrl}}
+{{/if}}
+
+Best regards,
+Industry 5.0 ERP Team

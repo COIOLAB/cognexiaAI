@@ -1,0 +1,476 @@
+# Doc vs Actual Routes
+Actual controllers scanned: 42
+Doc routes: 178
+Actual routes: 488
+Common: 93
+Missing (in code, present in doc): 85
+Extra (in code, not in doc): 380
+
+## Missing (implement required)
+- GET /api/v1/activity/:id
+- GET /api/v1/activity
+- POST /api/v1/activity
+- GET /api/v1/arvr/analytics
+- GET /api/v1/arvr/sessions/:id
+- POST /api/v1/arvr/sessions/:sessionId/interactions
+- POST /api/v1/arvr/sessions
+- GET /api/v1/arvr/showrooms/:id
+- POST /api/v1/auth/forgot-password
+- POST /api/v1/auth/reset-password
+- POST /api/v1/auth/verify-email
+- GET /api/v1/bundles/:id
+- GET /api/v1/bundles
+- POST /api/v1/bundles
+- GET /api/v1/call-analytics
+- GET /api/v1/call-queues
+- POST /api/v1/call-queues
+- GET /api/v1/catalogs/:catalogId/analytics
+- GET /api/v1/catalogs/:catalogId/items
+- POST /api/v1/catalogs/:catalogId/items
+- POST /api/v1/catalogs/:catalogId/publish
+- POST /api/v1/catalogs/:catalogId/share
+- GET /api/v1/categories/:id
+- GET /api/v1/categories
+- POST /api/v1/categories
+- POST /api/v1/contracts/:contractId/approve
+- POST /api/v1/contracts/:contractId/clauses
+- POST /api/v1/contracts/:contractId/renew
+- POST /api/v1/contracts/:contractId/sign
+- GET /api/v1/contracts/:contractId/version-history
+- GET /api/v1/crm/customers/:id/activities
+- DELETE /api/v1/crm/customers/:id
+- GET /api/v1/crm/customers/:id
+- PUT /api/v1/crm/customers/:id
+- POST /api/v1/crm/customers/bulk
+- POST /api/v1/crm/customers/search
+- POST /api/v1/crm/customers
+- GET /api/v1/crm/marketing/campaigns/:id/analytics
+- POST /api/v1/crm/marketing/campaigns/:id/send
+- GET /api/v1/crm/sales/opportunities/:id
+- PUT /api/v1/crm/sales/opportunities/:id
+- GET /api/v1/crm/sales/pipeline
+- GET /api/v1/dashboards/:id
+- GET /api/v1/dashboards
+- POST /api/v1/dashboards
+- GET /api/v1/discounts/:id
+- GET /api/v1/discounts
+- POST /api/v1/discounts
+- POST /api/v1/documents
+- GET /api/v1/email/templates
+- POST /api/v1/email/templates
+- POST /api/v1/forms/:id/submissions
+- GET /api/v1/holographic/sessions/:id
+- PUT /api/v1/holographic/sessions/:id
+- GET /api/v1/holographic/sessions/:sessionId/analytics
+- POST /api/v1/holographic/sessions/:sessionId/gestures
+- POST /api/v1/holographic/sessions
+- POST /api/v1/holographic/templates
+- GET /api/v1/inventory/audit-logs
+- GET /api/v1/inventory/items/:id
+- PUT /api/v1/inventory/items/:id
+- POST /api/v1/inventory/items/:itemId/locations
+- POST /api/v1/inventory/items/:itemId/movements
+- GET /api/v1/inventory/items
+- POST /api/v1/inventory/items
+- POST /api/v1/inventory/replenishment-orders
+- POST /api/v1/migration/import
+- GET /api/v1/migration/status
+- POST /api/v1/mobile/notifications/send
+- POST /api/v1/mobile/sync
+- PUT /api/v1/notifications/:id/read
+- POST /api/v1/notifications/send
+- GET /api/v1/notifications
+- GET /api/v1/onboarding/status
+- GET /api/v1/portal/config
+- PUT /api/v1/portal/config
+- POST /api/v1/reporting/generate
+- POST /api/v1/reporting/schedule
+- POST /api/v1/sequences/:id/enroll
+- POST /api/v1/stripe/create-payment-intent
+- POST /api/v1/stripe/create-subscription
+- POST /api/v1/subscription-plans
+- GET /api/v1/throttling/status
+- POST /api/v1/usage/track
+- GET /api/v1/usage
+
+## Extra (consider documenting)
+- POST /api/v1/activity/log  (from activity.controller.ts)
+- GET /api/v1/activity/notes/:entityType/:entityId  (from activity.controller.ts)
+- POST /api/v1/activity/notes/:id/pin  (from activity.controller.ts)
+- DELETE /api/v1/activity/notes/:id  (from activity.controller.ts)
+- PUT /api/v1/activity/notes/:id  (from activity.controller.ts)
+- POST /api/v1/activity/notes  (from activity.controller.ts)
+- DELETE /api/v1/activity/tasks/:id  (from activity.controller.ts)
+- GET /api/v1/activity/tasks/:id  (from activity.controller.ts)
+- PUT /api/v1/activity/tasks/:id  (from activity.controller.ts)
+- GET /api/v1/activity/tasks/my  (from activity.controller.ts)
+- GET /api/v1/activity/tasks/overdue  (from activity.controller.ts)
+- GET /api/v1/activity/tasks/stats  (from activity.controller.ts)
+- GET /api/v1/activity/tasks  (from activity.controller.ts)
+- POST /api/v1/activity/tasks  (from activity.controller.ts)
+- GET /api/v1/activity/timeline/:entityType/:entityId  (from activity.controller.ts)
+- GET /api/v1/api/crm/support/knowledge-base/search  (from support.controller.ts)
+- POST /api/v1/api/crm/support/sla/check-compliance  (from support.controller.ts)
+- GET /api/v1/api/crm/support/statistics  (from support.controller.ts)
+- POST /api/v1/api/crm/support/tickets/:id/assign  (from support.controller.ts)
+- POST /api/v1/api/crm/support/tickets/:id/auto-assign  (from support.controller.ts)
+- POST /api/v1/api/crm/support/tickets/:id/escalate  (from support.controller.ts)
+- POST /api/v1/api/crm/support/tickets/:id/response  (from support.controller.ts)
+- PUT /api/v1/api/crm/support/tickets/:id  (from support.controller.ts)
+- GET /api/v1/arvr/analytics/:showroomId  (from arvr-sales.controller.ts)
+- PUT /api/v1/arvr/configurator/:id/customize  (from arvr-sales.controller.ts)
+- POST /api/v1/arvr/configurator/initialize  (from arvr-sales.controller.ts)
+- GET /api/v1/arvr/meetings/:id  (from arvr-sales.controller.ts)
+- POST /api/v1/arvr/meetings  (from arvr-sales.controller.ts)
+- POST /api/v1/arvr/product-demos  (from arvr-sales.controller.ts)
+- GET /api/v1/audit-logs/entities/:entityType/:entityId  (from audit-log.controller.ts)
+- GET /api/v1/audit-logs/export  (from audit-log.controller.ts)
+- GET /api/v1/audit-logs/organizations/:organizationId  (from audit-log.controller.ts)
+- GET /api/v1/audit-logs/stats  (from audit-log.controller.ts)
+- GET /api/v1/audit-logs/users/:userId  (from audit-log.controller.ts)
+- POST /api/v1/auth/logout  (from auth.controller.ts)
+- GET /api/v1/auth/me  (from auth.controller.ts)
+- POST /api/v1/auth/password-reset/confirm  (from auth.controller.ts)
+- POST /api/v1/auth/password-reset/request  (from auth.controller.ts)
+- POST /api/v1/auth/refresh  (from auth.controller.ts)
+- POST /api/v1/auth/verify-email/confirm  (from auth.controller.ts)
+- POST /api/v1/auth/verify-email/send  (from auth.controller.ts)
+- GET /api/v1/billing-transactions/organization/:organizationId  (from billing-transaction.controller.ts)
+- GET /api/v1/billing-transactions/reports/export-csv  (from billing-transaction.controller.ts)
+- GET /api/v1/billing-transactions/reports/failed  (from billing-transaction.controller.ts)
+- GET /api/v1/billing-transactions/reports/monthly-revenue  (from billing-transaction.controller.ts)
+- GET /api/v1/billing-transactions/reports/refunds  (from billing-transaction.controller.ts)
+- GET /api/v1/billing-transactions/reports/stats  (from billing-transaction.controller.ts)
+- GET /api/v1/billing-transactions/reports/upcoming-billing  (from billing-transaction.controller.ts)
+- DELETE /api/v1/calls/:id/agents/:agentId  (from telephony.controller.ts)
+- POST /api/v1/calls/:id/agents  (from telephony.controller.ts)
+- POST /api/v1/calls/:id/answer  (from telephony.controller.ts)
+- POST /api/v1/calls/:id/hangup  (from telephony.controller.ts)
+- POST /api/v1/calls/:id/hold  (from telephony.controller.ts)
+- POST /api/v1/calls/:id/missed  (from telephony.controller.ts)
+- POST /api/v1/calls/:id/resume  (from telephony.controller.ts)
+- GET /api/v1/calls/:id/statistics  (from telephony.controller.ts)
+- POST /api/v1/calls/:id/transfer  (from telephony.controller.ts)
+- DELETE /api/v1/calls/:id  (from telephony.controller.ts)
+- DELETE /api/v1/calls/:id  (from telephony.controller.ts)
+- PUT /api/v1/calls/:id  (from telephony.controller.ts)
+- PUT /api/v1/calls/:id  (from telephony.controller.ts)
+- GET /api/v1/calls/agent/:agentId/performance  (from telephony.controller.ts)
+- GET /api/v1/calls/agent/:agentId  (from telephony.controller.ts)
+- GET /api/v1/calls/available  (from telephony.controller.ts)
+- GET /api/v1/calls/customer/:customerId  (from telephony.controller.ts)
+- GET /api/v1/calls/missed  (from telephony.controller.ts)
+- GET /api/v1/calls/recent  (from telephony.controller.ts)
+- GET /api/v1/calls/statistics  (from telephony.controller.ts)
+- GET /api/v1/calls/trends  (from telephony.controller.ts)
+- POST /api/v1/catalogs/:id/duplicate  (from catalog-management.controller.ts)
+- DELETE /api/v1/catalogs/:id/products/:productId  (from catalog-management.controller.ts)
+- POST /api/v1/catalogs/:id/products  (from catalog-management.controller.ts)
+- POST /api/v1/catalogs/:id/publish  (from catalog-management.controller.ts)
+- GET /api/v1/catalogs/:id/versions  (from catalog-management.controller.ts)
+- POST /api/v1/contracts/:id/amendments  (from contract-management.controller.ts)
+- POST /api/v1/contracts/:id/approve  (from contract-management.controller.ts)
+- GET /api/v1/contracts/:id/e-signature  (from contract-management.controller.ts)
+- POST /api/v1/contracts/:id/renewals  (from contract-management.controller.ts)
+- GET /api/v1/contracts/templates  (from contract-management.controller.ts)
+- GET /api/v1/crm/ai/campaigns/roi-analysis  (from crm-ai-integration.controller.ts)
+- POST /api/v1/crm/ai/customers/:id/churn-prevention  (from crm-ai-integration.controller.ts)
+- POST /api/v1/crm/ai/customers/:id/generate-campaign  (from crm-ai-integration.controller.ts)
+- GET /api/v1/crm/ai/customers/:id/marketing-insights  (from crm-ai-integration.controller.ts)
+- POST /api/v1/crm/ai/leads/:id/create-nurturing-sequence  (from crm-ai-integration.controller.ts)
+- GET /api/v1/crm/ai/leads/nurturing-analytics  (from crm-ai-integration.controller.ts)
+- POST /api/v1/crm/ai/opportunities/:id/generate-content  (from crm-ai-integration.controller.ts)
+- GET /api/v1/crm/analytics/overview  (from crm.controller.ts)
+- GET /api/v1/crm/customers/:id/contacts  (from customer.controller.ts)
+- POST /api/v1/crm/customers/:id/contacts  (from customer.controller.ts)
+- GET /api/v1/crm/customers/:id/health  (from customer.controller.ts)
+- GET /api/v1/crm/customers/:id/interactions  (from crm.controller.ts)
+- POST /api/v1/crm/customers/:id/interactions  (from customer.controller.ts)
+- GET /api/v1/crm/customers/:id/timeline  (from customer.controller.ts)
+- GET /api/v1/crm/customers/analytics/churn-risk  (from customer.controller.ts)
+- GET /api/v1/crm/customers/analytics/lifetime-value  (from customer.controller.ts)
+- PUT /api/v1/crm/customers/contacts/:contactId  (from customer.controller.ts)
+- POST /api/v1/crm/customers/segment  (from customer.controller.ts)
+- GET /api/v1/crm/leads  (from crm.controller.ts)
+- POST /api/v1/crm/leads  (from crm.controller.ts)
+- GET /api/v1/crm/marketing/ai/campaign-prediction/:campaignId  (from marketing.controller.ts)
+- GET /api/v1/crm/marketing/ai/customer-clv/:customerId  (from marketing.controller.ts)
+- GET /api/v1/crm/marketing/ai/recommendations/:customerId  (from marketing.controller.ts)
+- POST /api/v1/crm/marketing/analytics  (from marketing.controller.ts)
+- POST /api/v1/crm/marketing/campaigns/:id/activate  (from marketing.controller.ts)
+- GET /api/v1/crm/marketing/campaigns/:id/roi  (from marketing.controller.ts)
+- DELETE /api/v1/crm/marketing/campaigns/:id  (from marketing.controller.ts)
+- PUT /api/v1/crm/marketing/campaigns/:id  (from marketing.controller.ts)
+- POST /api/v1/crm/marketing/campaigns/send-email  (from marketing.controller.ts)
+- GET /api/v1/crm/marketing/dashboard/overview  (from marketing.controller.ts)
+- GET /api/v1/crm/marketing/reports/campaign-performance  (from marketing.controller.ts)
+- POST /api/v1/crm/marketing/segments/:id/recalculate  (from marketing.controller.ts)
+- POST /api/v1/crm/marketing/segments  (from marketing.controller.ts)
+- GET /api/v1/crm/marketing/templates/:id  (from marketing.controller.ts)
+- GET /api/v1/crm/marketing/templates  (from marketing.controller.ts)
+- POST /api/v1/crm/marketing/templates  (from marketing.controller.ts)
+- GET /api/v1/crm/pipeline  (from crm.controller.ts)
+- GET /api/v1/crm/sales/forecasting  (from sales.controller.ts)
+- GET /api/v1/crm/sales/metrics  (from sales.controller.ts)
+- PUT /api/v1/crm/sales/opportunities/:id/stage  (from sales.controller.ts)
+- GET /api/v1/dashboards/admin/growth-statistics  (from dashboard.controller.ts)
+- GET /api/v1/dashboards/admin/organization-health/:organizationId  (from dashboard.controller.ts)
+- GET /api/v1/dashboards/admin/organizations-at-risk  (from dashboard.controller.ts)
+- GET /api/v1/dashboards/admin/plan-distribution  (from dashboard.controller.ts)
+- GET /api/v1/dashboards/admin/platform-metrics  (from dashboard.controller.ts)
+- GET /api/v1/dashboards/admin/revenue-metrics  (from dashboard.controller.ts)
+- GET /api/v1/dashboards/admin/system-health  (from dashboard.controller.ts)
+- GET /api/v1/dashboards/admin/top-organizations  (from dashboard.controller.ts)
+- GET /api/v1/dashboards/admin/usage-metrics  (from dashboard.controller.ts)
+- DELETE /api/v1/dashboards/custom/:id  (from dashboard.controller.ts)
+- GET /api/v1/dashboards/custom/:id  (from dashboard.controller.ts)
+- PUT /api/v1/dashboards/custom/:id  (from dashboard.controller.ts)
+- GET /api/v1/dashboards/custom  (from dashboard.controller.ts)
+- POST /api/v1/dashboards/custom  (from dashboard.controller.ts)
+- GET /api/v1/dashboards/user/metrics  (from dashboard.controller.ts)
+- GET /api/v1/dashboards/user/performance-metrics  (from dashboard.controller.ts)
+- GET /api/v1/dashboards/user/recent-activities  (from dashboard.controller.ts)
+- GET /api/v1/dashboards/user/sales-funnel  (from dashboard.controller.ts)
+- GET /api/v1/documents/:id/download  (from document.controller.ts)
+- POST /api/v1/documents/:id/share  (from document.controller.ts)
+- POST /api/v1/documents/:id/unshare  (from document.controller.ts)
+- POST /api/v1/documents/:id/versions/:versionNumber/restore  (from document.controller.ts)
+- GET /api/v1/documents/:id/versions  (from document.controller.ts)
+- POST /api/v1/documents/:id/versions  (from document.controller.ts)
+- PUT /api/v1/documents/:id  (from document.controller.ts)
+- POST /api/v1/documents/contracts/:id/activate  (from document.controller.ts)
+- POST /api/v1/documents/contracts/:id/approve  (from document.controller.ts)
+- POST /api/v1/documents/contracts/:id/renew  (from document.controller.ts)
+- POST /api/v1/documents/contracts/:id/terminate  (from document.controller.ts)
+- DELETE /api/v1/documents/contracts/:id  (from document.controller.ts)
+- GET /api/v1/documents/contracts/:id  (from document.controller.ts)
+- PUT /api/v1/documents/contracts/:id  (from document.controller.ts)
+- GET /api/v1/documents/contracts/customer/:customerId  (from document.controller.ts)
+- GET /api/v1/documents/contracts/expiring  (from document.controller.ts)
+- GET /api/v1/documents/contracts/metrics  (from document.controller.ts)
+- GET /api/v1/documents/contracts  (from document.controller.ts)
+- POST /api/v1/documents/contracts  (from document.controller.ts)
+- GET /api/v1/documents/entity/:entityType/:entityId  (from document.controller.ts)
+- POST /api/v1/documents/signatures/:id/decline  (from document.controller.ts)
+- POST /api/v1/documents/signatures/:id/remind  (from document.controller.ts)
+- POST /api/v1/documents/signatures/:id/sign  (from document.controller.ts)
+- GET /api/v1/documents/signatures/:id/view  (from document.controller.ts)
+- GET /api/v1/documents/signatures/:id  (from document.controller.ts)
+- POST /api/v1/documents/signatures/request  (from document.controller.ts)
+- POST /api/v1/documents/upload  (from document.controller.ts)
+- POST /api/v1/email/campaigns/:id/send  (from email.controller.ts)
+- DELETE /api/v1/email/campaigns/:id  (from email.controller.ts)
+- GET /api/v1/email/campaigns/:id  (from email.controller.ts)
+- PUT /api/v1/email/campaigns/:id  (from email.controller.ts)
+- GET /api/v1/email/campaigns  (from email.controller.ts)
+- POST /api/v1/email/campaigns  (from email.controller.ts)
+- GET /api/v1/email/track/click/:token  (from email.controller.ts)
+- GET /api/v1/email/track/open/:token  (from email.controller.ts)
+- GET /api/v1/forms/:id/analytics  (from form.controller.ts)
+- POST /api/v1/forms/:id/duplicate  (from form.controller.ts)
+- GET /api/v1/forms/:id/embed-code  (from form.controller.ts)
+- GET /api/v1/forms/:id/embed  (from form.controller.ts)
+- POST /api/v1/forms/:id/pause  (from form.controller.ts)
+- POST /api/v1/forms/:id/publish  (from form.controller.ts)
+- GET /api/v1/forms/:id/submissions  (from form.controller.ts)
+- POST /api/v1/forms/:id/submit  (from form.controller.ts)
+- GET /api/v1/forms/:id/view  (from form.controller.ts)
+- DELETE /api/v1/forms/:id  (from form.controller.ts)
+- PUT /api/v1/forms/:id  (from form.controller.ts)
+- GET /api/v1/holographic/avatars/:customerId  (from holographic-experience.controller.ts)
+- POST /api/v1/holographic/multi-user/sync  (from holographic-experience.controller.ts)
+- POST /api/v1/holographic/projections  (from holographic-experience.controller.ts)
+- PUT /api/v1/holographic/sessions/:id/interactions  (from holographic-experience.controller.ts)
+- GET /api/v1/holographic/sessions/:sessionId  (from holographic-experience.controller.ts)
+- POST /api/v1/holographic/spatial-computing/start  (from holographic-experience.controller.ts)
+- GET /api/v1/import-export/export/:jobId/download  (from import-export.controller.ts)
+- GET /api/v1/import-export/export/:jobId  (from import-export.controller.ts)
+- GET /api/v1/import-export/export  (from import-export.controller.ts)
+- GET /api/v1/import-export/import/:jobId  (from import-export.controller.ts)
+- POST /api/v1/import-export/import/template  (from import-export.controller.ts)
+- GET /api/v1/import-export/import  (from import-export.controller.ts)
+- GET /api/v1/inventory/analytics  (from inventory-management.controller.ts)
+- POST /api/v1/inventory/audits  (from inventory-management.controller.ts)
+- GET /api/v1/inventory/reorder-points  (from inventory-management.controller.ts)
+- POST /api/v1/inventory/reorder-points  (from inventory-management.controller.ts)
+- PUT /api/v1/inventory/stock-levels/:productId  (from inventory-management.controller.ts)
+- POST /api/v1/inventory/transfers  (from inventory-management.controller.ts)
+- GET /api/v1/inventory/warehouses  (from inventory-management.controller.ts)
+- POST /api/v1/inventory/warehouses  (from inventory-management.controller.ts)
+- GET /api/v1/migration/field-mappings/:entity  (from migration.controller.ts)
+- POST /api/v1/migration/import/csv  (from migration.controller.ts)
+- POST /api/v1/migration/import/excel  (from migration.controller.ts)
+- POST /api/v1/migration/jobs/:id/cancel  (from migration.controller.ts)
+- POST /api/v1/migration/jobs/:id/rollback  (from migration.controller.ts)
+- GET /api/v1/migration/jobs/:id  (from migration.controller.ts)
+- GET /api/v1/migration/jobs  (from migration.controller.ts)
+- GET /api/v1/migration/supported-entities  (from migration.controller.ts)
+- POST /api/v1/migration/sync/erp  (from migration.controller.ts)
+- POST /api/v1/migration/sync/hubspot  (from migration.controller.ts)
+- POST /api/v1/migration/sync/oracle  (from migration.controller.ts)
+- POST /api/v1/migration/sync/salesforce  (from migration.controller.ts)
+- POST /api/v1/migration/sync/sap  (from migration.controller.ts)
+- POST /api/v1/migration/sync/zoho  (from migration.controller.ts)
+- GET /api/v1/migration/templates/:entity  (from migration.controller.ts)
+- POST /api/v1/mobile/devices/:deviceId/heartbeat  (from mobile.controller.ts)
+- DELETE /api/v1/mobile/devices/:deviceId  (from mobile.controller.ts)
+- PUT /api/v1/mobile/devices/:deviceId  (from mobile.controller.ts)
+- POST /api/v1/mobile/devices/:id/click  (from mobile.controller.ts)
+- POST /api/v1/mobile/devices/:id/delivered  (from mobile.controller.ts)
+- POST /api/v1/mobile/devices/batch  (from mobile.controller.ts)
+- POST /api/v1/mobile/devices/conflicts/resolve  (from mobile.controller.ts)
+- GET /api/v1/mobile/devices/conflicts  (from mobile.controller.ts)
+- POST /api/v1/mobile/devices/mark-all-read  (from mobile.controller.ts)
+- GET /api/v1/mobile/devices/pending  (from mobile.controller.ts)
+- POST /api/v1/mobile/devices/send-bulk  (from mobile.controller.ts)
+- POST /api/v1/mobile/devices/send  (from mobile.controller.ts)
+- GET /api/v1/mobile/devices/statistics  (from mobile.controller.ts)
+- GET /api/v1/mobile/devices/unread-count  (from mobile.controller.ts)
+- GET /api/v1/monitoring/analytics/comprehensive  (from monitoring.controller.ts)
+- GET /api/v1/monitoring/analytics/features  (from monitoring.controller.ts)
+- GET /api/v1/monitoring/analytics/organization/:id  (from monitoring.controller.ts)
+- GET /api/v1/monitoring/business  (from monitoring.controller.ts)
+- GET /api/v1/monitoring/dashboard  (from monitoring.controller.ts)
+- GET /api/v1/monitoring/health/detailed  (from monitoring.controller.ts)
+- GET /api/v1/monitoring/organization/:id  (from monitoring.controller.ts)
+- GET /api/v1/monitoring/organization  (from monitoring.controller.ts)
+- GET /api/v1/monitoring/system  (from monitoring.controller.ts)
+- POST /api/v1/notifications/bulk  (from notification.controller.ts)
+- POST /api/v1/notifications/notify-admins/:organizationId  (from notification.controller.ts)
+- GET /api/v1/notifications/templates  (from notification.controller.ts)
+- POST /api/v1/notifications/test  (from notification.controller.ts)
+- POST /api/v1/notifications/triggers/failed-payments  (from notification.controller.ts)
+- POST /api/v1/notifications/triggers/monthly-reports  (from notification.controller.ts)
+- POST /api/v1/notifications/triggers/seat-limits  (from notification.controller.ts)
+- POST /api/v1/notifications/triggers/subscription-renewals  (from notification.controller.ts)
+- POST /api/v1/notifications/triggers/trial-endings  (from notification.controller.ts)
+- POST /api/v1/notifications/welcome-batch/:organizationId  (from notification.controller.ts)
+- POST /api/v1/onboarding/:sessionId/abandon  (from onboarding.controller.ts)
+- POST /api/v1/onboarding/:sessionId/checklist/complete  (from onboarding.controller.ts)
+- POST /api/v1/onboarding/:sessionId/feedback  (from onboarding.controller.ts)
+- POST /api/v1/onboarding/:sessionId/help  (from onboarding.controller.ts)
+- PUT /api/v1/onboarding/:sessionId/progress  (from onboarding.controller.ts)
+- POST /api/v1/onboarding/:sessionId/reward/claim  (from onboarding.controller.ts)
+- PUT /api/v1/onboarding/:sessionId/settings  (from onboarding.controller.ts)
+- POST /api/v1/onboarding/:sessionId/steps/complete  (from onboarding.controller.ts)
+- POST /api/v1/onboarding/:sessionId/steps/skip  (from onboarding.controller.ts)
+- GET /api/v1/onboarding/analytics  (from onboarding.controller.ts)
+- GET /api/v1/onboarding/current  (from onboarding.controller.ts)
+- POST /api/v1/organizations/:id/activate  (from organization.controller.ts)
+- GET /api/v1/organizations/:id/statistics  (from organization.controller.ts)
+- POST /api/v1/organizations/:id/suspend  (from organization.controller.ts)
+- GET /api/v1/organizations/me/organization  (from organization.controller.ts)
+- POST /api/v1/performance/analyze/:table  (from performance.controller.ts)
+- GET /api/v1/performance/connection-pool  (from performance.controller.ts)
+- POST /api/v1/performance/create-indexes/:entity  (from performance.controller.ts)
+- GET /api/v1/performance/index-recommendations/:entity  (from performance.controller.ts)
+- GET /api/v1/performance/requests/slow  (from performance.controller.ts)
+- DELETE /api/v1/performance/requests  (from performance.controller.ts)
+- GET /api/v1/performance/requests  (from performance.controller.ts)
+- DELETE /api/v1/performance/slow-queries  (from performance.controller.ts)
+- GET /api/v1/performance/slow-queries  (from performance.controller.ts)
+- POST /api/v1/performance/slow-query-threshold  (from performance.controller.ts)
+- GET /api/v1/performance/table-sizes  (from performance.controller.ts)
+- POST /api/v1/performance/vacuum-analyze  (from performance.controller.ts)
+- POST /api/v1/portal/accept-invitation  (from portal.controller.ts)
+- GET /api/v1/portal/documents  (from portal.controller.ts)
+- GET /api/v1/portal/knowledge-base/search  (from portal.controller.ts)
+- POST /api/v1/portal/login  (from portal.controller.ts)
+- POST /api/v1/portal/password/change  (from portal.controller.ts)
+- POST /api/v1/portal/password/request-reset  (from portal.controller.ts)
+- POST /api/v1/portal/password/reset  (from portal.controller.ts)
+- PUT /api/v1/portal/preferences  (from portal.controller.ts)
+- GET /api/v1/portal/profile  (from portal.controller.ts)
+- PUT /api/v1/portal/profile  (from portal.controller.ts)
+- GET /api/v1/portal/tickets  (from portal.controller.ts)
+- POST /api/v1/portal/tickets  (from portal.controller.ts)
+- POST /api/v1/portal/users  (from portal.controller.ts)
+- DELETE /api/v1/price-lists/:id  (from pricing.controller.ts)
+- DELETE /api/v1/price-lists/:id  (from pricing.controller.ts)
+- PUT /api/v1/price-lists/:id  (from pricing.controller.ts)
+- PUT /api/v1/price-lists/:id  (from pricing.controller.ts)
+- GET /api/v1/price-lists/active  (from pricing.controller.ts)
+- GET /api/v1/price-lists/active  (from pricing.controller.ts)
+- POST /api/v1/price-lists/apply-discount  (from pricing.controller.ts)
+- POST /api/v1/price-lists/calculate-bulk  (from pricing.controller.ts)
+- POST /api/v1/price-lists/calculate  (from pricing.controller.ts)
+- POST /api/v1/price-lists/validate-code  (from pricing.controller.ts)
+- GET /api/v1/products/:id/frequently-bought-together  (from product.controller.ts)
+- GET /api/v1/products/:id/recommendations  (from product.controller.ts)
+- GET /api/v1/products/:id/upsell  (from product.controller.ts)
+- GET /api/v1/products/best-sellers  (from product.controller.ts)
+- GET /api/v1/products/featured  (from product.controller.ts)
+- GET /api/v1/products/inventory/low-stock  (from product.controller.ts)
+- GET /api/v1/products/inventory/report  (from product.controller.ts)
+- GET /api/v1/products/on-sale  (from product.controller.ts)
+- GET /api/v1/products/search  (from product.controller.ts)
+- GET /api/v1/products/tree  (from product.controller.ts)
+- GET /api/v1/reporting/analytics/bottlenecks  (from reporting.controller.ts)
+- POST /api/v1/reporting/analytics/cohort  (from reporting.controller.ts)
+- GET /api/v1/reporting/analytics/conversion-metrics  (from reporting.controller.ts)
+- POST /api/v1/reporting/analytics/forecast  (from reporting.controller.ts)
+- POST /api/v1/reporting/analytics/funnel  (from reporting.controller.ts)
+- GET /api/v1/reporting/analytics/pipeline-forecast  (from reporting.controller.ts)
+- POST /api/v1/reporting/reports/:id/run  (from reporting.controller.ts)
+- DELETE /api/v1/reporting/reports/:id  (from reporting.controller.ts)
+- PUT /api/v1/reporting/reports/:id  (from reporting.controller.ts)
+- GET /api/v1/reporting/reports/templates  (from reporting.controller.ts)
+- POST /api/v1/reporting/reports  (from reporting.controller.ts)
+- POST /api/v1/reporting/schedules/:id/run  (from reporting.controller.ts)
+- DELETE /api/v1/reporting/schedules/:id  (from reporting.controller.ts)
+- GET /api/v1/reporting/schedules/:id  (from reporting.controller.ts)
+- PUT /api/v1/reporting/schedules/:id  (from reporting.controller.ts)
+- GET /api/v1/reporting/schedules  (from reporting.controller.ts)
+- POST /api/v1/reporting/schedules  (from reporting.controller.ts)
+- POST /api/v1/sequences/:id/activate  (from sequence.controller.ts)
+- GET /api/v1/sequences/:id/analytics  (from sequence.controller.ts)
+- POST /api/v1/sequences/:id/pause  (from sequence.controller.ts)
+- GET /api/v1/sequences/:id/timeline  (from sequence.controller.ts)
+- DELETE /api/v1/sequences/:id  (from sequence.controller.ts)
+- PUT /api/v1/sequences/:id  (from sequence.controller.ts)
+- POST /api/v1/sequences/analytics/compare  (from sequence.controller.ts)
+- GET /api/v1/sequences/analytics/overall  (from sequence.controller.ts)
+- POST /api/v1/sequences/enroll/bulk  (from sequence.controller.ts)
+- POST /api/v1/sequences/enrollment/:id/pause  (from sequence.controller.ts)
+- POST /api/v1/sequences/enrollment/:id/resume  (from sequence.controller.ts)
+- POST /api/v1/sequences/enroll  (from sequence.controller.ts)
+- POST /api/v1/sequences/unenroll  (from sequence.controller.ts)
+- POST /api/v1/stripe/customer  (from stripe-payment.controller.ts)
+- POST /api/v1/stripe/payment-method  (from stripe-payment.controller.ts)
+- POST /api/v1/stripe/payment  (from stripe-payment.controller.ts)
+- POST /api/v1/stripe/refund/:transactionId  (from stripe-payment.controller.ts)
+- POST /api/v1/stripe/subscription/:organizationId/cancel  (from stripe-payment.controller.ts)
+- POST /api/v1/stripe/subscription/:organizationId/update  (from stripe-payment.controller.ts)
+- POST /api/v1/stripe/subscription  (from stripe-payment.controller.ts)
+- POST /api/v1/stripe/webhook  (from stripe-payment.controller.ts)
+- GET /api/v1/territories/:id/stats  (from territory.controller.ts)
+- DELETE /api/v1/territories/:id  (from territory.controller.ts)
+- PUT /api/v1/territories/:id  (from territory.controller.ts)
+- GET /api/v1/territories/analytics/comparison  (from territory.controller.ts)
+- GET /api/v1/territories/analytics/coverage  (from territory.controller.ts)
+- GET /api/v1/territories/analytics/performance  (from territory.controller.ts)
+- POST /api/v1/territories/assign/bulk  (from territory.controller.ts)
+- POST /api/v1/territories/assign  (from territory.controller.ts)
+- POST /api/v1/territories/rebalance  (from territory.controller.ts)
+- DELETE /api/v1/throttling/block  (from throttling.controller.ts)
+- GET /api/v1/throttling/blocked/:type/:identifier  (from throttling.controller.ts)
+- GET /api/v1/throttling/blocked  (from throttling.controller.ts)
+- POST /api/v1/throttling/block  (from throttling.controller.ts)
+- GET /api/v1/throttling/check/global  (from throttling.controller.ts)
+- GET /api/v1/throttling/check/ip/:ipAddress  (from throttling.controller.ts)
+- GET /api/v1/throttling/check/organization/:organizationId  (from throttling.controller.ts)
+- GET /api/v1/throttling/check/user/:userId  (from throttling.controller.ts)
+- GET /api/v1/throttling/export  (from throttling.controller.ts)
+- GET /api/v1/throttling/limits/:type/:identifier  (from throttling.controller.ts)
+- POST /api/v1/throttling/reset  (from throttling.controller.ts)
+- GET /api/v1/throttling/stats  (from throttling.controller.ts)
+- GET /api/v1/usage/active-users/:organizationId  (from usage-tracking.controller.ts)
+- POST /api/v1/usage/cleanup  (from usage-tracking.controller.ts)
+- GET /api/v1/usage/daily/:organizationId  (from usage-tracking.controller.ts)
+- GET /api/v1/usage/quota/:organizationId/check  (from usage-tracking.controller.ts)
+- GET /api/v1/usage/quota/:organizationId  (from usage-tracking.controller.ts)
+- GET /api/v1/usage/stats/:organizationId  (from usage-tracking.controller.ts)
+- GET /api/v1/usage/summary/:organizationId  (from usage-tracking.controller.ts)
+- GET /api/v1/usage/top-endpoints/:organizationId  (from usage-tracking.controller.ts)
+- POST /api/v1/usage/track/:organizationId  (from usage-tracking.controller.ts)
+- GET /api/v1/usage/trends/:organizationId  (from usage-tracking.controller.ts)

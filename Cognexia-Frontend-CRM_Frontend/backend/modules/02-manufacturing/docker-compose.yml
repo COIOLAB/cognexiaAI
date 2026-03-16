@@ -1,0 +1,138 @@
+version: '3.8'
+
+services:
+  manufacturing-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/manufacturing
+      - REDIS_URL=redis://redis:6379
+      - MQTT_BROKER_URL=mqtt://mosquitto:1883
+      - BLOCKCHAIN_NODE_URL=http://blockchain:8545
+      - QUANTUM_SERVICE_URL=http://quantum:5000
+    depends_on:
+      - postgres
+      - redis
+      - mosquitto
+      - blockchain
+      - quantum
+      - edge-processor
+      - digital-twin
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: manufacturing
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  edge-processor:
+    build:
+      context: ./edge-computing
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=production
+      - MQTT_BROKER_URL=mqtt://mosquitto:1883
+    depends_on:
+      - mosquitto
+
+  digital-twin:
+    build:
+      context: ./digital-twin
+      dockerfile: Dockerfile
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/manufacturing
+      - MQTT_BROKER_URL=mqtt://mosquitto:1883
+    depends_on:
+      - postgres
+      - mosquitto
+
+  blockchain:
+    image: hyperledger/besu:latest
+    ports:
+      - "8545:8545"
+      - "8546:8546"
+    volumes:
+      - blockchain_data:/var/lib/besu
+
+  quantum:
+    build:
+      context: ./quantum-service
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - PYTHONPATH=/app
+      - QUANTUM_PROVIDER=IONQ
+    volumes:
+      - quantum_data:/app/data
+
+  monitoring:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+
+  ml-training:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/manufacturing
+    volumes:
+      - ml_models:/app/models
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+  redis_data:
+  mosquitto_data:
+  mosquitto_log:
+  blockchain_data:
+  quantum_data:
+  grafana_data:
+  prometheus_data:
+  ml_models:

@@ -1,0 +1,4 @@
+"Method","Url"
+"GET","http://localhost:3003/api/v1/email/track/click/00000000-0000-0000-0000-000000000001"
+"POST","http://localhost:3003/api/v1/auth/refresh"
+"POST","http://localhost:3003/api/v1/portal/login"

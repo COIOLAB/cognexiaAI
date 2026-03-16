@@ -1,0 +1,388 @@
+version: '3.8'
+
+# EzAi-MFGNINJA Cloud Production Deployment
+# Using Supabase (PostgreSQL) + MongoDB Atlas/Cloud
+# Government Certification Ready - Full Backend Services
+# AI-Powered Manufacturing Intelligence Platform
+
+services:
+  # ==================== BACKEND SERVICES ====================
+
+  # HR Service - Human Resources Management (85% Complete)
+  hr-service:
+    build:
+      context: ../backend/hr
+      dockerfile: Dockerfile
+    container_name: ezai-hr-service
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=hr
+      - PORT=3001
+      # Supabase Configuration
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      # MongoDB Configuration
+      - MONGODB_URI=${MONGODB_URI}
+      # Security
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      # Compliance
+      - GOVERNMENT_CERTIFICATION=enabled
+      - AUDIT_ENABLED=true
+      - ENCRYPTION_ENABLED=true
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # Finance & Accounting Service (90% Complete)
+  finance-service:
+    build:
+      context: ../backend/finance-accounting
+      dockerfile: Dockerfile
+    container_name: ezai-finance-service
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=finance-accounting
+      - PORT=3002
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - GOVERNMENT_CERTIFICATION=enabled
+      - AUDIT_ENABLED=true
+    ports:
+      - "3002:3002"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # Manufacturing Service (90% Complete)
+  manufacturing-service:
+    build:
+      context: ../backend/manufacturing
+      dockerfile: Dockerfile
+    container_name: ezai-manufacturing-service
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=manufacturing
+      - PORT=3003
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - GOVERNMENT_CERTIFICATION=enabled
+      - AUDIT_ENABLED=true
+    ports:
+      - "3003:3003"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # Supply Chain Service (75% Complete)
+  supply-chain-service:
+    build:
+      context: ../backend/supply-chain
+      dockerfile: Dockerfile
+    container_name: ezai-supply-chain-service
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=supply-chain
+      - PORT=3004
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - GOVERNMENT_CERTIFICATION=enabled
+    ports:
+      - "3004:3004"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Inventory Service (90% Complete)
+  inventory-service:
+    build:
+      context: ../backend/inventory
+      dockerfile: Dockerfile
+    container_name: ezai-inventory-service
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=inventory
+      - PORT=3005
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - GOVERNMENT_CERTIFICATION=enabled
+    ports:
+      - "3005:3005"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Production Planning Service (85% Complete)
+  production-planning-service:
+    build:
+      context: ../backend/production-planning
+      dockerfile: Dockerfile
+    container_name: ezai-production-planning-service
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=production-planning
+      - PORT=3006
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - GOVERNMENT_CERTIFICATION=enabled
+    ports:
+      - "3006:3006"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # CRM Service (88% Complete)
+  crm-service:
+    build:
+      context: ../backend/crm
+      dockerfile: Dockerfile
+    container_name: ezai-crm-service
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=crm
+      - PORT=3007
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - GOVERNMENT_CERTIFICATION=enabled
+    ports:
+      - "3007:3007"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3007/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Procurement Service (85% Complete)
+  procurement-service:
+    build:
+      context: ../backend/procurement
+      dockerfile: Dockerfile
+    container_name: ezai-procurement-service
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=procurement
+      - PORT=3008
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - GOVERNMENT_CERTIFICATION=enabled
+    ports:
+      - "3008:3008"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3008/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Sales & Marketing Service (95% Complete)
+  sales-marketing-service:
+    build:
+      context: ../backend/sales-marketing
+      dockerfile: Dockerfile
+    container_name: ezai-sales-marketing-service
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=sales-marketing
+      - PORT=3009
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - GOVERNMENT_CERTIFICATION=enabled
+    ports:
+      - "3009:3009"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3009/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==================== INFRASTRUCTURE SERVICES ====================
+
+  # API Gateway (Nginx with Load Balancing)
+  api-gateway:
+    image: nginx:alpine
+    container_name: ezai-api-gateway
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx-cloud.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - hr-service
+      - finance-service
+      - manufacturing-service
+      - supply-chain-service
+      - inventory-service
+      - production-planning-service
+      - crm-service
+      - procurement-service
+      - sales-marketing-service
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend Application
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: ezai-frontend
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost
+      - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==================== MONITORING & ANALYTICS ====================
+
+  # Prometheus - Metrics Collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ezai-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus-cloud.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+      - '--storage.tsdb.retention.time=30d'
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Grafana - Analytics Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ezai-grafana
+    ports:
+      - "3010:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-ezai_grafana_2025!}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3010
+      - GF_SECURITY_SECRET_KEY=${GRAFANA_SECRET_KEY}
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# ==================== VOLUMES ====================
+volumes:
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+# ==================== NETWORKS ====================
+networks:
+  default:
+    name: ezai-cloud-network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.21.0.0/16

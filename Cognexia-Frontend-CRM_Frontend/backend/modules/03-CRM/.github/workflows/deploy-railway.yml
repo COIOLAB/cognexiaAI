@@ -1,0 +1,62 @@
+# Build CRM backend → Push to GHCR → Deploy to Railway
+#
+# Required secrets (Repo → Settings → Secrets → Actions):
+#   RAILWAY_TOKEN      - Project token from Railway → Project Settings → Tokens
+#   RAILWAY_SERVICE_ID - Service ID from Railway → CRM Backend → Settings (in URL or Settings)
+#
+# Railway service must be configured to use: ghcr.io/cognexiaai/cognexia-crm-backend:latest
+#
+name: Build and Deploy to Railway
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy-railway:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Railway
+        run: npx -y @railway/cli redeploy --service "$RAILWAY_SERVICE_ID" -y
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}

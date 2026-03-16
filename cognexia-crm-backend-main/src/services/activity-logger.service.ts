@@ -1,0 +1,304 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Activity, ActivityType } from '../entities/activity.entity';
+import { Note } from '../entities/note.entity';
+import { CreateActivityDto, CreateNoteDto } from '../dto/activity.dto';
+import { throwNotFound } from '../utils/error-handler.util';
+
+@Injectable()
+export class ActivityLoggerService {
+  constructor(
+    @InjectRepository(Activity)
+    private activityRepo: Repository<Activity>,
+    @InjectRepository(Note)
+    private noteRepo: Repository<Note>,
+  ) { }
+
+  /**
+   * Log activity manually
+   */
+  async logActivity(
+    organizationId: string,
+    userId: string,
+    userName: string,
+    dto: CreateActivityDto,
+  ): Promise<Activity> {
+    const activity = this.activityRepo.create({
+      organizationId: organizationId,
+      activity_type: dto.activityType,
+      title: dto.title,
+      description: dto.description,
+      performed_by: userId,
+      performed_by_name: userName,
+      related_to_id: dto.relatedToId,
+      related_to_type: dto.relatedToType,
+      metadata: dto.metadata,
+      is_system_generated: false,
+    });
+
+    return this.activityRepo.save(activity);
+  }
+
+  /**
+   * Log task created
+   */
+  async logTaskCreated(
+    organizationId: string,
+    userId: string,
+    taskId: string,
+    taskTitle: string,
+  ): Promise<void> {
+    const activity = this.activityRepo.create({
+      organizationId: organizationId,
+      activity_type: ActivityType.TASK_CREATED,
+      title: `Created task: ${taskTitle}`,
+      performed_by: userId,
+      related_to_id: taskId,
+      related_to_type: 'task',
+      is_system_generated: true,
+    });
+
+    await this.activityRepo.save(activity);
+  }
+
+  /**
+   * Log task completed
+   */
+  async logTaskCompleted(
+    organizationId: string,
+    userId: string,
+    taskId: string,
+    taskTitle: string,
+  ): Promise<void> {
+    const activity = this.activityRepo.create({
+      organizationId: organizationId,
+      activity_type: ActivityType.TASK_COMPLETED,
+      title: `Completed task: ${taskTitle}`,
+      performed_by: userId,
+      related_to_id: taskId,
+      related_to_type: 'task',
+      is_system_generated: true,
+    });
+
+    await this.activityRepo.save(activity);
+  }
+
+  /**
+   * Log status change
+   */
+  async logStatusChanged(
+    organizationId: string,
+    userId: string,
+    entityType: string,
+    entityId: string,
+    oldStatus: string,
+    newStatus: string,
+  ): Promise<void> {
+    const activity = this.activityRepo.create({
+      organizationId: organizationId,
+      activity_type: ActivityType.STATUS_CHANGED,
+      title: `Status changed from ${oldStatus} to ${newStatus}`,
+      performed_by: userId,
+      related_to_id: entityId,
+      related_to_type: entityType,
+      metadata: { oldStatus, newStatus },
+      is_system_generated: true,
+    });
+
+    await this.activityRepo.save(activity);
+  }
+
+  /**
+   * Log field update
+   */
+  async logFieldUpdated(
+    organizationId: string,
+    userId: string,
+    entityType: string,
+    entityId: string,
+    fieldName: string,
+    oldValue: any,
+    newValue: any,
+  ): Promise<void> {
+    const activity = this.activityRepo.create({
+      organizationId: organizationId,
+      activity_type: ActivityType.FIELD_UPDATED,
+      title: `Updated ${fieldName}`,
+      description: `Changed from "${oldValue}" to "${newValue}"`,
+      performed_by: userId,
+      related_to_id: entityId,
+      related_to_type: entityType,
+      metadata: { fieldName, oldValue, newValue },
+      is_system_generated: true,
+    });
+
+    await this.activityRepo.save(activity);
+  }
+
+  /**
+   * Create note
+   */
+  async createNote(
+    organizationId: string,
+    userId: string,
+    userName: string,
+    dto: CreateNoteDto,
+  ): Promise<Note> {
+    const note = this.noteRepo.create({
+      organizationId: organizationId,
+      content: dto.content,
+      created_by: userId,
+      created_by_name: userName,
+      related_to_id: dto.relatedToId,
+      related_to_type: dto.relatedToType,
+      is_pinned: dto.isPinned || false,
+    });
+
+    const savedNote = await this.noteRepo.save(note);
+
+    // Also log as activity
+    await this.logActivity(organizationId, userId, userName, {
+      activityType: ActivityType.NOTE,
+      title: 'Added a note',
+      description: dto.content.substring(0, 100),
+      relatedToId: dto.relatedToId,
+      relatedToType: dto.relatedToType,
+    });
+
+    return savedNote;
+  }
+
+  /**
+   * Get all activities with pagination
+   */
+  async getActivities(
+    organizationId: string,
+    query: any,
+    page: number = 1,
+    limit: number = 50,
+  ): Promise<{ data: Activity[]; total: number; page: number; limit: number }> {
+    try {
+      const where: any = { organizationId: organizationId };
+
+      if (query.activityType) {
+        where.activity_type = query.activityType;
+      }
+      if (query.relatedToType) {
+        where.related_to_type = query.relatedToType;
+      }
+      if (query.relatedToId) {
+        where.related_to_id = query.relatedToId;
+      }
+      if (query.performedBy) {
+        where.performed_by = query.performedBy;
+      }
+
+      const [data, total] = await this.activityRepo.findAndCount({
+        where,
+        order: { created_at: 'DESC' },
+        take: limit,
+        skip: (page - 1) * limit,
+      });
+
+      return { data: data || [], total: total || 0, page, limit };
+    } catch (error) {
+      return { data: [], total: 0, page, limit };
+    }
+  }
+
+  /**
+   * Get single activity by ID
+   */
+  async getActivity(
+    activityId: string,
+    organizationId: string,
+  ): Promise<Activity> {
+    try {
+      const activity = await this.activityRepo.findOne({
+        where: {
+          id: activityId,
+          organizationId: organizationId,
+        },
+      });
+
+      return activity || null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Get activity timeline
+   */
+  async getActivityTimeline(
+    organizationId: string,
+    relatedToId: string,
+    relatedToType: string,
+    limit: number = 50,
+  ): Promise<Activity[]> {
+    try {
+      const activities = await this.activityRepo.find({
+        where: {
+          organizationId: organizationId,
+          related_to_id: relatedToId,
+          related_to_type: relatedToType,
+        },
+        order: { created_at: 'DESC' },
+        take: limit,
+      });
+      return activities || [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  /**
+   * Get notes for entity
+   */
+  async getNotesForEntity(
+    organizationId: string,
+    relatedToId: string,
+    relatedToType: string,
+  ): Promise<Note[]> {
+    return this.noteRepo.find({
+      where: {
+        organizationId: organizationId,
+        related_to_id: relatedToId,
+        related_to_type: relatedToType,
+      },
+      order: { is_pinned: 'DESC', created_at: 'DESC' },
+    });
+  }
+
+  /**
+   * Update note
+   */
+  async updateNote(noteId: string, content: string): Promise<Note> {
+    const note = await this.noteRepo.findOne({ where: { id: noteId } });
+    if (!note) throwNotFound('Note');
+
+    note.content = content;
+    return this.noteRepo.save(note);
+  }
+
+  /**
+   * Delete note
+   */
+  async deleteNote(noteId: string): Promise<void> {
+    const note = await this.noteRepo.findOne({ where: { id: noteId } });
+    if (!note) throwNotFound('Note');
+    await this.noteRepo.remove(note);
+  }
+
+  /**
+   * Pin/Unpin note
+   */
+  async togglePinNote(noteId: string): Promise<Note> {
+    const note = await this.noteRepo.findOne({ where: { id: noteId } });
+    if (!note) throwNotFound('Note');
+
+    note.is_pinned = !note.is_pinned;
+    return this.noteRepo.save(note);
+  }
+}
