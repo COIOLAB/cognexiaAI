@@ -20,6 +20,7 @@ import { ILike, Repository } from 'typeorm';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../guards/roles.guard';
 import { Contact, ContactType } from '../entities/contact.entity';
+import { Customer } from '../entities/customer.entity';
 
 @ApiTags('CRM - Contacts')
 @Controller('crm/contacts')
@@ -36,6 +37,7 @@ export class ContactController {
   @ApiResponse({ status: 200, description: 'Contacts retrieved successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing', 'viewer', 'org_admin')
   async getAllContacts(
+    @Req() req: any,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 20,
     @Query('customerId') customerId?: string,
@@ -43,15 +45,16 @@ export class ContactController {
   ) {
     const take = Math.min(Number(limit) || 20, 100);
     const skip = (Math.max(Number(page) || 1, 1) - 1) * take;
+    const organizationId = req?.user?.organizationId || req?.user?.tenantId;
 
     if (search) {
       const [contacts, total] = await this.contactRepository.findAndCount({
         where: [
-          { fullName: ILike(`%${search}%`) },
-          { email: ILike(`%${search}%`) },
-          { workPhone: ILike(`%${search}%`) },
-          { mobilePhone: ILike(`%${search}%`) },
-          { homePhone: ILike(`%${search}%`) },
+          { fullName: ILike(`%${search}%`), organizationId },
+          { email: ILike(`%${search}%`), organizationId },
+          { workPhone: ILike(`%${search}%`), organizationId },
+          { mobilePhone: ILike(`%${search}%`), organizationId },
+          { homePhone: ILike(`%${search}%`), organizationId },
         ],
         take,
         skip,
@@ -73,8 +76,12 @@ export class ContactController {
       };
     }
 
+    const where: any = {};
+    if (customerId) where.customerId = customerId;
+    if (organizationId) where.organizationId = organizationId;
+
     const [contacts, total] = await this.contactRepository.findAndCount({
-      where: customerId ? { customerId } : {},
+      where,
       take,
       skip,
       order: { createdAt: 'DESC' },
@@ -110,15 +117,32 @@ export class ContactController {
       doNotCall: false,
       emailOptOut: false,
     };
-    const fallbackCustomerId = createDto.customerId || '00000000-0000-0000-0000-000000000456';
+    const organizationId = req?.user?.organizationId || req?.user?.tenantId;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    let resolvedCustomerId = createDto.customerId || '00000000-0000-0000-0000-000000000456';
+    if (createDto.customerId && !uuidRegex.test(createDto.customerId)) {
+      const customerByCode = await this.contactRepository.manager.findOne(Customer, {
+        where: { customerCode: createDto.customerId },
+      });
+      if (!customerByCode) {
+        throw new HttpException('Customer not found', HttpStatus.BAD_REQUEST);
+      }
+      resolvedCustomerId = customerByCode.id;
+    }
+    let resolvedOrganizationId = createDto.organizationId || organizationId;
+    if (!resolvedOrganizationId && resolvedCustomerId) {
+      const customer = await this.contactRepository.manager.findOne(Customer, { where: { id: resolvedCustomerId } });
+      resolvedOrganizationId = customer?.organizationId;
+    }
     const contact = this.contactRepository.create({
       ...createDto,
+      organizationId: resolvedOrganizationId,
       type: createDto.type || ContactType.PRIMARY,
       firstName: createDto.firstName || 'Fixture',
       lastName: createDto.lastName || 'Contact',
       title: createDto.title || 'Contact',
       email: createDto.email || `contact+${stamp}@cognexiaai.com`,
-      customerId: fallbackCustomerId,
+      customerId: resolvedCustomerId,
       communicationPrefs: createDto.communicationPrefs || defaultPrefs,
       createdBy: req.user?.id || 'system',
       updatedBy: req.user?.id || 'system',
@@ -185,7 +209,13 @@ export class ContactController {
       return { success: false, data: null, message: 'Contact not found' };
     }
 
-    Object.assign(contact, updateDto, { updatedBy: req.user?.id || 'system' });
+    const organizationId = req?.user?.organizationId || req?.user?.tenantId;
+    const merged = {
+      ...updateDto,
+      organizationId: updateDto.organizationId || contact.organizationId || organizationId,
+      updatedBy: req.user?.id || 'system',
+    };
+    Object.assign(contact, merged);
     contact.updateFullName();
     const saved = await this.contactRepository.save(contact);
 

@@ -32,8 +32,24 @@ export class CustomerService {
 
   async createContact(contactData: any, createdBy: string) {
     try {
+      let organizationId = contactData.organizationId;
+      let customerId = contactData.customerId;
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (customerId && !uuidRegex.test(customerId)) {
+        const customerByCode = await this.customerRepository.findOne({ where: { customerCode: customerId } });
+        if (customerByCode) {
+          customerId = customerByCode.id;
+          if (!organizationId) organizationId = customerByCode.organizationId;
+        }
+      }
+      if (!organizationId && customerId) {
+        const customer = await this.customerRepository.findOne({ where: { id: customerId } });
+        organizationId = customer?.organizationId;
+      }
       const contactEntity = this.contactRepository.create({
         ...contactData,
+        customerId,
+        organizationId,
         createdBy: createdBy,
         updatedBy: createdBy,
       }) as unknown as Contact;
