@@ -26,6 +26,7 @@ import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../guards/roles.guard';
 import { SalesService } from '../services/sales.service';
+import { SalesOrderService } from '../services/sales-order.service';
 import { QuoteStatus } from '../entities/sales-quote.entity';
 
 @ApiTags('CRM - Sales Management')
@@ -35,7 +36,10 @@ import { QuoteStatus } from '../entities/sales-quote.entity';
 export class SalesController {
   private readonly logger = new Logger(SalesController.name);
 
-  constructor(private readonly salesService: SalesService) {}
+  constructor(
+    private readonly salesService: SalesService,
+    private readonly salesOrderService: SalesOrderService,
+  ) {}
 
   @Get('opportunities')
   @ApiOperation({ 
@@ -531,9 +535,35 @@ export class SalesController {
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep')
   async convertQuote(@Param('id') id: string) {
     try {
+      const quote = await this.salesService.getQuoteById(id);
+      if (!quote) {
+        return { success: false, data: null, message: 'Quote not found' };
+      }
+      const order = this.salesOrderService.create({
+        customerId: quote.customerId,
+        customerName: quote.customer?.companyName || 'Unknown Customer',
+        items: (quote.lineItems || []).map((item: any) => ({
+          productId: item.productId,
+          productName: item.productName || item.description || 'Item',
+          quantity: Number(item.quantity || 0),
+          unitPrice: Number(item.unitPrice || 0),
+          discount: Number(item.discount || 0),
+        })),
+        notes: quote.notes,
+        payment: {
+          terms: quote.terms || 'Net 30',
+          method: 'Invoice',
+          status: 'pending',
+        },
+        shipping: {
+          address: '',
+          method: 'Digital Delivery',
+        },
+      });
+
       return {
         success: true,
-        data: { quoteId: id, orderId: `order-${id}` },
+        data: { quoteId: id, orderId: order.id },
         message: 'Quote converted successfully',
       };
     } catch (error) {

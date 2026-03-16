@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useForm, useFieldArray, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -23,6 +24,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { useCustomers } from '@/hooks/useCustomers';
 import { QuoteStatus, type SalesQuote } from '@/types/api.types';
 
 const lineItemSchema = z.object({
@@ -60,6 +62,12 @@ export default function QuoteForm({
   onCancel,
   isLoading,
 }: QuoteFormProps) {
+  const { data: customersData, isLoading: isLoadingCustomers } = useCustomers({
+    page: 1,
+    limit: 1000,
+  });
+  const customers = customersData?.data?.customers || [];
+
   const form = useForm<QuoteFormValues>({
     resolver: zodResolver(quoteSchema) as unknown as Resolver<QuoteFormValues>,
     defaultValues: {
@@ -80,6 +88,23 @@ export default function QuoteForm({
       ],
     },
   });
+
+  const selectedCustomerId = form.watch('customerId');
+  const selectedCustomer = customers.find((customer) => customer.id === selectedCustomerId);
+
+  useEffect(() => {
+    if (!selectedCustomer) {
+      return;
+    }
+
+    const displayName =
+      selectedCustomer.companyName ||
+      `${selectedCustomer.primaryContact?.firstName || ''} ${selectedCustomer.primaryContact?.lastName || ''}`.trim();
+
+    if (displayName && form.getValues('customerName') !== displayName) {
+      form.setValue('customerName', displayName, { shouldValidate: true });
+    }
+  }, [form, selectedCustomer]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -168,10 +193,29 @@ export default function QuoteForm({
                 name="customerId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Customer ID *</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Customer ID" />
-                    </FormControl>
+                    <FormLabel>Customer *</FormLabel>
+                    <Select
+                      disabled={isLoadingCustomers}
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={
+                              isLoadingCustomers ? 'Loading customers...' : 'Select a customer'
+                            }
+                          />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {customers.map((customer) => (
+                          <SelectItem key={customer.id} value={customer.id}>
+                            {customer.companyName} ({customer.customerCode})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -184,7 +228,11 @@ export default function QuoteForm({
                   <FormItem>
                     <FormLabel>Customer Name</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Customer name" />
+                      <Input
+                        {...field}
+                        placeholder="Auto-filled from selected customer"
+                        disabled
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
