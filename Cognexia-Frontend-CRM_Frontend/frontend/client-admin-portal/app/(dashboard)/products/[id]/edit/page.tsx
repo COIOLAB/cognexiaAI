@@ -31,7 +31,18 @@ export default function EditProductPage() {
           </Button>
         }
       />
-      <ProductForm initialData={data} onSubmit={(formData) => updateMutation.mutate({ id: productId, data: formData }, { onSuccess: () => router.push(`/products/${productId}`) })} isLoading={updateMutation.isPending} submitLabel="Save Changes" />
+      <ProductForm
+        initialData={data}
+        onSubmit={(formData) => {
+          const { sku, costPrice, ...updateData } = formData as Record<string, any>;
+          updateMutation.mutate(
+            { id: productId, data: updateData },
+            { onSuccess: () => router.push(`/products/${productId}`) }
+          );
+        }}
+        isLoading={updateMutation.isPending}
+        submitLabel="Save Changes"
+      />
     </div>
   );
 }

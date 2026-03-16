@@ -12,7 +12,7 @@ import { Lead } from '../entities/lead.entity';
 import { Contact } from '../entities/contact.entity';
 import { Opportunity } from '../entities/opportunity.entity';
 import { logError } from '../utils/logger.util';
-
+import { MarketingCampaign } from '../entities/marketing-campaign.entity';
 @Injectable()
 export class ExportService {
   private readonly exportDir = path.join(process.cwd(), 'exports');
@@ -89,7 +89,7 @@ export class ExportService {
 
       // Get file size
       const stats = fs.statSync(filePath);
-      
+
       job.file_name = fileName;
       job.file_path = filePath;
       job.file_size = stats.size;
@@ -115,8 +115,8 @@ export class ExportService {
     columns?: string[],
   ): Promise<any[]> {
     const where = { organization_id: organizationId, ...filters };
-    const select = columns?.length 
-      ? columns.reduce((acc, col) => ({ ...acc, [col]: true }), {}) 
+    const select = columns?.length
+      ? columns.reduce((acc, col) => ({ ...acc, [col]: true }), {})
       : undefined;
 
     switch (exportType.toLowerCase()) {
@@ -184,12 +184,12 @@ export class ExportService {
   private async generateExcel(data: any[], filePath: string, columns?: string[]): Promise<void> {
     const filteredData = columns
       ? data.map(row => {
-          const filtered = {};
-          columns.forEach(col => {
-            if (row[col] !== undefined) filtered[col] = row[col];
-          });
-          return filtered;
-        })
+        const filtered = {};
+        columns.forEach(col => {
+          if (row[col] !== undefined) filtered[col] = row[col];
+        });
+        return filtered;
+      })
       : data;
 
     const worksheet = xlsx.utils.json_to_sheet(filteredData);
@@ -215,7 +215,7 @@ export class ExportService {
       // Table
       if (data.length > 0) {
         const headers = columns || Object.keys(data[0]);
-        
+
         // Header row
         doc.fontSize(10).font('Helvetica-Bold');
         let x = 50;

@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   Query,
+  Res,
   UseGuards,
   Logger,
   HttpException,
@@ -26,6 +27,7 @@ import {
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../guards/roles.guard';
 import { MarketingService } from '../services/marketing.service';
+import type { Response } from 'express';
 
 import {
   CreateCampaignDto,
@@ -581,6 +583,86 @@ export class MarketingController {
     } catch (error) {
       this.logger.error('Error retrieving marketing analytics:', error);
       throw new HttpException('Failed to retrieve analytics', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get('analytics')
+  @ApiOperation({
+    summary: 'Get marketing analytics (by period)',
+    description: 'Retrieve marketing analytics for a selected period (e.g. 30d, 90d, 1y)'
+  })
+  @ApiQuery({ name: 'period', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'Analytics retrieved successfully' })
+  @Roles('admin', 'manager', 'marketing_manager', 'marketing_specialist', 'viewer')
+  async getMarketingAnalyticsByPeriod(@Query('period') period: string = '30d') {
+    try {
+      const { startDate, endDate } = this.marketingService.resolvePeriodRange(period);
+      const analytics = await this.marketingService.getMarketingAnalytics({
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+      });
+
+      return {
+        success: true,
+        data: analytics,
+        message: 'Marketing analytics retrieved successfully',
+      };
+    } catch (error) {
+      this.logger.error('Error retrieving marketing analytics by period:', error);
+      throw new HttpException('Failed to retrieve analytics', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get('analytics/roi')
+  @ApiOperation({
+    summary: 'Get ROI metrics',
+    description: 'Retrieve ROI metrics for a selected period'
+  })
+  @ApiQuery({ name: 'period', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'ROI metrics retrieved successfully' })
+  @Roles('admin', 'manager', 'marketing_manager', 'marketing_specialist', 'viewer')
+  async getROIMetrics(@Query('period') period: string = '30d') {
+    try {
+      const roi = await this.marketingService.getROIMetrics(period);
+      return {
+        success: true,
+        data: roi,
+        message: 'ROI metrics retrieved successfully',
+      };
+    } catch (error) {
+      this.logger.error('Error retrieving ROI metrics:', error);
+      throw new HttpException('Failed to retrieve ROI metrics', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get('analytics/export')
+  @ApiOperation({
+    summary: 'Export ROI analytics',
+    description: 'Export ROI analytics in CSV format'
+  })
+  @ApiQuery({ name: 'period', required: false, type: String })
+  @ApiQuery({ name: 'format', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'ROI analytics exported successfully' })
+  @Roles('admin', 'manager', 'marketing_manager', 'marketing_specialist', 'viewer')
+  async exportAnalytics(
+    @Query('period') period: string = '30d',
+    @Query('format') format: string = 'csv',
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    try {
+      const roi = await this.marketingService.getROIMetrics(period);
+      const csv = this.marketingService.buildRoiCsv(roi);
+
+      if (format.toLowerCase() !== 'csv') {
+        this.logger.warn(`Unsupported export format "${format}", defaulting to CSV.`);
+      }
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="marketing-roi-${period}.csv"`);
+      return csv;
+    } catch (error) {
+      this.logger.error('Error exporting ROI analytics:', error);
+      throw new HttpException('Failed to export analytics', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 

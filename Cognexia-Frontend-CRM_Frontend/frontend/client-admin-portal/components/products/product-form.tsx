@@ -10,16 +10,19 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
+import { ProductType } from '@/types/api.types';
 
 const productSchema = z.object({
+  sku: z.string().min(1, 'SKU is required'),
   name: z.string().min(1, 'Product name is required'),
   description: z.string().optional(),
-  sku: z.string().min(1, 'SKU is required'),
-  price: z.coerce.number().positive('Price must be greater than 0'),
-  cost: z.coerce.number().positive().optional(),
-  category: z.string().min(1, 'Category is required'),
-  tags: z.string().optional(),
+  type: z.nativeEnum(ProductType).optional(),
+  basePrice: z.coerce.number().min(0, 'Price must be at least 0'),
+  costPrice: z.coerce.number().min(0).optional(),
+  categoryId: z.string().optional(),
+  quantityInStock: z.coerce.number().min(0).optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -32,15 +35,18 @@ interface ProductFormProps {
 }
 
 export function ProductForm({ initialData, onSubmit, isLoading, submitLabel = 'Create Product' }: ProductFormProps) {
-  const { register, handleSubmit, formState: { errors } } = useForm<ProductFormData>({
+  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema) as unknown as Resolver<ProductFormData>,
     defaultValues: initialData || {},
   });
 
   const onFormSubmit = (data: ProductFormData) => {
+    const categoryId = data.categoryId?.trim();
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
     const payload = {
       ...data,
-      tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
+      categoryId: categoryId && uuidRegex.test(categoryId) ? categoryId : undefined,
     };
     onSubmit(payload);
   };
@@ -69,22 +75,41 @@ export function ProductForm({ initialData, onSubmit, isLoading, submitLabel = 'C
               {errors.sku && <p className="text-sm text-destructive">{errors.sku.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="category">Category *</Label>
-              <Input id="category" placeholder="Software" {...register('category')} />
-              {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
+              <Label htmlFor="categoryId">Category ID</Label>
+              <Input id="categoryId" placeholder="Category UUID" {...register('categoryId')} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="price">Price ($) *</Label>
-              <Input id="price" type="number" step="0.01" placeholder="99.99" {...register('price')} />
-              {errors.price && <p className="text-sm text-destructive">{errors.price.message}</p>}
+              <Label htmlFor="type">Type</Label>
+              <Select
+                value={watch('type')}
+                onValueChange={(value) => setValue('type', value as ProductType, { shouldValidate: true })}
+              >
+                <SelectTrigger id="type">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ProductType.PHYSICAL}>Physical</SelectItem>
+                  <SelectItem value={ProductType.DIGITAL}>Digital</SelectItem>
+                  <SelectItem value={ProductType.SERVICE}>Service</SelectItem>
+                  <SelectItem value={ProductType.SUBSCRIPTION}>Subscription</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cost">Cost ($)</Label>
-              <Input id="cost" type="number" step="0.01" placeholder="50.00" {...register('cost')} />
+              <Label htmlFor="basePrice">Price ($) *</Label>
+              <Input id="basePrice" type="number" step="0.01" placeholder="99.99" {...register('basePrice')} />
+              {errors.basePrice && <p className="text-sm text-destructive">{errors.basePrice.message}</p>}
             </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="tags">Tags (comma-separated)</Label>
-              <Input id="tags" placeholder="software, saas, enterprise" {...register('tags')} />
+            <div className="space-y-2">
+              <Label htmlFor="costPrice">Cost ($)</Label>
+              <Input id="costPrice" type="number" step="0.01" placeholder="50.00" {...register('costPrice')} />
+              {errors.costPrice && <p className="text-sm text-destructive">{errors.costPrice.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="quantityInStock">Quantity</Label>
+              <Input id="quantityInStock" type="number" min="0" step="1" placeholder="0" {...register('quantityInStock')} />
+              {errors.quantityInStock && <p className="text-sm text-destructive">{errors.quantityInStock.message}</p>}
             </div>
           </div>
         </CardContent>

@@ -70,6 +70,10 @@ export class UpdateProductDto {
   @IsOptional()
   description?: string;
 
+  @IsEnum(ProductType)
+  @IsOptional()
+  type?: ProductType;
+
   @IsEnum(ProductStatus)
   @IsOptional()
   status?: ProductStatus;

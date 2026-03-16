@@ -35,7 +35,7 @@ export class ProductController {
     private readonly catalogService: CatalogService,
     private readonly recommendationEngine: RecommendationEngineService,
     private readonly inventoryService: InventoryService,
-  ) {}
+  ) { }
 
   // ============ Product CRUD ============
 
@@ -150,7 +150,7 @@ export class ProductController {
 @UseGuards(JwtAuthGuard, TenantGuard)
 @ApiBearerAuth()
 export class CategoryController {
-  constructor(private readonly catalogService: CatalogService) {}
+  constructor(private readonly catalogService: CatalogService) { }
 
   @Post()
   @ApiOperation({ summary: 'Create category' })
@@ -198,7 +198,7 @@ export class CategoryController {
 @UseGuards(JwtAuthGuard, TenantGuard)
 @ApiBearerAuth()
 export class BundleController {
-  constructor(private readonly catalogService: CatalogService) {}
+  constructor(private readonly catalogService: CatalogService) { }
 
   @Post()
   @ApiOperation({ summary: 'Create bundle' })

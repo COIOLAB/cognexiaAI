@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Package, DollarSign, BarChart3 } from 'lucide-react';
+import { Package, DollarSign, BarChart3, ArrowLeft } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
 import { useCreateProduct, useDeleteProduct } from '@/hooks/useProducts';
 
@@ -34,6 +34,10 @@ export default function ProductDetailPage() {
         subtitle={`SKU: ${product.sku}`}
         actions={
           <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => router.push('/products')}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Products
+            </Button>
             <Button variant="outline" onClick={() => router.push(`/products/${product.id}/edit`)}>
               Edit
             </Button>
@@ -46,34 +50,17 @@ export default function ProductDetailPage() {
                     sku: `${product.sku}-COPY-${skuSuffix}`,
                     name: `${product.name} (Copy)`,
                     description: product.description,
-                    shortDescription: product.shortDescription,
                     type: product.type,
-                    status: product.status,
-                    basePrice: product.basePrice,
-                    costPrice: product.costPrice,
-                    msrp: product.msrp,
+                    basePrice: Number(product.basePrice) || 0,
+                    costPrice: product.costPrice != null ? Number(product.costPrice) : undefined,
                     currency: product.currency,
                     trackInventory: product.trackInventory,
-                    quantityInStock: product.quantityInStock,
-                    lowStockThreshold: product.lowStockThreshold,
-                    allowBackorder: product.allowBackorder,
+                    quantityInStock: Number(product.quantityInStock) || 0,
                     categoryId: product.categoryId,
                     brand: product.brand,
-                    manufacturer: product.manufacturer,
-                    model: product.model,
                     tags: product.tags,
-                    weight: product.weight,
-                    weightUnit: product.weightUnit,
-                    dimensions: product.dimensions,
                     imageUrls: product.imageUrls,
-                    primaryImageUrl: product.primaryImageUrl,
                     attributes: product.attributes,
-                    specifications: product.specifications,
-                    isFeatured: product.isFeatured,
-                    isOnSale: product.isOnSale,
-                    salePrice: product.salePrice,
-                    saleStartDate: product.saleStartDate,
-                    saleEndDate: product.saleEndDate,
                   },
                   {
                     onSuccess: (newProduct) => {

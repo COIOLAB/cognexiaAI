@@ -26,6 +26,7 @@ export class CatalogService {
       slug: this.generateSlug(dto.name),
     });
 
+    this.applyStockStatus(product, undefined);
     return this.productRepository.save(product);
   }
 
@@ -68,12 +69,28 @@ export class CatalogService {
   async updateProduct(id: string, tenantId: string, dto: UpdateProductDto): Promise<Product> {
     const product = await this.findProductById(id, tenantId);
     Object.assign(product, dto);
+    this.applyStockStatus(product, dto.status);
     return this.productRepository.save(product);
   }
 
   async deleteProduct(id: string, tenantId: string): Promise<void> {
     const product = await this.findProductById(id, tenantId);
     await this.productRepository.remove(product);
+  }
+
+  private applyStockStatus(product: Product, explicitStatus?: ProductStatus): void {
+    if (!product.trackInventory) return;
+
+    const available = (product.quantityInStock || 0) - (product.quantityReserved || 0);
+
+    if (available <= 0) {
+      product.status = ProductStatus.OUT_OF_STOCK;
+      return;
+    }
+
+    if (!explicitStatus && product.status === ProductStatus.OUT_OF_STOCK) {
+      product.status = ProductStatus.ACTIVE;
+    }
   }
 
   // ============ Product Search & Filters ============

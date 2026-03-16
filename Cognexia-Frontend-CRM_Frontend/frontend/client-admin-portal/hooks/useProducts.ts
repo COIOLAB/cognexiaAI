@@ -13,6 +13,8 @@ export const useGetProducts = (params?: ProductQueryDto) => {
   return useQuery<Product[]>({
     queryKey: [QUERY_KEY, params],
     queryFn: () => productApi.getProducts(params),
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 };
 
@@ -66,7 +68,22 @@ export const useCreateProduct = () => {
 
   return useMutation({
     mutationFn: (data: CreateProductDto) => productApi.createProduct(data),
-    onSuccess: () => {
+    onSuccess: (newProduct) => {
+      queryClient.setQueriesData({ queryKey: [QUERY_KEY] }, (old: any) => {
+        if (!old) return old;
+
+        if (Array.isArray(old)) {
+          if (old.some((item) => item?.id === newProduct.id)) return old;
+          return [newProduct, ...old];
+        }
+
+        if (Array.isArray(old.data)) {
+          if (old.data.some((item: any) => item?.id === newProduct.id)) return old;
+          return { ...old, data: [newProduct, ...old.data] };
+        }
+
+        return old;
+      });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
   });

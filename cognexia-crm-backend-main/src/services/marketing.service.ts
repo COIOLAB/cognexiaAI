@@ -5,7 +5,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
 // Entities
-import { MarketingCampaign, CampaignStatus } from '../entities/marketing-campaign.entity';
+import { MarketingCampaign, CampaignStatus, CampaignType } from '../entities/marketing-campaign.entity';
 import { EmailTemplate } from '../entities/email-template.entity';
 import { MarketingAnalytics, AnalyticsEventType } from '../entities/marketing-analytics.entity';
 import { CustomerSegment } from '../entities/customer-segment.entity';
@@ -584,6 +584,199 @@ export class MarketingService {
     }
 
     return summary;
+  }
+
+  resolvePeriodRange(period?: string): { startDate: Date; endDate: Date } {
+    const normalized = (period || '30d').toLowerCase().trim();
+    const endDate = new Date();
+
+    let days = 30;
+    const dayMatch = normalized.match(/^(\d+)\s*d$/);
+    const yearMatch = normalized.match(/^(\d+)\s*y$/);
+    const monthMatch = normalized.match(/^(\d+)\s*m$/);
+
+    if (dayMatch) {
+      days = Math.max(1, Number(dayMatch[1]));
+    } else if (yearMatch) {
+      days = Math.max(1, Number(yearMatch[1])) * 365;
+    } else if (monthMatch) {
+      days = Math.max(1, Number(monthMatch[1])) * 30;
+    } else if (normalized === '1y') {
+      days = 365;
+    } else if (normalized === '90d') {
+      days = 90;
+    } else if (normalized === '30d') {
+      days = 30;
+    }
+
+    const startDate = new Date(endDate.getTime() - days * 24 * 60 * 60 * 1000);
+    return { startDate, endDate };
+  }
+
+  async getROIMetrics(period?: string): Promise<{
+    totalInvestment: number;
+    revenue: number;
+    overallROI: number;
+    costPerAcquisition: number;
+    lifetimeValue: number;
+    byChannel: Array<{ channel: string; roi: number; spend: number; revenue: number }>;
+    byCampaignType: Array<{ type: string; roi: number; spend: number; revenue: number }>;
+  }> {
+    const { startDate, endDate } = this.resolvePeriodRange(period);
+
+    const campaigns = await this.campaignRepository.createQueryBuilder('campaign')
+      .where('campaign.startDate <= :endDate AND campaign.endDate >= :startDate', { startDate, endDate })
+      .getMany();
+
+    const analytics = await this.analyticsRepository.createQueryBuilder('analytics')
+      .where('analytics.eventDate BETWEEN :startDate AND :endDate', { startDate, endDate })
+      .getMany();
+
+    const campaignById = new Map(campaigns.map((campaign) => [campaign.id, campaign]));
+
+    const channelTotals = new Map<string, { spend: number; revenue: number }>();
+    const typeTotals = new Map<string, { spend: number; revenue: number }>();
+
+    const applySpend = (channel: string, type: string, spend: number) => {
+      const channelEntry = channelTotals.get(channel) || { spend: 0, revenue: 0 };
+      channelEntry.spend += spend;
+      channelTotals.set(channel, channelEntry);
+
+      const typeEntry = typeTotals.get(type) || { spend: 0, revenue: 0 };
+      typeEntry.spend += spend;
+      typeTotals.set(type, typeEntry);
+    };
+
+    campaigns.forEach((campaign) => {
+      const spend = Number(campaign.spentAmount || 0) > 0
+        ? Number(campaign.spentAmount || 0)
+        : Number(campaign.budget || 0);
+      const channel = this.mapCampaignTypeToChannel(campaign.type);
+      applySpend(channel, campaign.type, spend);
+    });
+
+    let totalRevenue = 0;
+    let conversionCount = 0;
+    const uniqueCustomers = new Set<string>();
+
+    analytics.forEach((event) => {
+      const revenue = Number(event.revenue || 0);
+      totalRevenue += revenue;
+
+      if (event.customerId) {
+        uniqueCustomers.add(event.customerId);
+      }
+
+      if (event.eventType === AnalyticsEventType.CONVERSION || event.eventType === AnalyticsEventType.PURCHASE) {
+        conversionCount += 1;
+      }
+
+      const campaign = event.campaignId ? campaignById.get(event.campaignId) : undefined;
+      if (!campaign) return;
+
+      const channel = this.mapCampaignTypeToChannel(campaign.type);
+      const channelEntry = channelTotals.get(channel) || { spend: 0, revenue: 0 };
+      channelEntry.revenue += revenue;
+      channelTotals.set(channel, channelEntry);
+
+      const typeEntry = typeTotals.get(campaign.type) || { spend: 0, revenue: 0 };
+      typeEntry.revenue += revenue;
+      typeTotals.set(campaign.type, typeEntry);
+    });
+
+    const totalInvestment = Array.from(channelTotals.values())
+      .reduce((sum, entry) => sum + entry.spend, 0);
+
+    const overallROI = totalInvestment > 0
+      ? ((totalRevenue - totalInvestment) / totalInvestment) * 100
+      : 0;
+
+    const costPerAcquisition = conversionCount > 0
+      ? totalInvestment / conversionCount
+      : 0;
+
+    const lifetimeValue = uniqueCustomers.size > 0
+      ? totalRevenue / uniqueCustomers.size
+      : conversionCount > 0
+        ? totalRevenue / conversionCount
+        : 0;
+
+    const toRoiEntry = (spend: number, revenue: number) =>
+      spend > 0 ? ((revenue - spend) / spend) * 100 : 0;
+
+    const byChannel = Array.from(channelTotals.entries()).map(([channel, totals]) => ({
+      channel,
+      spend: Number(totals.spend.toFixed(2)),
+      revenue: Number(totals.revenue.toFixed(2)),
+      roi: Number(toRoiEntry(totals.spend, totals.revenue).toFixed(2)),
+    }));
+
+    const byCampaignType = Array.from(typeTotals.entries()).map(([type, totals]) => ({
+      type,
+      spend: Number(totals.spend.toFixed(2)),
+      revenue: Number(totals.revenue.toFixed(2)),
+      roi: Number(toRoiEntry(totals.spend, totals.revenue).toFixed(2)),
+    }));
+
+    return {
+      totalInvestment: Number(totalInvestment.toFixed(2)),
+      revenue: Number(totalRevenue.toFixed(2)),
+      overallROI: Number(overallROI.toFixed(2)),
+      costPerAcquisition: Number(costPerAcquisition.toFixed(2)),
+      lifetimeValue: Number(lifetimeValue.toFixed(2)),
+      byChannel,
+      byCampaignType,
+    };
+  }
+
+  buildRoiCsv(roi: {
+    totalInvestment: number;
+    revenue: number;
+    overallROI: number;
+    costPerAcquisition: number;
+    lifetimeValue: number;
+    byChannel: Array<{ channel: string; roi: number; spend: number; revenue: number }>;
+    byCampaignType: Array<{ type: string; roi: number; spend: number; revenue: number }>;
+  }): string {
+    const lines: string[] = [
+      'Metric,Value',
+      `Total Investment,${roi.totalInvestment}`,
+      `Total Revenue,${roi.revenue}`,
+      `Overall ROI (%),${roi.overallROI}`,
+      `Cost Per Acquisition,${roi.costPerAcquisition}`,
+      `Lifetime Value,${roi.lifetimeValue}`,
+      '',
+      'ROI By Channel',
+      'Channel,Spend,Revenue,ROI (%)',
+    ];
+
+    roi.byChannel.forEach((channel) => {
+      lines.push(`${channel.channel},${channel.spend},${channel.revenue},${channel.roi}`);
+    });
+
+    lines.push('', 'ROI By Campaign Type', 'Type,Spend,Revenue,ROI (%)');
+    roi.byCampaignType.forEach((campaignType) => {
+      lines.push(`${campaignType.type},${campaignType.spend},${campaignType.revenue},${campaignType.roi}`);
+    });
+
+    return lines.join('\n');
+  }
+
+  private mapCampaignTypeToChannel(type: CampaignType): string {
+    switch (type) {
+      case CampaignType.EMAIL:
+        return 'email';
+      case CampaignType.SMS:
+        return 'sms';
+      case CampaignType.SOCIAL_MEDIA:
+        return 'social';
+      case CampaignType.DISPLAY_ADS:
+      case CampaignType.CONTENT_MARKETING:
+      case CampaignType.WEBINAR:
+      case CampaignType.EVENT:
+      default:
+        return 'web';
+    }
   }
 
   // ==================== CUSTOMER SEGMENTATION ====================
