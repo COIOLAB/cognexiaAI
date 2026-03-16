@@ -33,6 +33,18 @@ export class DashboardController {
     private readonly userDashboardService: UserDashboardService,
   ) {}
 
+  private resolveOrganizationId(req: any): string | undefined {
+    const tenantHeader = req.headers?.['x-tenant-id'];
+    const headerOrg =
+      Array.isArray(tenantHeader) ? tenantHeader[0] : tenantHeader;
+    return (
+      req.user?.organizationId ||
+      req.user?.tenantId ||
+      req.user?.orgId ||
+      headerOrg
+    );
+  }
+
   // ==================== ADMIN DASHBOARD ENDPOINTS ====================
 
   /**
@@ -247,7 +259,7 @@ export class DashboardController {
   @UserTypes(UserType.ORG_ADMIN, UserType.ORG_USER)
   async getUserMetrics(@Request() req) {
     try {
-      const organizationId = req.user.organizationId;
+      const organizationId = this.resolveOrganizationId(req);
       const metrics = await this.userDashboardService.getUserMetrics(organizationId);
       return {
         success: true,
@@ -268,7 +280,7 @@ export class DashboardController {
   @UserTypes(UserType.ORG_ADMIN, UserType.ORG_USER)
   async getMarketingMetrics(@Request() req) {
     try {
-      const organizationId = req.user.organizationId;
+      const organizationId = this.resolveOrganizationId(req);
       const summary = await this.userDashboardService.getMarketingSummary(organizationId);
       return {
         success: true,
@@ -289,7 +301,7 @@ export class DashboardController {
   @UserTypes(UserType.ORG_ADMIN, UserType.ORG_USER)
   async getSupportSla(@Request() req) {
     try {
-      const organizationId = req.user.organizationId;
+      const organizationId = this.resolveOrganizationId(req);
       const summary = await this.userDashboardService.getSupportSlaSummary(organizationId);
       return {
         success: true,
@@ -310,7 +322,7 @@ export class DashboardController {
   @UserTypes(UserType.ORG_ADMIN, UserType.ORG_USER)
   async getTierAnalytics(@Request() req) {
     try {
-      const organizationId = req.user.organizationId;
+      const organizationId = this.resolveOrganizationId(req);
       const analytics = await this.userDashboardService.getTierAnalytics(organizationId);
       return {
         success: true,
@@ -331,7 +343,7 @@ export class DashboardController {
   @UserTypes(UserType.ORG_ADMIN, UserType.ORG_USER)
   async getSalesFunnel(@Request() req) {
     try {
-      const organizationId = req.user.organizationId;
+      const organizationId = this.resolveOrganizationId(req);
       const funnel = await this.userDashboardService.getSalesFunnel(organizationId);
       return {
         success: true,
@@ -355,7 +367,7 @@ export class DashboardController {
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
     try {
-      const organizationId = req.user.organizationId;
+      const organizationId = this.resolveOrganizationId(req);
       const activities = await this.userDashboardService.getRecentActivities(organizationId, limit);
       return {
         success: true,
@@ -379,7 +391,7 @@ export class DashboardController {
     @Query('period') period: 'day' | 'week' | 'month' = 'month',
   ) {
     try {
-      const organizationId = req.user.organizationId;
+      const organizationId = this.resolveOrganizationId(req);
       const metrics = await this.userDashboardService.getPerformanceMetrics(organizationId, period);
       return {
         success: true,
@@ -400,7 +412,7 @@ export class DashboardController {
   @UserTypes(UserType.ORG_ADMIN, UserType.ORG_USER)
   async getUserRevenueMetrics(@Request() req) {
     try {
-      const organizationId = req.user.organizationId;
+      const organizationId = this.resolveOrganizationId(req);
       if (!organizationId) {
         return {
           success: true,

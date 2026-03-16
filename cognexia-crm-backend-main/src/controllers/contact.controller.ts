@@ -10,6 +10,7 @@ import {
   Put,
   Query,
   Req,
+  Header as SetHeader,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -31,6 +32,21 @@ export class ContactController {
     @InjectRepository(Contact)
     private readonly contactRepository: Repository<Contact>,
   ) {}
+
+  private resolveOrganizationId(req: any): string | undefined {
+    const tenantHeader = req.headers?.['x-tenant-id'];
+    const headerOrg = Array.isArray(tenantHeader) ? tenantHeader[0] : tenantHeader;
+    return req.user?.organizationId || req.user?.tenantId || req.user?.orgId || headerOrg;
+  }
+
+  private formatCsv(rows: Array<Array<string | number | null | undefined>>): string {
+    const escape = (value: string | number | null | undefined) => {
+      if (value === null || value === undefined) return '';
+      const text = String(value);
+      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    };
+    return rows.map((row) => row.map(escape).join(',')).join('\n');
+  }
 
   @Get()
   @ApiOperation({ summary: 'Get all contacts' })
@@ -171,11 +187,66 @@ export class ContactController {
   }
 
   @Get('export')
+  @SetHeader('Content-Type', 'text/csv')
+  @SetHeader('Content-Disposition', 'attachment; filename=\"contacts.csv\"')
   @ApiOperation({ summary: 'Export contacts' })
   @ApiResponse({ status: 200, description: 'Contacts exported successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing', 'viewer', 'org_admin')
-  async exportContacts() {
-    return { success: true, data: 'id,fullName,email,phone\n' };
+  async exportContacts(
+    @Req() req: any,
+    @Query('type') type?: string,
+    @Query('status') status?: string,
+    @Query('role') role?: string,
+    @Query('customerId') customerId?: string,
+    @Query('search') search?: string,
+  ) {
+    const organizationId = this.resolveOrganizationId(req);
+    const qb = this.contactRepository.createQueryBuilder('contact');
+
+    if (organizationId) {
+      if (process.env.DEMO_ENABLED === 'true') {
+        qb.andWhere('(contact.organizationId = :orgId OR contact.organizationId IS NULL)', {
+          orgId: organizationId,
+        });
+      } else {
+        qb.andWhere('contact.organizationId = :orgId', { orgId: organizationId });
+      }
+    }
+    if (type) qb.andWhere('contact.type = :type', { type });
+    if (status) qb.andWhere('contact.status = :status', { status });
+    if (role) qb.andWhere('contact.role = :role', { role });
+    if (customerId) qb.andWhere('contact.customerId = :customerId', { customerId });
+    if (search) {
+      qb.andWhere('(contact.fullName ILIKE :q OR contact.email ILIKE :q)', { q: `%${search}%` });
+    }
+
+    const contacts = await qb.getMany();
+    const headers = [
+      'id',
+      'fullName',
+      'email',
+      'phone',
+      'company',
+      'role',
+      'status',
+      'type',
+      'customerId',
+      'createdAt',
+    ];
+    const rows = contacts.map((contact) => [
+      contact.id,
+      contact.fullName,
+      contact.email,
+      contact.phone,
+      contact.company,
+      (contact as any).role,
+      contact.status,
+      contact.type,
+      contact.customerId,
+      contact.createdAt instanceof Date ? contact.createdAt.toISOString() : contact.createdAt,
+    ]);
+
+    return this.formatCsv([headers, ...rows]);
   }
 
   @Get(':id')

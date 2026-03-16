@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import { Opportunity, OpportunityStage } from '../entities/opportunity.entity';
 import { SalesQuote, QuoteStatus } from '../entities/sales-quote.entity';
 import { Lead } from '../entities/lead.entity';
@@ -395,7 +395,7 @@ export class SalesService {
 
   async getSalesMetrics(filters: any = {}) {
     try {
-      const opportunities = await this.findAllOpportunities(filters);
+      const opportunities = await this.findAllOpportunities({ where: { organizationId: Not(IsNull()),} });
 
       const totalValue = opportunities.reduce((sum, opp) => sum + Number(opp.value || 0), 0);
       const totalWeightedValue = opportunities.reduce((sum, opp) => {

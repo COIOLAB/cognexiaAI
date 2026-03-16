@@ -81,7 +81,7 @@ export class Lead {
   @Column({ name: 'organization_id', type: 'uuid', nullable: true })
   organizationId: string;
 
-  @ManyToOne(() => Organization, { nullable: true })
+  @ManyToOne(() => Organization, { nullable: false })
   @JoinColumn({ name: 'organization_id' })
   organization?: Organization;
 

@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Customer, CustomerStatus } from '../entities/customer.entity';
 import { Contact } from '../entities/contact.entity';
 import { CustomerInteraction, InteractionType } from '../entities/customer-interaction.entity';
@@ -217,6 +217,75 @@ export class CustomerService {
     }
   }
 
+  async getStats() {
+    try {
+      const customers = await this.customerRepository.find();
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      const stats = customers.reduce(
+        (accumulator, customer) => {
+          const totalRevenue = Number(customer.salesMetrics?.totalRevenue || 0);
+          const tier = customer.segmentation?.tier || 'unknown';
+          const region = customer.address?.region || 'unknown';
+          const createdAt = customer.createdAt ? new Date(customer.createdAt) : null;
+
+          accumulator.totalCustomers += 1;
+          accumulator.totalRevenue += totalRevenue;
+
+          if (customer.status === CustomerStatus.ACTIVE) {
+            accumulator.activeCustomers += 1;
+          }
+
+          if (customer.status === CustomerStatus.CHURNED) {
+            accumulator.churnedCustomers += 1;
+          }
+
+          if (
+            createdAt &&
+            createdAt.getMonth() === currentMonth &&
+            createdAt.getFullYear() === currentYear
+          ) {
+            accumulator.newThisMonth += 1;
+          }
+
+          accumulator.tierDistribution[tier] = (accumulator.tierDistribution[tier] || 0) + 1;
+          accumulator.regionalDistribution[region] =
+            (accumulator.regionalDistribution[region] || 0) + 1;
+
+          return accumulator;
+        },
+        {
+          totalCustomers: 0,
+          activeCustomers: 0,
+          churnedCustomers: 0,
+          newThisMonth: 0,
+          totalRevenue: 0,
+          tierDistribution: {} as Record<string, number>,
+          regionalDistribution: {} as Record<string, number>,
+        },
+      );
+
+      return {
+        totalCustomers: stats.totalCustomers,
+        activeCustomers: stats.activeCustomers,
+        newThisMonth: stats.newThisMonth,
+        churnRate: stats.totalCustomers
+          ? (stats.churnedCustomers / stats.totalCustomers) * 100
+          : 0,
+        averageRevenue: stats.totalCustomers
+          ? stats.totalRevenue / stats.totalCustomers
+          : 0,
+        tierDistribution: stats.tierDistribution,
+        regionalDistribution: stats.regionalDistribution,
+      };
+    } catch (error) {
+      this.logger.error('Error getting customer stats:', error);
+      throw error;
+    }
+  }
+
   private async updateCustomerInteractionMetrics(customerId: string) {
     try {
       const customer = await this.customerRepository.findOne({ where: { id: customerId } });
@@ -421,6 +490,24 @@ export class CustomerService {
       return { success: true, message: 'Customer deleted successfully' };
     } catch (error) {
       this.logger.error(`Error deleting customer ${customerId}:`, error);
+      throw error;
+    }
+  }
+
+  async bulkDelete(customerIds: string[], deletedBy: string) {
+    try {
+      if (!customerIds || customerIds.length === 0) {
+        return { success: true, deleted: 0 };
+      }
+
+      await this.customerRepository.update(
+        { id: In(customerIds) },
+        { status: CustomerStatus.INACTIVE, updatedBy: deletedBy },
+      );
+
+      return { success: true, deleted: customerIds.length, message: 'Customers deleted successfully' };
+    } catch (error) {
+      this.logger.error('Error bulk deleting customers:', error);
       throw error;
     }
   }

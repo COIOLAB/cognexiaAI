@@ -34,6 +34,23 @@ export class CustomerController {
 
   constructor(private readonly customerService: CustomerService) { }
 
+  @Get('stats')
+  @ApiOperation({
+    summary: 'Get customer statistics',
+    description: 'Retrieve customer overview metrics for dashboards',
+  })
+  @ApiResponse({ status: 200, description: 'Customer statistics retrieved successfully' })
+  @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing', 'viewer')
+  async getCustomerStats() {
+    try {
+      const stats = await this.customerService.getStats();
+      return { success: true, data: stats, message: 'Customer statistics retrieved successfully' };
+    } catch (error) {
+      this.logger.error('Error getting customer stats:', error);
+      throw new HttpException('Failed to retrieve customer statistics', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   @Get()
   @ApiOperation({
     summary: 'Get customers',
@@ -105,6 +122,11 @@ export class CustomerController {
         ...createCustomerDto,
         organizationId: createCustomerDto.organizationId || organizationId,
       };
+      payload.customerCode =
+        payload.customerCode ||
+        `C-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)
+          .toString()
+          .padStart(3, '0')}`;
       const customer = await this.customerService.createCustomer(payload, createdBy);
       return { success: true, data: customer, message: 'Customer created successfully' };
     } catch (error) {

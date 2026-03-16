@@ -8,10 +8,12 @@ import {
   Param,
   Query,
   UseGuards,
+  Req,
   Logger,
   HttpException,
   HttpStatus,
   NotFoundException,
+  Header as SetHeader,
   Request,
 } from '@nestjs/common';
 import {
@@ -40,6 +42,21 @@ export class CRMController {
     private readonly customerService: CustomerService,
     private readonly leadService: LeadService,
   ) { }
+
+  private resolveOrganizationId(req: any): string | undefined {
+    const tenantHeader = req.headers?.['x-tenant-id'];
+    const headerOrg = Array.isArray(tenantHeader) ? tenantHeader[0] : tenantHeader;
+    return req.user?.organizationId || req.user?.tenantId || req.user?.orgId || headerOrg;
+  }
+
+  private formatCsv(rows: Array<Array<string | number | null | undefined>>): string {
+    const escape = (value: string | number | null | undefined) => {
+      if (value === null || value === undefined) return '';
+      const text = String(value);
+      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    };
+    return rows.map((row) => row.map(escape).join(',')).join('\n');
+  }
 
   // =================== CUSTOMER MANAGEMENT ===================
 
@@ -164,6 +181,64 @@ export class CRMController {
     } catch (error) {
       this.logger.error('Error getting lead stats:', error);
       throw new HttpException('Failed to retrieve lead stats', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get('leads/export')
+  @SetHeader('Content-Type', 'text/csv')
+  @SetHeader('Content-Disposition', 'attachment; filename=\"leads.csv\"')
+  @ApiOperation({ summary: 'Export leads', description: 'Export leads to CSV' })
+  @ApiResponse({ status: 200, description: 'Leads exported successfully' })
+  @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing')
+  async exportLeads(
+    @Req() req,
+    @Query('status') status?: string,
+    @Query('source') source?: string,
+    @Query('assignedTo') assignedTo?: string,
+    @Query('score') score?: number,
+    @Query('search') search?: string,
+  ) {
+    try {
+      const organizationId = this.resolveOrganizationId(req);
+      const leads = await this.leadService.exportLeads({
+        status,
+        source,
+        assignedTo,
+        minScore: score,
+        search,
+        organizationId,
+        demoFallback: process.env.DEMO_ENABLED === 'true',
+      });
+
+      const headers = [
+        'id',
+        'leadNumber',
+        'status',
+        'source',
+        'score',
+        'firstName',
+        'lastName',
+        'email',
+        'company',
+        'createdAt',
+      ];
+      const rows = leads.map((lead) => [
+        lead.id,
+        (lead as any).leadNumber,
+        lead.status,
+        lead.source,
+        lead.score,
+        (lead as any)?.contact?.firstName,
+        (lead as any)?.contact?.lastName,
+        (lead as any)?.contact?.email,
+        (lead as any)?.contact?.company,
+        lead.createdAt instanceof Date ? lead.createdAt.toISOString() : lead.createdAt,
+      ]);
+
+      return this.formatCsv([headers, ...rows]);
+    } catch (error) {
+      this.logger.error('Error exporting leads:', error);
+      throw new HttpException('Failed to export leads', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
