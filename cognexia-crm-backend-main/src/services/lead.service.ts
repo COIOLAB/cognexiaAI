@@ -40,6 +40,7 @@ export class LeadService {
     assignedTo?: string;
     minScore?: number;
     search?: string;
+    organizationId?: string;
   }): Promise<{
     data: Lead[];
     total: number;
@@ -47,8 +48,12 @@ export class LeadService {
     limit: number;
   }> {
     try {
-      const { page = 1, limit = 10, status, source, assignedTo, minScore, search } = paginationDto;
-      const qb = this.leadRepository.createQueryBuilder('lead');
+      const { page = 1, limit = 10, status, source, assignedTo, minScore, search, organizationId } = paginationDto;
+      const qb = this.leadRepository.createQueryBuilder('lead')
+        .leftJoinAndSelect('lead.customer', 'customer')
+        .leftJoinAndSelect('lead.organization', 'organization');
+
+      if (organizationId) qb.andWhere('lead.organizationId = :organizationId', { organizationId });
 
       if (status) qb.andWhere('lead.status = :status', { status });
       if (source) qb.andWhere('lead.source = :source', { source });
@@ -88,7 +93,7 @@ export class LeadService {
       
       const lead = await this.leadRepository.findOne({
         where: { id },
-        relations: ['customer'],
+        relations: ['customer', 'organization'],
       });
 
       if (!lead) {
@@ -148,7 +153,7 @@ export class LeadService {
     try {
       return await this.leadRepository.findOne({
         where: { contact: { path: ['email'], equals: email } } as any,
-        relations: ['customer'],
+        relations: ['customer', 'organization'],
       });
     } catch (error) {
       this.logger.error(`Error finding lead by email ${email}:`, error);
@@ -160,7 +165,7 @@ export class LeadService {
     try {
       return await this.leadRepository.find({
         where: { status: status as any },
-        relations: ['customer'],
+        relations: ['customer', 'organization'],
         order: { createdAt: 'DESC' },
       });
     } catch (error) {

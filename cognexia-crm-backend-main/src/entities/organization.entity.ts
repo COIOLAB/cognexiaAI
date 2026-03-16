@@ -10,6 +10,8 @@ import {
   Index,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
+import { Lead } from './lead.entity';
+import { Customer } from './customer.entity';
 
 export enum OrganizationStatus {
   ACTIVE = 'active',
@@ -215,4 +217,10 @@ export class Organization {
 
   @OneToMany('UsageMetric', 'organization')
   usageMetrics: any[];
+
+  @OneToMany(() => Lead, (lead) => lead.organization)
+  leads: Lead[];
+
+  @OneToMany(() => Customer, (customer) => customer.organization)
+  customers: Customer[];
 }

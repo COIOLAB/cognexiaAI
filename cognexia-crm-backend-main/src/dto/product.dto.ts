@@ -147,7 +147,15 @@ export class CreateCategoryDto {
 
   @IsString()
   @IsOptional()
+  slug?: string;
+
+  @IsString()
+  @IsOptional()
   description?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  active?: boolean;
 
   @IsUUID()
   @IsOptional()

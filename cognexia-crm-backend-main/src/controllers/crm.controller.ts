@@ -12,6 +12,7 @@ import {
   HttpException,
   HttpStatus,
   NotFoundException,
+  Request,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -56,6 +57,7 @@ export class CRMController {
   @ApiResponse({ status: 200, description: 'Customers retrieved successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing', 'viewer')
   async getAllCustomers(
+    @Request() req,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('segment') segment?: string,
@@ -67,10 +69,12 @@ export class CRMController {
     try {
       const currentPage = Number(page) || 1;
       const itemsPerPage = Number(limit) || 20;
+      const organizationId = req?.user?.organizationId || req?.user?.tenantId;
       const { data, total } = await this.customerService.findAll({
         page: currentPage,
         limit: itemsPerPage,
         search,
+        organizationId,
       });
 
       return {
@@ -108,6 +112,7 @@ export class CRMController {
   @ApiResponse({ status: 200, description: 'Leads retrieved successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing')
   async getAllLeads(
+    @Request() req,
     @Query('status') status?: string,
     @Query('source') source?: string,
     @Query('score') score?: number,
@@ -119,6 +124,7 @@ export class CRMController {
     try {
       const currentPage = Number(page) || 1;
       const itemsPerPage = Number(limit) || 10;
+      const organizationId = req?.user?.organizationId || req?.user?.tenantId;
       const result = await this.leadService.findAll({
         page: currentPage,
         limit: itemsPerPage,
@@ -127,6 +133,7 @@ export class CRMController {
         minScore: score,
         assignedTo,
         search,
+        organizationId,
       } as any);
 
       const mapped = result.data.map((lead) => this.mapLeadToDto(lead));
@@ -217,7 +224,7 @@ export class CRMController {
   @ApiParam({ name: 'id', description: 'Lead UUID' })
   @ApiResponse({ status: 200, description: 'Lead updated successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing')
-  async updateLead(@Param('id') id: string, @Body() updateLeadDto: any) {
+  async updateLead(@Param('id') id: string, @Body() updateLeadDto: any, @Request() req) {
     try {
       const existing = await this.leadService.findOne(id);
 
@@ -260,6 +267,7 @@ export class CRMController {
         behaviorData,
         source,
         updatedBy: updateLeadDto.updatedBy || 'system_user',
+        organizationId: updateLeadDto.organizationId || existing.organizationId || req?.user?.organizationId || req?.user?.tenantId,
       };
 
       const lead = await this.leadService.update(id, payload);
@@ -298,6 +306,8 @@ export class CRMController {
     return {
       id: lead.id,
       leadCode: lead.leadNumber,
+      customerId: lead.customerId || lead.customer?.id || null,
+      organizationId: lead.organizationId || lead.organization?.id || null,
       fullName: fullName || contact.email || '',
       email: contact.email || '',
       company: lead.company || contact.company || '',
@@ -316,7 +326,7 @@ export class CRMController {
   })
   @ApiResponse({ status: 201, description: 'Lead created successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing')
-  async createLead(@Body() createLeadDto: any) {
+  async createLead(@Body() createLeadDto: any, @Request() req) {
     try {
       if (!createLeadDto.contact?.email && !createLeadDto.email) {
         throw new HttpException('Contact email is required', HttpStatus.BAD_REQUEST);
@@ -365,6 +375,7 @@ export class CRMController {
         status: createLeadDto.status || LeadStatus.NEW,
         createdBy: createLeadDto.createdBy || 'system_user',
         updatedBy: createLeadDto.updatedBy || 'system_user',
+        organizationId: createLeadDto.organizationId || req?.user?.organizationId || req?.user?.tenantId,
         score: leadScore,
         leadScoring: {
           demographicScore: leadScore,

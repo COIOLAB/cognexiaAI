@@ -11,6 +11,7 @@ import {
   Logger,
   HttpException,
   HttpStatus,
+  Request,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -32,6 +33,132 @@ export class CustomerController {
   private readonly logger = new Logger(CustomerController.name);
 
   constructor(private readonly customerService: CustomerService) { }
+
+  @Get()
+  @ApiOperation({
+    summary: 'Get customers',
+    description: 'Retrieve customers with pagination and search'
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'Customers retrieved successfully' })
+  @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'viewer')
+  async getCustomers(
+    @Request() req,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+  ) {
+    try {
+      const organizationId = req?.user?.organizationId || req?.user?.tenantId;
+      const result = await this.customerService.findAll({
+        page: Number(page) || 1,
+        limit: Number(limit) || 20,
+        search,
+        organizationId,
+      });
+
+      return { success: true, data: result, message: 'Customers retrieved successfully' };
+    } catch (error) {
+      this.logger.error('Error getting customers:', error);
+      throw new HttpException('Failed to retrieve customers', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Get customer by ID',
+    description: 'Retrieve a single customer'
+  })
+  @ApiParam({ name: 'id', description: 'Customer UUID' })
+  @ApiResponse({ status: 200, description: 'Customer retrieved successfully' })
+  @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'viewer')
+  async getCustomer(@Param('id') customerId: string) {
+    try {
+      const customer = await this.customerService.findById(customerId);
+      if (!customer) {
+        throw new HttpException('Customer not found', HttpStatus.NOT_FOUND);
+      }
+      return { success: true, data: customer, message: 'Customer retrieved successfully' };
+    } catch (error) {
+      this.logger.error(`Error getting customer ${customerId}:`, error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException('Failed to retrieve customer', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Post()
+  @ApiOperation({
+    summary: 'Create customer',
+    description: 'Create a new customer'
+  })
+  @ApiResponse({ status: 201, description: 'Customer created successfully' })
+  @Roles('admin', 'manager', 'sales_manager', 'sales_rep')
+  async createCustomer(@Body() createCustomerDto: any, @Request() req) {
+    try {
+      const createdBy = req?.user?.email || req?.user?.id || 'system_user';
+      const organizationId = req?.user?.organizationId || req?.user?.tenantId;
+      const payload = {
+        ...createCustomerDto,
+        organizationId: createCustomerDto.organizationId || organizationId,
+      };
+      const customer = await this.customerService.createCustomer(payload, createdBy);
+      return { success: true, data: customer, message: 'Customer created successfully' };
+    } catch (error) {
+      this.logger.error('Error creating customer:', error);
+      throw new HttpException('Failed to create customer', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Put(':id')
+  @ApiOperation({
+    summary: 'Update customer',
+    description: 'Update an existing customer'
+  })
+  @ApiParam({ name: 'id', description: 'Customer UUID' })
+  @ApiResponse({ status: 200, description: 'Customer updated successfully' })
+  @Roles('admin', 'manager', 'sales_manager', 'sales_rep')
+  async updateCustomer(
+    @Param('id') customerId: string,
+    @Body() updateCustomerDto: any,
+    @Request() req
+  ) {
+    try {
+      const updatedBy = req?.user?.email || req?.user?.id || 'system_user';
+      const organizationId = req?.user?.organizationId || req?.user?.tenantId;
+      const payload = {
+        ...updateCustomerDto,
+        organizationId: updateCustomerDto.organizationId || organizationId,
+      };
+      const customer = await this.customerService.updateCustomer(customerId, payload, updatedBy);
+      return { success: true, data: customer, message: 'Customer updated successfully' };
+    } catch (error) {
+      this.logger.error(`Error updating customer ${customerId}:`, error);
+      throw new HttpException('Failed to update customer', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Delete(':id')
+  @ApiOperation({
+    summary: 'Delete customer',
+    description: 'Soft-delete a customer'
+  })
+  @ApiParam({ name: 'id', description: 'Customer UUID' })
+  @ApiResponse({ status: 200, description: 'Customer deleted successfully' })
+  @Roles('admin', 'manager', 'sales_manager', 'sales_rep')
+  async deleteCustomer(@Param('id') customerId: string, @Request() req) {
+    try {
+      const deletedBy = req?.user?.email || req?.user?.id || 'system_user';
+      const result = await this.customerService.deleteCustomer(customerId, deletedBy);
+      return { success: true, data: result, message: 'Customer deleted successfully' };
+    } catch (error) {
+      this.logger.error(`Error deleting customer ${customerId}:`, error);
+      throw new HttpException('Failed to delete customer', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
 
   @Get(':id/contacts')
   @ApiOperation({

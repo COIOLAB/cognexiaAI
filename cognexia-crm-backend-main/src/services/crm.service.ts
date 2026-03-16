@@ -238,6 +238,7 @@ export class CRMService {
 
       // Create customer from lead
       const customerData = {
+        organizationId: lead.organizationId,
         companyName: lead.contact.company || `${lead.contact.firstName} ${lead.contact.lastName}`,
         customerType: CustomerType.B2B,
         status: CustomerStatus.PROSPECT,

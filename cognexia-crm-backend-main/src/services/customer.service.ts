@@ -280,8 +280,53 @@ export class CustomerService {
 
   async createCustomer(createCustomerDto: any, createdBy: string) {
     try {
+      const customerCode = createCustomerDto.customerCode || await this.generateCustomerCode();
+      const nowIso = new Date().toISOString();
+      const preferences = createCustomerDto.preferences ?? {
+        language: 'en',
+        currency: 'USD',
+        timezone: 'UTC',
+        communicationChannels: ['email'],
+        marketingOptIn: true,
+        newsletterOptIn: false,
+        eventInvitations: false,
+        privacySettings: {
+          dataSharing: false,
+          analytics: true,
+          marketing: true,
+        },
+      };
+      const salesMetrics = createCustomerDto.salesMetrics ?? {
+        totalRevenue: 0,
+        averageOrderValue: 0,
+        paymentTerms: 'NET30',
+        outstandingBalance: 0,
+      };
+      const relationshipMetrics = createCustomerDto.relationshipMetrics ?? {
+        customerSince: nowIso,
+        loyaltyScore: 5,
+        satisfactionScore: 5,
+        npsScore: 0,
+        interactionFrequency: 'weekly',
+      };
+      const segmentation = createCustomerDto.segmentation ?? {
+        segment: 'prospect',
+        tier: 'bronze',
+        riskLevel: 'medium',
+        growthPotential: 'medium',
+      };
+      const demographics = createCustomerDto.demographics ?? {};
+      const tags = Array.isArray(createCustomerDto.tags) ? createCustomerDto.tags : [];
+
       const customer = this.customerRepository.create({
         ...createCustomerDto,
+        customerCode,
+        demographics,
+        preferences,
+        salesMetrics,
+        relationshipMetrics,
+        segmentation,
+        tags,
         status: CustomerStatus.ACTIVE,
         createdBy,
         updatedBy: createdBy
@@ -293,10 +338,20 @@ export class CustomerService {
     }
   }
 
-  async findAll(params: { page?: number; limit?: number; search?: string }) {
+  private async generateCustomerCode(): Promise<string> {
+    const year = new Date().getFullYear();
+    const count = await this.customerRepository.count();
+    return `C-${year}-${String(count + 1).padStart(3, '0')}`;
+  }
+
+  async findAll(params: { page?: number; limit?: number; search?: string; organizationId?: string }) {
     try {
-      const { page = 1, limit = 10, search } = params;
+      const { page = 1, limit = 10, search, organizationId } = params;
       const query = this.customerRepository.createQueryBuilder('customer');
+
+      if (organizationId) {
+        query.andWhere('customer.organizationId = :organizationId', { organizationId });
+      }
       
       if (search) {
         query.andWhere('customer.companyName ILIKE :search OR customer.customerCode ILIKE :search', {
