@@ -161,6 +161,42 @@ export class CreateCustomerSegmentDto {
   isActive?: boolean;
 }
 
+export class UpdateCustomerSegmentDto {
+  @ApiPropertyOptional({ description: 'Segment name' })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional({ description: 'Segment description' })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiPropertyOptional({ enum: SegmentCriteria, description: 'Segmentation criteria' })
+  @IsOptional()
+  @IsEnum(SegmentCriteria)
+  criteria?: SegmentCriteria;
+
+  @ApiPropertyOptional({ description: 'Segment conditions' })
+  @IsOptional()
+  @IsArray()
+  conditions?: {
+    field: string;
+    operator: string;
+    value: any;
+  }[];
+
+  @ApiPropertyOptional({ description: 'Segment tags' })
+  @IsOptional()
+  @IsArray()
+  tags?: string[];
+
+  @ApiPropertyOptional({ description: 'Is segment active' })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
 export class EmailTemplateDto {
   @ApiProperty({ description: 'Template name' })
   @IsString()

@@ -11,7 +11,9 @@ import { KpiCard } from '@/components/KpiCard';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
+import { SegmentCriteria } from '@/types/api.types';
 
 export default function SegmentsPage() {
   const { data: segmentsData, isLoading } = useGetSegments();
@@ -20,6 +22,7 @@ export default function SegmentsPage() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [criteria, setCriteria] = useState<SegmentCriteria>(SegmentCriteria.DEMOGRAPHIC);
 
   const stats = statsData?.data || {
     totalSegments: 0,
@@ -95,6 +98,22 @@ export default function SegmentsPage() {
               <label className="text-sm font-medium">Description</label>
               <Textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={3} />
             </div>
+            <div>
+              <label className="text-sm font-medium">Criteria</label>
+              <Select value={criteria} onValueChange={(value) => setCriteria(value as SegmentCriteria)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select criteria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SegmentCriteria.DEMOGRAPHIC}>Demographic</SelectItem>
+                  <SelectItem value={SegmentCriteria.BEHAVIORAL}>Behavioral</SelectItem>
+                  <SelectItem value={SegmentCriteria.GEOGRAPHIC}>Geographic</SelectItem>
+                  <SelectItem value={SegmentCriteria.PSYCHOGRAPHIC}>Psychographic</SelectItem>
+                  <SelectItem value={SegmentCriteria.TRANSACTIONAL}>Transactional</SelectItem>
+                  <SelectItem value={SegmentCriteria.ENGAGEMENT}>Engagement</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
@@ -106,14 +125,16 @@ export default function SegmentsPage() {
                 createSegment.mutate(
                   {
                     name: name.trim(),
-                    type: 'static' as any,
-                    criteria: [],
+                    description: description.trim(),
+                    criteria,
+                    conditions: [],
                   },
                   {
                     onSuccess: () => {
                       setOpen(false);
                       setName('');
                       setDescription('');
+                      setCriteria(SegmentCriteria.DEMOGRAPHIC);
                     },
                   },
                 );

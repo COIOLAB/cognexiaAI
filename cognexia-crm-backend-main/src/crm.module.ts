@@ -18,6 +18,7 @@ import { ContactController } from './controllers/contact.controller';
 import { CRMAIIntegrationController } from './controllers/crm-ai-integration.controller';
 import { MarketingController } from './controllers/marketing.controller';
 import { SupportController } from './controllers/support.controller';
+import { SLAController } from './controllers/sla.controller';
 import { OrganizationController } from './controllers/organization.controller';
 import { SubscriptionPlansController } from './controllers/subscription-plans.controller';
 import { AuditLogController } from './controllers/audit-log.controller';
@@ -112,6 +113,7 @@ import { LeadService } from './services/lead.service';
 import { CRMAIIntegrationService } from './services/crm-ai-integration.service';
 import { MarketingService } from './services/marketing.service';
 import { SupportService } from './services/support.service';
+import { SLAService } from './services/sla.service';
 import { UserManagementService } from './services/user-management.service';
 import { UserTierService } from './services/user-tier.service';
 
@@ -747,6 +749,7 @@ import { Deployment } from './entities/deployment.entity';
     CRMAIIntegrationController,
     MarketingController,
     SupportController,
+    SLAController,
     
     // Core Management Controllers
     OrganizationController,
@@ -881,6 +884,7 @@ import { Deployment } from './entities/deployment.entity';
     CRMAIIntegrationService,
     MarketingService,
     SupportService,
+    SLAService,
     
     // ===== NEW: 18 Super Admin Feature Services =====
     PlatformAnalyticsService,

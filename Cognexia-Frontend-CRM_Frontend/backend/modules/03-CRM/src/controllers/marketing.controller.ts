@@ -13,6 +13,7 @@ import {
   HttpStatus,
   ParseUUIDPipe,
   Request,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -31,12 +32,14 @@ import {
   CreateCampaignDto,
   UpdateCampaignDto,
   CreateCustomerSegmentDto,
+  UpdateCustomerSegmentDto,
   EmailTemplateDto,
   SendEmailCampaignDto,
   MarketingAnalyticsRequestDto,
   CampaignStatus,
   CampaignType,
 } from '../dto/marketing.dto';
+import type { Response } from 'express';
 
 @ApiTags('CRM - Marketing Management')
 @Controller('crm/marketing')
@@ -524,6 +527,234 @@ export class MarketingController {
       this.logger.error(`Error recalculating segment ${id}:`, error);
       throw new HttpException('Failed to recalculate segment', HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  @Post('segments/:id/refresh')
+  @ApiOperation({
+    summary: 'Refresh segment',
+    description: 'Alias for recalculating a segment'
+  })
+  @ApiParam({ name: 'id', description: 'Segment UUID' })
+  @ApiResponse({ status: 200, description: 'Segment refreshed successfully' })
+  @Roles('admin', 'manager', 'marketing_manager', 'marketing_specialist')
+  async refreshSegment(@Param('id', ParseUUIDPipe) id: string) {
+    return this.recalculateSegment(id);
+  }
+
+  @Put('segments/:id')
+  @ApiOperation({
+    summary: 'Update customer segment',
+    description: 'Update segment settings or criteria'
+  })
+  @ApiParam({ name: 'id', description: 'Segment UUID' })
+  @ApiBody({ type: UpdateCustomerSegmentDto })
+  @ApiResponse({ status: 200, description: 'Segment updated successfully' })
+  @Roles('admin', 'manager', 'marketing_manager', 'marketing_specialist')
+  async updateCustomerSegment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() segmentDto: UpdateCustomerSegmentDto,
+    @Request() req,
+  ) {
+    try {
+      const segment = await this.marketingService.updateCustomerSegment(
+        id,
+        segmentDto,
+        req.user?.id || req.user?.userId || 'system',
+      );
+      return {
+        success: true,
+        data: segment,
+        message: 'Segment updated successfully',
+      };
+    } catch (error) {
+      this.logger.error(`Error updating segment ${id}:`, error);
+      throw new HttpException(error.message || 'Failed to update segment', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Delete('segments/:id')
+  @ApiOperation({
+    summary: 'Delete customer segment',
+    description: 'Delete a segment and its associated data'
+  })
+  @ApiParam({ name: 'id', description: 'Segment UUID' })
+  @ApiResponse({ status: 200, description: 'Segment deleted successfully' })
+  @Roles('admin', 'manager', 'marketing_manager')
+  async deleteCustomerSegment(@Param('id', ParseUUIDPipe) id: string) {
+    try {
+      await this.marketingService.deleteCustomerSegment(id);
+      return {
+        success: true,
+        message: 'Segment deleted successfully',
+      };
+    } catch (error) {
+      this.logger.error(`Error deleting segment ${id}:`, error);
+      throw new HttpException(error.message || 'Failed to delete segment', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get('segments/:id/size')
+  @ApiOperation({
+    summary: 'Get segment size',
+    description: 'Return current customer count for a segment'
+  })
+  @ApiParam({ name: 'id', description: 'Segment UUID' })
+  @ApiResponse({ status: 200, description: 'Segment size retrieved successfully' })
+  @Roles('admin', 'manager', 'marketing_manager', 'marketing_specialist', 'viewer')
+  async getSegmentSize(@Param('id', ParseUUIDPipe) id: string) {
+    try {
+      const segment = await this.marketingService.getCustomerSegment(id);
+      return {
+        success: true,
+        data: { size: segment?.customerCount || 0 },
+        message: 'Segment size retrieved successfully',
+      };
+    } catch (error) {
+      this.logger.error(`Error retrieving size for segment ${id}:`, error);
+      throw new HttpException('Failed to retrieve segment size', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get('segments/:id/contacts')
+  @ApiOperation({
+    summary: 'Get segment contacts',
+    description: 'Retrieve customers that match segment criteria'
+  })
+  @ApiParam({ name: 'id', description: 'Segment UUID' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Segment contacts retrieved successfully' })
+  @Roles('admin', 'manager', 'marketing_manager', 'marketing_specialist', 'viewer')
+  async getSegmentContacts(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 100,
+  ) {
+    try {
+      const customers = await this.marketingService.getSegmentCustomers(id);
+      const normalizedPage = Math.max(1, Number(page) || 1);
+      const normalizedLimit = Math.max(1, Number(limit) || 100);
+      const start = (normalizedPage - 1) * normalizedLimit;
+      const items = customers.slice(start, start + normalizedLimit);
+      return {
+        success: true,
+        data: {
+          items,
+          total: customers.length,
+          page: normalizedPage,
+          limit: normalizedLimit,
+          totalPages: Math.max(1, Math.ceil(customers.length / normalizedLimit)),
+        },
+        message: 'Segment contacts retrieved successfully',
+      };
+    } catch (error) {
+      this.logger.error(`Error retrieving contacts for segment ${id}:`, error);
+      throw new HttpException('Failed to retrieve segment contacts', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get('segments/:id/export')
+  @ApiOperation({
+    summary: 'Export segment contacts',
+    description: 'Export customers in a segment as CSV or Excel'
+  })
+  @ApiParam({ name: 'id', description: 'Segment UUID' })
+  @ApiQuery({ name: 'format', required: false, enum: ['csv', 'excel'] })
+  @ApiResponse({ status: 200, description: 'Segment export generated successfully' })
+  @Roles('admin', 'manager', 'marketing_manager', 'marketing_specialist')
+  async exportSegment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('format') format = 'csv',
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    try {
+      const customers = await this.marketingService.getSegmentCustomers(id);
+      const csv = this.buildSegmentCsv(customers);
+      const isExcel = format === 'excel';
+      res.setHeader('Content-Type', isExcel ? 'application/vnd.ms-excel' : 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="segment-${id}.${isExcel ? 'xls' : 'csv'}"`);
+      return csv;
+    } catch (error) {
+      this.logger.error(`Error exporting segment ${id}:`, error);
+      throw new HttpException('Failed to export segment', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get('segments/:id/campaigns')
+  @ApiOperation({
+    summary: 'Get segment campaigns',
+    description: 'Retrieve campaigns targeting this segment'
+  })
+  @ApiParam({ name: 'id', description: 'Segment UUID' })
+  @ApiResponse({ status: 200, description: 'Segment campaigns retrieved successfully' })
+  @Roles('admin', 'manager', 'marketing_manager', 'marketing_specialist', 'viewer')
+  async getSegmentCampaigns(@Param('id', ParseUUIDPipe) id: string) {
+    try {
+      const campaigns = await this.marketingService.getSegmentCampaigns(id);
+      return {
+        success: true,
+        data: campaigns,
+        message: 'Segment campaigns retrieved successfully',
+      };
+    } catch (error) {
+      this.logger.error(`Error retrieving campaigns for segment ${id}:`, error);
+      throw new HttpException('Failed to retrieve segment campaigns', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Post('segments/bulk/delete')
+  @ApiOperation({
+    summary: 'Bulk delete segments',
+    description: 'Delete multiple segments by id'
+  })
+  @ApiResponse({ status: 200, description: 'Segments deleted successfully' })
+  @Roles('admin', 'manager', 'marketing_manager')
+  async bulkDeleteSegments(@Body() body: { ids: string[] }) {
+    try {
+      const ids = Array.isArray(body?.ids) ? body.ids : [];
+      await Promise.all(ids.map((id) => this.marketingService.deleteCustomerSegment(id)));
+      return {
+        success: true,
+        message: 'Segments deleted successfully',
+      };
+    } catch (error) {
+      this.logger.error('Error bulk deleting segments:', error);
+      throw new HttpException('Failed to delete segments', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  private buildSegmentCsv(customers: any[]): string {
+    const columns = [
+      { key: 'id', label: 'ID' },
+      { key: 'companyName', label: 'Company Name' },
+      { key: 'industry', label: 'Industry' },
+      { key: 'status', label: 'Status' },
+      { key: 'segment', label: 'Segment' },
+      { key: 'tier', label: 'Tier' },
+      { key: 'email', label: 'Primary Email' },
+    ];
+
+    const escapeValue = (value: any) =>
+      `"${String(value ?? '').replace(/"/g, '""')}"`;
+
+    const header = columns.map((col) => escapeValue(col.label)).join(',');
+    const rows = customers.map((customer) => {
+      const row = columns.map((col) => {
+        switch (col.key) {
+          case 'segment':
+            return escapeValue(customer?.segmentation?.segment);
+          case 'tier':
+            return escapeValue(customer?.segmentation?.tier);
+          case 'email':
+            return escapeValue(customer?.primaryContact?.email);
+          default:
+            return escapeValue(customer?.[col.key]);
+        }
+      });
+      return row.join(',');
+    });
+
+    return [header, ...rows].join('\n');
   }
 
   // ==================== ANALYTICS & INSIGHTS ====================

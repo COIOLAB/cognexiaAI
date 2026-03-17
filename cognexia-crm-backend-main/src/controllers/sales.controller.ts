@@ -13,6 +13,7 @@ import {
   HttpStatus,
   Header,
   NotFoundException,
+  Request,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -48,6 +49,7 @@ export class SalesController {
   @ApiResponse({ status: 200, description: 'Opportunities retrieved successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'viewer', 'org_admin')
   async getAllOpportunities(
+    @Request() req: any,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('stage') stage?: string,
@@ -56,7 +58,10 @@ export class SalesController {
     @Query('search') search?: string,
   ) {
     try {
+      const organizationId =
+        req.user?.organizationId || req.user?.tenantId || req.organizationId;
       const opportunities = await this.salesService.getOpportunities({
+        organizationId,
         page,
         limit,
         stage,
@@ -83,11 +88,15 @@ export class SalesController {
   })
   @ApiResponse({ status: 201, description: 'Opportunity created successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
-  async createOpportunity(@Body() createOpportunityDto: any) {
+  async createOpportunity(@Body() createOpportunityDto: any, @Request() req: any) {
     try {
+      const createdBy = req.user?.id || req.user?.userId || 'system_user';
+      const organizationId =
+        req.user?.organizationId || req.user?.tenantId || req.organizationId;
       const opportunity = await this.salesService.createOpportunity(
         createOpportunityDto,
-        'system_user' // In real implementation, get from JWT token
+        createdBy,
+        organizationId
       );
 
       return {
@@ -111,13 +120,15 @@ export class SalesController {
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
   async updateOpportunityStage(
     @Param('id') id: string,
-    @Body() updateStageDto: { stage: string }
+    @Body() updateStageDto: { stage: string },
+    @Request() req: any
   ) {
     try {
+      const updatedBy = req.user?.id || req.user?.userId || 'system_user';
       const opportunity = await this.salesService.updateOpportunityStage(
         id,
         updateStageDto.stage as any,
-        'system_user'
+        updatedBy
       );
 
       return {
@@ -141,13 +152,17 @@ export class SalesController {
   @ApiResponse({ status: 200, description: 'Opportunities exported successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
   async exportOpportunities(
+    @Request() req: any,
     @Query('stage') stage?: string,
     @Query('salesRep') salesRep?: string,
     @Query('minValue') minValue?: number,
     @Query('search') search?: string,
   ) {
     try {
+      const organizationId =
+        req.user?.organizationId || req.user?.tenantId || req.organizationId;
       const opportunities = await this.salesService.findAllOpportunities({
+        organizationId,
         stage,
         salesRep,
         minValue,
@@ -197,9 +212,10 @@ export class SalesController {
   @ApiParam({ name: 'id', description: 'Opportunity UUID' })
   @ApiResponse({ status: 200, description: 'Opportunity updated successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
-  async updateOpportunity(@Param('id') id: string, @Body() updateDto: any) {
+  async updateOpportunity(@Param('id') id: string, @Body() updateDto: any, @Request() req: any) {
     try {
-      const opportunity = await this.salesService.updateOpportunity(id, updateDto, 'system_user');
+      const updatedBy = req.user?.id || req.user?.userId || 'system_user';
+      const opportunity = await this.salesService.updateOpportunity(id, updateDto, updatedBy);
       return {
         success: true,
         data: opportunity,
@@ -283,11 +299,11 @@ export class SalesController {
   })
   @ApiResponse({ status: 201, description: 'Quote created successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
-  async createQuote(@Body() createQuoteDto: any) {
+  async createQuote(@Body() createQuoteDto: any, @Request() req: any) {
     try {
       const quote = await this.salesService.createQuote(
         createQuoteDto,
-        'system_user'
+        req.user?.id || req.user?.userId || 'system_user'
       );
 
       return {
@@ -427,9 +443,13 @@ export class SalesController {
   @ApiParam({ name: 'id', description: 'Quote UUID' })
   @ApiResponse({ status: 200, description: 'Quote updated successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
-  async updateQuote(@Param('id') id: string, @Body() updateQuoteDto: any) {
+  async updateQuote(@Param('id') id: string, @Body() updateQuoteDto: any, @Request() req: any) {
     try {
-      const quote = await this.salesService.updateQuote(id, updateQuoteDto, 'system_user');
+      const quote = await this.salesService.updateQuote(
+        id,
+        updateQuoteDto,
+        req.user?.id || req.user?.userId || 'system_user'
+      );
       return {
         success: true,
         data: quote,
@@ -470,9 +490,10 @@ export class SalesController {
   @ApiParam({ name: 'id', description: 'Quote UUID' })
   @ApiResponse({ status: 200, description: 'Quote sent successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
-  async sendQuote(@Param('id') id: string) {
+  async sendQuote(@Param('id') id: string, @Request() req: any) {
     try {
-      const quote = await this.salesService.updateQuoteStatus(id, QuoteStatus.SENT, 'system_user');
+      const updatedBy = req.user?.id || req.user?.userId || 'system_user';
+      const quote = await this.salesService.updateQuoteStatus(id, QuoteStatus.SENT, updatedBy);
       return { success: true, data: quote, message: 'Quote sent successfully' };
     } catch (error) {
       this.logger.error(`Error sending quote ${id}:`, error);
@@ -488,9 +509,10 @@ export class SalesController {
   @ApiParam({ name: 'id', description: 'Quote UUID' })
   @ApiResponse({ status: 200, description: 'Quote accepted successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
-  async acceptQuote(@Param('id') id: string) {
+  async acceptQuote(@Param('id') id: string, @Request() req: any) {
     try {
-      const quote = await this.salesService.updateQuoteStatus(id, QuoteStatus.ACCEPTED, 'system_user');
+      const updatedBy = req.user?.id || req.user?.userId || 'system_user';
+      const quote = await this.salesService.updateQuoteStatus(id, QuoteStatus.ACCEPTED, updatedBy);
       return { success: true, data: quote, message: 'Quote accepted successfully' };
     } catch (error) {
       this.logger.error(`Error accepting quote ${id}:`, error);
@@ -506,12 +528,13 @@ export class SalesController {
   @ApiParam({ name: 'id', description: 'Quote UUID' })
   @ApiResponse({ status: 200, description: 'Quote rejected successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
-  async rejectQuote(@Param('id') id: string, @Body() body: { reason?: string }) {
+  async rejectQuote(@Param('id') id: string, @Body() body: { reason?: string }, @Request() req: any) {
     try {
+      const updatedBy = req.user?.id || req.user?.userId || 'system_user';
       const quote = await this.salesService.updateQuoteStatus(
         id,
         QuoteStatus.REJECTED,
-        'system_user',
+        updatedBy,
         body?.reason,
       );
       return { success: true, data: quote, message: 'Quote rejected successfully' };
@@ -552,11 +575,15 @@ export class SalesController {
   @ApiResponse({ status: 200, description: 'Sales metrics retrieved successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'viewer', 'org_admin')
   async getSalesMetrics(
+    @Request() req: any,
     @Query('salesRep') salesRep?: string,
     @Query('timeframe') timeframe?: string,
   ) {
     try {
+      const organizationId =
+        req.user?.organizationId || req.user?.tenantId || req.organizationId;
       const metrics = await this.salesService.getSalesMetrics({
+        organizationId,
         salesRep,
         timeframe,
       });

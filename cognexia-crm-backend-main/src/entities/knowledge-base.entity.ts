@@ -6,8 +6,10 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { User } from './user.entity';
+import { Organization } from './organization.entity';
 
 export enum ArticleStatus {
   DRAFT = 'DRAFT',
@@ -34,6 +36,7 @@ export enum ArticleType {
 }
 
 @Entity('knowledge_base_articles')
+@Index('IDX_KB_ORGANIZATION_ID', ['organization_id'])
 export class KnowledgeBaseArticle {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -93,6 +96,13 @@ export class KnowledgeBaseArticle {
 
   @Column({ nullable: true })
   reviewer_id: string;
+
+  @ManyToOne(() => Organization, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'organization_id' })
+  organization?: Organization;
+
+  @Column({ name: 'organization_id', type: 'uuid', nullable: true })
+  organization_id?: string;
 
   @Column({ default: 0 })
   view_count: number;
