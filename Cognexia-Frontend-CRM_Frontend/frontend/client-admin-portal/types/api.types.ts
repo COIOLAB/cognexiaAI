@@ -1444,13 +1444,12 @@ export enum TicketCategory {
 }
 
 export enum TicketChannel {
+  WEB = 'web',
   EMAIL = 'email',
   PHONE = 'phone',
   CHAT = 'chat',
-  WEB = 'web',
-  MOBILE = 'mobile',
-  SOCIAL_MEDIA = 'social_media',
-  BOT = 'bot',
+  WHATSAPP = 'whatsapp',
+  SLACK = 'slack',
 }
 
 export interface SupportTicket {
@@ -2488,7 +2487,7 @@ export interface Product {
 }
 
 export interface CreateProductDto {
-  sku: string;
+  sku?: string;
   name: string;
   description?: string;
   shortDescription?: string;

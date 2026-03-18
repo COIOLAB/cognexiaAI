@@ -15,7 +15,7 @@ import { Loader2 } from 'lucide-react';
 import { ProductType } from '@/types/api.types';
 
 const productSchema = z.object({
-  sku: z.string().min(1, 'SKU is required'),
+  sku: z.string().optional(),
   name: z.string().min(1, 'Product name is required'),
   description: z.string().optional(),
   type: z.nativeEnum(ProductType).optional(),
@@ -70,9 +70,9 @@ export function ProductForm({ initialData, onSubmit, isLoading, submitLabel = 'C
               <Textarea id="description" placeholder="Product description..." rows={4} {...register('description')} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="sku">SKU *</Label>
+              <Label htmlFor="sku">SKU</Label>
               <Input id="sku" placeholder="PRD-001" {...register('sku')} />
-              {errors.sku && <p className="text-sm text-destructive">{errors.sku.message}</p>}
+
             </div>
             <div className="space-y-2">
               <Label htmlFor="categoryId">Category ID</Label>

@@ -48,8 +48,11 @@ export class SupportTicket {
   @Column()
   ticketNumber: string; // e.g., "TICK-2026-00001"
 
-  @Column()
+  @Column({ type: 'uuid', nullable: true })
   organizationId: string;
+
+  @Column({ nullable: true })
+  customerId: string;
 
   @Column({ nullable: true })
   organizationName: string;

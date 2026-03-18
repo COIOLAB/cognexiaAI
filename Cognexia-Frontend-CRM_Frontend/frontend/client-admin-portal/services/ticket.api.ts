@@ -13,6 +13,38 @@ import type {
 
 const TICKET_BASE = '/crm/support/tickets';
 
+// Backend expects snake_case fields; map camelCase DTOs from the UI to API shape
+const mapCreateDto = (dto: CreateTicketDto) => ({
+  subject: dto.subject,
+  description: dto.description,
+  priority: dto.priority,
+  category: dto.category,
+  channel: dto.channel,
+  customer_id: dto.customerId, // backend looks up customer by email in primaryContact
+  tags: dto.tags,
+  attachments: dto.attachments,
+});
+
+const mapUpdateDto = (dto: UpdateTicketDto) => ({
+  ...dto,
+  assigned_to: (dto as any).assignedTo ?? dto.assignedTo,
+});
+
+const mapAssignDto = (dto: AssignTicketDto) => ({
+  agent_id: dto.agentId,
+});
+
+const mapEscalateDto = (dto: EscalateTicketDto) => ({
+  reason: dto.reason,
+  escalate_to: dto.escalateTo,
+});
+
+const mapResponseDto = (dto: AddResponseDto) => ({
+  response: dto.message,
+  user_id: (dto as any).userId, // optional; backend parameter name
+  is_internal: dto.isInternal,
+});
+
 export const ticketApi = {
   // Get tickets with filters
   getTickets: async (filters?: TicketFilters) => {
@@ -20,7 +52,12 @@ export const ticketApi = {
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          params.append(key, value.toString());
+          // Align camelCase query params to backend expectations
+          if (key === 'customerId') {
+            params.append('customer_id', value.toString());
+          } else {
+            params.append(key, value.toString());
+          }
         }
       });
     }
@@ -38,13 +75,13 @@ export const ticketApi = {
 
   // Create ticket
   createTicket: async (ticketData: CreateTicketDto) => {
-    const { data } = await api.post<SupportTicket>(TICKET_BASE, ticketData);
+    const { data } = await api.post<SupportTicket>(TICKET_BASE, mapCreateDto(ticketData));
     return data;
   },
 
   // Update ticket
   updateTicket: async (id: string, ticketData: UpdateTicketDto) => {
-    const { data } = await api.put<SupportTicket>(`${TICKET_BASE}/${id}`, ticketData);
+    const { data } = await api.put<SupportTicket>(`${TICKET_BASE}/${id}`, mapUpdateDto(ticketData));
     return data;
   },
 
@@ -58,7 +95,7 @@ export const ticketApi = {
   assignTicket: async (id: string, assignData: AssignTicketDto) => {
     const { data } = await api.post<SupportTicket>(
       `${TICKET_BASE}/${id}/assign`,
-      assignData
+      mapAssignDto(assignData)
     );
     return data;
   },
@@ -73,7 +110,7 @@ export const ticketApi = {
   escalateTicket: async (id: string, escalateData: EscalateTicketDto) => {
     const { data } = await api.post<SupportTicket>(
       `${TICKET_BASE}/${id}/escalate`,
-      escalateData
+      mapEscalateDto(escalateData)
     );
     return data;
   },
@@ -82,7 +119,7 @@ export const ticketApi = {
   addResponse: async (id: string, responseData: AddResponseDto) => {
     const { data } = await api.post<TicketResponse>(
       `${TICKET_BASE}/${id}/response`,
-      responseData
+      mapResponseDto(responseData)
     );
     return data;
   },

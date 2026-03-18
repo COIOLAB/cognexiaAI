@@ -16,7 +16,8 @@ import { SupportService, CreateTicketDto, UpdateTicketDto, TicketSearchCriteria 
 import { SupportTicket } from '../entities/support-ticket.entity';
 
 @ApiTags('Support & Service')
-@Controller('api/crm/support')
+// Use global prefix "api/v1" defined in main.ts; controller path should NOT repeat "api/"
+@Controller('crm/support')
 @ApiBearerAuth()
 export class SupportController {
   constructor(private readonly supportService: SupportService) {}

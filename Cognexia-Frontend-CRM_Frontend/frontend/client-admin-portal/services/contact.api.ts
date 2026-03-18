@@ -131,6 +131,8 @@ export const contactApi = {
     return data;
   },
 
+  // (stats endpoint removed)
+
   /**
    * Get contact relationship map
    */

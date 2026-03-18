@@ -11,18 +11,20 @@ import {
   HttpCode,
   Request,
   HttpStatus,
+  HttpException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SupportService, CreateTicketDto, UpdateTicketDto, TicketSearchCriteria } from '../services/support.service';
 import { SupportTicket } from '../entities/support-ticket.entity';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { CustomerService } from '../services/customer.service';
 
 @ApiTags('Support & Service')
 @Controller('crm/support')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class SupportController {
-  constructor(private readonly supportService: SupportService) {}
+  constructor(private readonly supportService: SupportService, private readonly customerService: CustomerService) { }
 
   @Post('tickets')
   @ApiOperation({ summary: 'Create a new support ticket' })
@@ -31,10 +33,20 @@ export class SupportController {
   async createTicket(@Body() createDto: CreateTicketDto, @Request() req: any): Promise<SupportTicket> {
     const defaultOrgId = req.user?.organizationId;
     const defaultUserId = req.user?.userId || req.user?.id;
+
+    // Accept either customer email or customer UUID
+    const customer = await this.customerService.findByEmailOrId(createDto.customer_id);
+    if (!customer) {
+      throw new HttpException('Customer not found', HttpStatus.NOT_FOUND);
+    }
+    createDto.customer_id = customer.id;
+    console.log(customer);
+    console.log(createDto);
     return await this.supportService.createTicket({
       ...createDto,
       organizationId: createDto.organizationId || defaultOrgId,
       submittedBy: createDto.submittedBy || defaultUserId,
+
     });
   }
 
@@ -120,10 +132,10 @@ export class SupportController {
     @Query('start') start?: string,
     @Query('end') end?: string,
   ): Promise<any> {
-    const timeRange = start && end 
+    const timeRange = start && end
       ? { start: new Date(start), end: new Date(end) }
       : undefined;
-    
+
     return await this.supportService.getTicketStatistics(timeRange);
   }
 

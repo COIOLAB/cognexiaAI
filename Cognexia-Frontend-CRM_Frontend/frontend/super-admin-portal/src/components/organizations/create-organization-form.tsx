@@ -240,11 +240,11 @@ export function CreateOrganizationForm() {
       {/* Account Details */}
       <Card>
         <CardHeader>
-          <CardTitle>Account Details</CardTitle>
+          <CardTitle>Business Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Input
-            label="Account ID"
+            label="Business ID"
             name="accountId"
             value={formData.accountId}
             onChange={handleChange}
@@ -265,21 +265,21 @@ export function CreateOrganizationForm() {
             placeholder="Windows & Doors Installation"
           />
           <Input
-            label="Account Type"
+            label="Business Type"
             name="accountType"
             value={formData.accountType}
             onChange={handleChange}
             placeholder="Enterprise"
           />
           <Input
-            label="Account Owner"
+            label="Business Owner"
             name="accountOwner"
             value={formData.accountOwner}
             onChange={handleChange}
             placeholder="Jane Smith"
           />
           <Input
-            label="Account Status"
+            label="Business Status"
             name="accountStatus"
             value={formData.accountStatus}
             onChange={handleChange}

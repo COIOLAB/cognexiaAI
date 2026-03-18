@@ -56,7 +56,7 @@ const navigationSections = [
     tier: 'basic',
     items: [
       { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-      { name: 'Accounts', href: '/accounts', icon: Building },
+      { name: 'Clients', href: '/accounts', icon: Building },
       { name: 'Customers', href: '/customers', icon: Users },
       { name: 'Contacts', href: '/contacts', icon: Contact },
       { name: 'Leads', href: '/leads', icon: UserPlus },

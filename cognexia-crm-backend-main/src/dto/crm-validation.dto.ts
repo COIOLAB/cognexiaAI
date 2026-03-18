@@ -65,14 +65,14 @@ export enum LeadStatus {
 }
 
 export enum OpportunityStage {
-  PROSPECTING = 'PROSPECTING',
-  QUALIFICATION = 'QUALIFICATION',
-  NEEDS_ANALYSIS = 'NEEDS_ANALYSIS',
-  VALUE_PROPOSITION = 'VALUE_PROPOSITION',
-  PROPOSAL = 'PROPOSAL',
-  NEGOTIATION = 'NEGOTIATION',
-  CLOSED_WON = 'CLOSED_WON',
-  CLOSED_LOST = 'CLOSED_LOST',
+  PROSPECTING = 'prospecting',
+  QUALIFICATION = 'qualification',
+  NEEDS_ANALYSIS = 'needs_analysis',
+  VALUE_PROPOSITION = 'value_proposition',
+  PROPOSAL = 'proposal',
+  NEGOTIATION = 'negotiation',
+  CLOSED_WON = 'closed_won',
+  CLOSED_LOST = 'closed_lost',
 }
 
 export enum InteractionType {
@@ -977,7 +977,7 @@ export class CustomerAnalyticsRequestDto {
   @IsOptional()
   @IsArray({ message: 'Metrics must be an array' })
   @IsString({ each: true, message: 'Each metric must be a string' })
-  @IsIn(['engagement', 'satisfaction', 'retention', 'lifetime_value', 'churn_risk'], 
+  @IsIn(['engagement', 'satisfaction', 'retention', 'lifetime_value', 'churn_risk'],
     { each: true, message: 'Invalid metric specified' })
   metrics?: string[];
 }

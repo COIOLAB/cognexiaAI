@@ -16,7 +16,7 @@ export class CustomerService {
     private contactRepository: Repository<Contact>,
     @InjectRepository(CustomerInteraction)
     private interactionRepository: Repository<CustomerInteraction>,
-  ) {}
+  ) { }
 
   async findAllContacts(customerId: string) {
     try {
@@ -43,7 +43,7 @@ export class CustomerService {
 
       const savedContact = await this.contactRepository.save(contactEntity) as unknown as Contact;
       this.logger.log(`Contact created: ${savedContact.id}`);
-      
+
       return savedContact;
     } catch (error) {
       this.logger.error('Error creating contact:', error);
@@ -54,7 +54,7 @@ export class CustomerService {
   async updateContact(id: string, updateData: any, updatedBy: string) {
     try {
       const contact = await this.contactRepository.findOne({ where: { id } });
-      
+
       if (!contact) {
         throw new NotFoundException(`Contact with ID ${id} not found`);
       }
@@ -77,15 +77,15 @@ export class CustomerService {
         createdBy: createdBy,
         updatedBy: createdBy,
       });
-      
+
       if (Array.isArray(interactionEntity)) {
         throw new Error('Failed to create interaction entity');
       }
       const savedInteraction = await this.interactionRepository.save(interactionEntity) as unknown as CustomerInteraction;
-      
+
       // Update customer interaction metrics
       await this.updateCustomerInteractionMetrics(savedInteraction.customerId);
-      
+
       // Update contact metrics if contact is specified
       if (savedInteraction.contactId) {
         await this.updateContactInteractionMetrics(savedInteraction.contactId);
@@ -144,8 +144,8 @@ export class CustomerService {
       }
 
       if (criteria.minRevenue) {
-        queryBuilder.andWhere("CAST(customer.salesMetrics->>'totalRevenue' AS DECIMAL) >= :minRevenue", { 
-          minRevenue: criteria.minRevenue 
+        queryBuilder.andWhere("CAST(customer.salesMetrics->>'totalRevenue' AS DECIMAL) >= :minRevenue", {
+          minRevenue: criteria.minRevenue
         });
       }
 
@@ -154,7 +154,7 @@ export class CustomerService {
       }
 
       const customers = await queryBuilder.getMany();
-      
+
       return {
         criteria,
         customerCount: customers.length,
@@ -208,9 +208,9 @@ export class CustomerService {
 
       if (customer && interactions.length > 0) {
         const lastInteraction = interactions.sort((a, b) => b.date.getTime() - a.date.getTime())[0];
-        
+
         customer.relationshipMetrics.lastInteractionDate = lastInteraction.date.toISOString();
-        
+
         await this.customerRepository.save(customer);
       }
     } catch (error) {
@@ -225,11 +225,11 @@ export class CustomerService {
 
       if (contact && interactions.length > 0) {
         const lastInteraction = interactions.sort((a, b) => b.date.getTime() - a.date.getTime())[0];
-        
+
         contact.lastInteractionDate = lastInteraction.date;
         contact.totalInteractions = interactions.length;
         contact.updateEngagementScore();
-        
+
         await this.contactRepository.save(contact);
       }
     } catch (error) {
@@ -267,7 +267,7 @@ export class CustomerService {
     }
 
     if (customer.salesMetrics.outstandingBalance && customer.salesMetrics.creditLimit &&
-        customer.salesMetrics.outstandingBalance > customer.salesMetrics.creditLimit * 0.8) {
+      customer.salesMetrics.outstandingBalance > customer.salesMetrics.creditLimit * 0.8) {
       alerts.push('Approaching credit limit');
     }
 
@@ -297,18 +297,18 @@ export class CustomerService {
     try {
       const { page = 1, limit = 10, search } = params;
       const query = this.customerRepository.createQueryBuilder('customer');
-      
+
       if (search) {
         query.andWhere('customer.companyName ILIKE :search OR customer.customerCode ILIKE :search', {
           search: `%${search}%`
         });
       }
-      
+
       const [data, total] = await query
         .skip((page - 1) * limit)
         .take(limit)
         .getManyAndCount();
-      
+
       return { data: data || [], total: total || 0, page, limit };
     } catch (error) {
       this.logger.error('Error finding customers:', error);
@@ -328,6 +328,57 @@ export class CustomerService {
       this.logger.error(`Error finding customer ${customerId}:`, error);
       return null;
     }
+  }
+
+  async findByEmail(customerEmail: string) {
+    try {
+      const email = (customerEmail || '').trim().toLowerCase();
+      if (!email) {
+        return null;
+      }
+
+      // 1) Exact match on primaryContact.email (case/space-insensitive)
+      const exact = await this.customerRepository
+        .createQueryBuilder('customer')
+        .where(`LOWER(TRIM(customer."primaryContact"->>'email')) = :email`, { email })
+        .getOne();
+      if (exact) return exact;
+
+      // 2) Fallback: contains match on the JSON blob to handle unexpected casing/format
+      const like = await this.customerRepository
+        .createQueryBuilder('customer')
+        .where(`customer."primaryContact"::text ILIKE :pattern`, { pattern: `%${email}%` })
+        .getOne();
+
+      return like || null;
+    } catch (error) {
+      this.logger.error(`Error finding customer ${customerEmail}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Flexible lookup: try email (case/space-insensitive) then UUID
+   */
+  async findByEmailOrId(value: string) {
+    const trimmed = (value || '').trim();
+    if (!trimmed) return null;
+
+    // Try email match
+    const byEmail = await this.findByEmail(trimmed);
+    if (byEmail) return byEmail;
+
+    // If it looks like a UUID, try direct id lookup
+    if (/^[0-9a-fA-F-]{32,36}$/.test(trimmed)) {
+      try {
+        const byId = await this.customerRepository.findOne({ where: { id: trimmed } });
+        if (byId) return byId;
+      } catch (error) {
+        this.logger.error(`Error finding customer by id ${trimmed}:`, error);
+      }
+    }
+
+    return null;
   }
 
   async updateCustomer(customerId: string, updateCustomerDto: any, updatedBy: string) {
@@ -378,7 +429,7 @@ export class CustomerService {
   async searchCustomers(searchCriteria: any) {
     try {
       const query = this.customerRepository.createQueryBuilder('customer');
-      
+
       if (searchCriteria.name) {
         query.andWhere('customer.name ILIKE :name', { name: `%${searchCriteria.name}%` });
       }
@@ -388,7 +439,7 @@ export class CustomerService {
       if (searchCriteria.status) {
         query.andWhere('customer.status = :status', { status: searchCriteria.status });
       }
-      
+
       const results = await query.getMany();
       return { success: true, data: results || [], count: (results || []).length };
     } catch (error) {

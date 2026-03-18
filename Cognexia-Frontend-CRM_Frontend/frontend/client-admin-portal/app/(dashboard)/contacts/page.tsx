@@ -3,15 +3,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
-import {
-  Download,
-  Mail,
-  Phone,
-  Plus,
-  Trash2,
-  User,
-  Users,
-} from 'lucide-react';
+import { Download, Mail, Phone, Plus, Trash2, User, Users } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

@@ -51,7 +51,7 @@ export class SupportService {
     @InjectRepository(KnowledgeBaseArticle)
     private knowledgeBaseRepository: Repository<KnowledgeBaseArticle>,
     private eventEmitter: EventEmitter2,
-  ) {}
+  ) { }
 
   /**
    * Create a new support ticket
@@ -59,15 +59,15 @@ export class SupportService {
   async createTicket(createDto: CreateTicketDto): Promise<SupportTicket> {
     try {
       const ticketNumber = await this.generateTicketNumber();
-      
+      console.log(createDto);
       const ticket = this.ticketRepository.create({
-       ticketNumber: ticketNumber,
+        ticketNumber: ticketNumber,
         subject: createDto.subject || 'No Subject',
         description: createDto.description || '',
         priority: createDto.priority || TicketPriority.MEDIUM,
         category: createDto.category,
         channel: createDto.channel || 'web',
-        customer_id: createDto.customer_id,
+        customerId: (createDto as any).customerId || (createDto as any).customer_id,
         created_by: createDto.created_by,
         organizationId: createDto.organizationId,
         submittedBy: createDto.submittedBy,
@@ -183,10 +183,10 @@ export class SupportService {
 
     const updated = await this.ticketRepository.save(ticket);
 
-    this.eventEmitter.emit('ticket.escalated', { 
-      ticket: updated, 
-      escalated_to: escalateToId, 
-      reason 
+    this.eventEmitter.emit('ticket.escalated', {
+      ticket: updated,
+      escalated_to: escalateToId,
+      reason
     });
 
     return updated;
@@ -207,10 +207,10 @@ export class SupportService {
 
     const updated = await this.ticketRepository.save(ticket);
 
-    this.eventEmitter.emit('ticket.response_added', { 
-      ticket: updated, 
-      response, 
-      user_id: userId 
+    this.eventEmitter.emit('ticket.response_added', {
+      ticket: updated,
+      response,
+      user_id: userId
     });
 
     return updated;
@@ -373,7 +373,7 @@ export class SupportService {
     // with agent skills, availability, and performance
 
     const bestAgentId = await this.findBestAgent(ticket);
-    
+
     if (bestAgentId) {
       return await this.assignTicket(ticketId, bestAgentId);
     }
@@ -390,7 +390,7 @@ export class SupportService {
   }
 
   private async findApplicableSLA(ticket: SupportTicket): Promise<SLA | null> {
-    const slas = await this.slaRepository.find({ 
+    const slas = await this.slaRepository.find({
       where: { status: 'active' as any as any } as any,
       order: { priority_weight: 'DESC' }
     });
@@ -411,7 +411,7 @@ export class SupportService {
   private calculateDueDate(sla: SLA): Date {
     const now = new Date();
     const hoursToAdd = sla.sla_targets.resolution_time_hours;
-    
+
     if (sla.business_hours_only && sla.business_hours) {
       // Complex business hours calculation would go here
       // For now, simplified version
@@ -447,11 +447,11 @@ export class SupportService {
   private async autoEscalateTicket(ticket: SupportTicket, escalationRule: any): Promise<void> {
     // Find user with the escalation role
     const escalationTarget = await this.findUserByRole(escalationRule.escalate_to_role);
-    
+
     if (escalationTarget) {
       await this.escalateTicket(
-        ticket.id, 
-        escalationTarget, 
+        ticket.id,
+        escalationTarget,
         `Auto-escalation: ${escalationRule.level}`
       );
     }
@@ -466,7 +466,7 @@ export class SupportService {
     // - Availability status
     // - Language proficiency
     // - Customer history
-    
+
     // For now, return null to indicate manual assignment needed
     return null;
   }
