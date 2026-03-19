@@ -12,6 +12,7 @@ import {
   HttpException,
   HttpStatus,
   Request,
+  Header as SetHeader,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -33,6 +34,16 @@ export class CustomerController {
   private readonly logger = new Logger(CustomerController.name);
 
   constructor(private readonly customerService: CustomerService) { }
+
+  private formatCsv(rows: Array<Array<string | number | null | undefined>>) {
+    const escape = (value: string | number | null | undefined) => {
+      if (value === null || value === undefined) return '';
+      const text = String(value);
+      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    };
+
+    return rows.map((row) => row.map(escape).join(',')).join('\n');
+  }
 
   @Get('stats')
   @ApiOperation({
@@ -80,6 +91,81 @@ export class CustomerController {
     } catch (error) {
       this.logger.error('Error getting customers:', error);
       throw new HttpException('Failed to retrieve customers', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get('export')
+  @SetHeader('Content-Type', 'text/csv')
+  @SetHeader('Content-Disposition', 'attachment; filename=\"customers.csv\"')
+  @ApiOperation({
+    summary: 'Export customers',
+    description: 'Export customers as CSV',
+  })
+  @ApiResponse({ status: 200, description: 'Customers exported successfully' })
+  @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'viewer')
+  async exportCustomers(
+    @Request() req,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('industry') industry?: string,
+    @Query('segment') segment?: string,
+    @Query('region') region?: string,
+  ) {
+    try {
+      const organizationId = req?.user?.organizationId || req?.user?.tenantId;
+      const customers = await this.customerService.findForExport({
+        search,
+        status,
+        industry,
+        segment,
+        region,
+        organizationId,
+      });
+
+      const headers = [
+        'id',
+        'customerCode',
+        'companyName',
+        'customerType',
+        'status',
+        'industry',
+        'segment',
+        'tier',
+        'region',
+        'primaryContactName',
+        'primaryContactEmail',
+        'primaryContactPhone',
+        'website',
+        'totalRevenue',
+        'createdAt',
+      ];
+
+      const rows = customers.map((customer) => [
+        customer.id,
+        customer.customerCode,
+        customer.companyName,
+        customer.customerType,
+        customer.status,
+        customer.industry,
+        customer.segmentation?.segment,
+        customer.segmentation?.tier,
+        customer.address?.region,
+        [customer.primaryContact?.firstName, customer.primaryContact?.lastName]
+          .filter(Boolean)
+          .join(' '),
+        customer.primaryContact?.email,
+        customer.primaryContact?.phone,
+        customer.demographics?.website,
+        customer.salesMetrics?.totalRevenue,
+        customer.createdAt instanceof Date
+          ? customer.createdAt.toISOString()
+          : customer.createdAt,
+      ]);
+
+      return this.formatCsv([headers, ...rows]);
+    } catch (error) {
+      this.logger.error('Error exporting customers:', error);
+      throw new HttpException('Failed to export customers', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 

@@ -642,6 +642,7 @@ export interface Account {
     employees?: number;
     annualRevenue?: number;
     description?: string;
+    phone?: string;
     territory?: string;
     segment?: string;
     tier?: string;
@@ -662,6 +663,9 @@ export interface CreateAccountDto {
   owner: string;
   website?: string;
   parentAccount?: string;
+  parentAccountId?: string;
+  description?: string;
+  phone?: string;
   team?: string[];
   revenue?: number;
   priorityScore?: number;
@@ -669,6 +673,7 @@ export interface CreateAccountDto {
     employees?: number;
     annualRevenue?: number;
     description?: string;
+    phone?: string;
     territory?: string;
     segment?: string;
     tier?: string;

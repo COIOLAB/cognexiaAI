@@ -27,6 +27,62 @@ export class AccountController {
     @InjectRepository(Account)
     private readonly accountRepository: Repository<Account>,
   ) {}
+
+  private normalizeAccountPayload(
+    body: Partial<Account> & {
+      description?: string;
+      phone?: string;
+      parentAccountId?: string;
+    },
+  ): Partial<Account> {
+    const {
+      description,
+      phone,
+      parentAccountId,
+      parentAccount,
+      details,
+      ...rest
+    } = body;
+
+    const normalizedDescription =
+      typeof description === 'string' ? description.trim() : details?.description;
+    const normalizedPhone = typeof phone === 'string' ? phone.trim() : details?.phone;
+    const normalizedParentAccount =
+      typeof parentAccountId === 'string' && parentAccountId.trim()
+        ? parentAccountId.trim()
+        : typeof parentAccount === 'string' && parentAccount.trim()
+        ? parentAccount.trim()
+        : undefined;
+
+    const hasDescriptionInput = description !== undefined || details?.description !== undefined;
+    const hasPhoneInput = phone !== undefined || details?.phone !== undefined;
+    const normalizedDetails = details ? { ...details } : {};
+
+    if (hasDescriptionInput) {
+      if (normalizedDescription) {
+        normalizedDetails.description = normalizedDescription;
+      } else {
+        delete normalizedDetails.description;
+      }
+    }
+
+    if (hasPhoneInput) {
+      if (normalizedPhone) {
+        normalizedDetails.phone = normalizedPhone;
+      } else {
+        delete normalizedDetails.phone;
+      }
+    }
+
+    return {
+      ...rest,
+      ...(normalizedParentAccount ? { parentAccount: normalizedParentAccount } : {}),
+      ...(details || hasDescriptionInput || hasPhoneInput
+        ? { details: normalizedDetails }
+        : {}),
+    };
+  }
+
   private formatCsv(rows: Array<Array<string | number | null | undefined>>): string {
     const escape = (value: string | number | null | undefined) => {
       if (value === null || value === undefined) return '';
@@ -264,26 +320,35 @@ export class AccountController {
   @ApiOperation({ summary: 'Create account' })
   @ApiResponse({ status: 201, description: 'Account created successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
-  async createAccount(@Body() body: Partial<Account>, @Req() req: any) {
+  async createAccount(
+    @Body()
+    body: Partial<Account> & {
+      description?: string;
+      phone?: string;
+      parentAccountId?: string;
+    },
+    @Req() req: any,
+  ) {
     const actor = req.user?.id || req.user?.userId || 'system';
     const organizationId = this.resolveOrganizationId(req);
-    const accountNumber = body.accountNumber || `ACC-${Date.now()}`;
-    const fallbackName = body.name || `Account ${Date.now()}`;
-    const fallbackType = body.type || AccountType.PROSPECT;
-    const fallbackIndustry = body.industry || 'General';
-    const fallbackOwner = body.owner || req.user?.email || 'system';
+    const normalizedBody = this.normalizeAccountPayload(body);
+    const accountNumber = normalizedBody.accountNumber || `ACC-${Date.now()}`;
+    const fallbackName = normalizedBody.name || `Account ${Date.now()}`;
+    const fallbackType = normalizedBody.type || AccountType.PROSPECT;
+    const fallbackIndustry = normalizedBody.industry || 'General';
+    const fallbackOwner = normalizedBody.owner || req.user?.email || 'system';
 
     const account = this.accountRepository.create({
-      ...body,
-      organizationId: body.organizationId || organizationId,
+      ...normalizedBody,
+      organizationId: normalizedBody.organizationId || organizationId,
       accountNumber,
-      name: body.name || fallbackName,
-      type: body.type || fallbackType,
-      industry: body.industry || fallbackIndustry,
-      owner: body.owner || fallbackOwner,
-      team: body.team || [],
-      details: body.details || {},
-      tags: body.tags || [],
+      name: normalizedBody.name || fallbackName,
+      type: normalizedBody.type || fallbackType,
+      industry: normalizedBody.industry || fallbackIndustry,
+      owner: normalizedBody.owner || fallbackOwner,
+      team: normalizedBody.team || [],
+      details: normalizedBody.details || {},
+      tags: normalizedBody.tags || [],
       createdBy: actor,
       updatedBy: actor,
     });
@@ -367,14 +432,24 @@ export class AccountController {
   @ApiOperation({ summary: 'Update account' })
   @ApiResponse({ status: 200, description: 'Account updated successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
-  async updateAccount(@Param('id') id: string, @Body() body: Partial<Account>, @Req() req: any) {
+  async updateAccount(
+    @Param('id') id: string,
+    @Body()
+    body: Partial<Account> & {
+      description?: string;
+      phone?: string;
+      parentAccountId?: string;
+    },
+    @Req() req: any,
+  ) {
     const account = await this.accountRepository.findOne({ where: { id } });
     if (!account) {
       return { success: false, data: null, message: 'Account not found' };
     }
 
     const actor = req.user?.id || req.user?.userId || 'system';
-    Object.assign(account, body, { updatedBy: actor });
+    const normalizedBody = this.normalizeAccountPayload(body);
+    Object.assign(account, normalizedBody, { updatedBy: actor });
 
     const saved = await this.accountRepository.save(account);
     return { success: true, data: saved };

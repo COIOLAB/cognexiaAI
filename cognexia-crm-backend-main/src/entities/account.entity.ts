@@ -92,6 +92,7 @@ export class Account {
     employees?: number;
     annualRevenue?: number;
     description?: string;
+    phone?: string;
     territory?: string;
     segment?: string;
     tier?: string;

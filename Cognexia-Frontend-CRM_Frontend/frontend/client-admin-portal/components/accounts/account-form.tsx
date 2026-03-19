@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import type { Account } from '@/types/api.types';
 
 const accountSchema = z.object({
   name: z.string().min(1, 'Account name is required'),
@@ -23,16 +24,29 @@ const accountSchema = z.object({
 type AccountFormData = z.infer<typeof accountSchema>;
 
 interface AccountFormProps {
-  initialData?: any;
-  onSubmit: (data: any) => void;
+  initialData?: Partial<Account> & {
+    description?: string;
+    phone?: string;
+    parentAccountId?: string;
+  };
+  onSubmit: (data: AccountFormData) => void;
   isLoading?: boolean;
   submitLabel?: string;
 }
 
 export function AccountForm({ initialData, onSubmit, isLoading, submitLabel = 'Create Account' }: AccountFormProps) {
+  const defaultValues = initialData
+    ? {
+        ...initialData,
+        description: initialData.description ?? initialData.details?.description ?? '',
+        phone: initialData.phone ?? initialData.details?.phone ?? '',
+        parentAccountId: initialData.parentAccountId ?? initialData.parentAccount ?? '',
+      }
+    : {};
+
   const { register, handleSubmit, formState: { errors } } = useForm<AccountFormData>({
     resolver: zodResolver(accountSchema),
-    defaultValues: initialData || {},
+    defaultValues,
   });
 
   return (

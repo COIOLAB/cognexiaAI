@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
-import { MoreHorizontal, Plus, Download, Trash2, TrendingUp, DollarSign, Target } from 'lucide-react';
+import { MoreHorizontal, Plus, Download, Trash2, TrendingUp, DollarSign, Target, Upload } from 'lucide-react';
 import { Opportunity, OpportunityStage, OpportunityStatus } from '@/types/api.types';
 import {
   useOpportunities,
@@ -31,6 +31,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { toast } from 'sonner';
+import {
+  createImportedId,
+  ensureCsvFile,
+  normalizeCsvValue,
+  parseCsvDate,
+  parseCsvNumber,
+  parseCsvText,
+} from '@/lib/csv-import';
 
 const stageStyles: Record<OpportunityStage, string> = {
   [OpportunityStage.PROSPECTING]: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
@@ -41,13 +50,82 @@ const stageStyles: Record<OpportunityStage, string> = {
   [OpportunityStage.CLOSED_LOST]: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
 };
 
+type OpportunityRow = Opportunity & {
+  isClientImported?: boolean;
+};
+
+const opportunityStageValues = new Set<OpportunityStage>([
+  'prospecting',
+  'qualification',
+  'proposal',
+  'negotiation',
+  'closed_won',
+  'closed_lost',
+]);
+
+const opportunityStatusValues = new Set<OpportunityStatus>(['open', 'won', 'lost']);
+
+const isImportedOpportunity = (opportunity: OpportunityRow) => opportunity.isClientImported === true;
+
+const opportunityTemplateHeaders = [
+  'name',
+  'description',
+  'amount',
+  'expected close date',
+  'customer id',
+  'contact id',
+  'assigned to',
+  'stage',
+  'status',
+  'probability',
+  'products',
+  'competitors',
+  'actual close date',
+  'lost reason',
+  'notes',
+];
+
+const opportunityTemplateSampleRow = [
+  'Q1 Enterprise Deal',
+  'Expansion opportunity for enterprise licensing',
+  '125000',
+  '2026-06-30',
+  'customer-uuid-001',
+  'contact-uuid-001',
+  'sales_rep_1',
+  'qualification',
+  'open',
+  '65',
+  'prod-1|prod-2',
+  'Competitor A|Competitor B',
+  '',
+  '',
+  'Customer requested proposal by end of month',
+];
+
+const buildOpportunityDuplicateKey = (opportunity: {
+  name: string;
+  customerId: string;
+  amount: number;
+  expectedCloseDate: string;
+}) =>
+  [
+    normalizeCsvValue(opportunity.name),
+    normalizeCsvValue(opportunity.customerId),
+    Number(opportunity.amount || 0),
+    normalizeCsvValue(opportunity.expectedCloseDate),
+  ].join('|');
+
 export default function OpportunitiesPage() {
   const router = useRouter();
-  const [page, setPage] = useState(1);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [page] = useState(1);
   const [search, setSearch] = useState('');
   const [stageFilter, setStageFilter] = useState<OpportunityStage | undefined>();
   const [statusFilter, setStatusFilter] = useState<OpportunityStatus | undefined>();
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  const [importedOpportunities, setImportedOpportunities] = useState<OpportunityRow[]>([]);
+  const [isImporting, setIsImporting] = useState(false);
 
   const { data, isLoading, error } = useOpportunities({
     page,
@@ -61,15 +139,69 @@ export default function OpportunitiesPage() {
   const deleteMutation = useDeleteOpportunity();
   const bulkDeleteMutation = useBulkDeleteOpportunities();
   const exportMutation = useExportOpportunities();
+  const importedOpportunityIds = useMemo(
+    () => new Set(importedOpportunities.map((opportunity) => opportunity.id)),
+    [importedOpportunities]
+  );
+  const filteredImportedOpportunities = useMemo(
+    () =>
+      importedOpportunities.filter((opportunity) => {
+        if (stageFilter && opportunity.stage !== stageFilter) {
+          return false;
+        }
 
-  const columns: ColumnDef<Opportunity>[] = [
+        if (statusFilter && opportunity.status !== statusFilter) {
+          return false;
+        }
+
+        if (!search.trim()) {
+          return true;
+        }
+
+        const searchValue = normalizeCsvValue(search);
+        return [
+          opportunity.name,
+          opportunity.description,
+          opportunity.opportunityNumber,
+          opportunity.customerId,
+        ].some((value) => normalizeCsvValue(value).includes(searchValue));
+      }),
+    [importedOpportunities, search, stageFilter, statusFilter]
+  );
+  const importedTotalAmount = importedOpportunities.reduce(
+    (sum, opportunity) => sum + Number(opportunity.amount ?? 0),
+    0
+  );
+  const importedWeightedAmount = importedOpportunities.reduce(
+    (sum, opportunity) => sum + Number(opportunity.weightedValue ?? 0),
+    0
+  );
+  const importedWonCount = importedOpportunities.filter(
+    (opportunity) => opportunity.status === 'won'
+  ).length;
+  const combinedTotalOpportunities = Number(stats?.data?.total ?? 0) + importedOpportunities.length;
+  const combinedTotalValue = Number(stats?.data?.totalValue ?? 0) + importedTotalAmount;
+  const combinedWeightedValue = Number(stats?.data?.totalWeightedValue ?? 0) + importedWeightedAmount;
+  const combinedWinRate =
+    combinedTotalOpportunities > 0
+      ? (((Number(stats?.data?.winRate ?? 0) / 100) * Number(stats?.data?.total ?? 0) + importedWonCount) /
+          combinedTotalOpportunities) *
+        100
+      : 0;
+
+  const columns: ColumnDef<OpportunityRow>[] = [
     {
       accessorKey: 'opportunityCode',
       header: 'Opportunity Code',
       cell: ({ row }) => (
-        <span className="font-medium text-blue-600 dark:text-blue-400">
-          {row.original.opportunityNumber}
-        </span>
+        <div>
+          <span className="font-medium text-blue-600 dark:text-blue-400">
+            {row.original.opportunityNumber}
+          </span>
+          {isImportedOpportunity(row.original) && (
+            <div className="text-xs text-muted-foreground">Imported from CSV</div>
+          )}
+        </div>
       ),
     },
     {
@@ -138,7 +270,20 @@ export default function OpportunitiesPage() {
             </DropdownMenuItem>
             <DropdownMenuItem
               className="text-red-600"
-              onClick={() => deleteMutation.mutate(row.original.id)}
+              onClick={() => {
+                if (importedOpportunityIds.has(row.original.id)) {
+                  setImportedOpportunities((currentOpportunities) =>
+                    currentOpportunities.filter((opportunity) => opportunity.id !== row.original.id)
+                  );
+                  setSelectedRows((currentRows) =>
+                    currentRows.filter((id) => id !== row.original.id)
+                  );
+                  toast.success('Imported opportunity removed');
+                  return;
+                }
+
+                deleteMutation.mutate(row.original.id);
+              }}
             >
               Delete
             </DropdownMenuItem>
@@ -150,7 +295,21 @@ export default function OpportunitiesPage() {
 
   const handleBulkDelete = () => {
     if (selectedRows.length > 0) {
-      bulkDeleteMutation.mutate(selectedRows);
+      const localIds = selectedRows.filter((id) => importedOpportunityIds.has(id));
+      const serverIds = selectedRows.filter((id) => !importedOpportunityIds.has(id));
+
+      if (localIds.length > 0) {
+        setImportedOpportunities((currentOpportunities) =>
+          currentOpportunities.filter((opportunity) => !localIds.includes(opportunity.id))
+        );
+      }
+
+      if (serverIds.length > 0) {
+        bulkDeleteMutation.mutate(serverIds);
+      } else {
+        toast.success(`${localIds.length} imported opportunity(s) removed`);
+      }
+
       setSelectedRows([]);
     }
   };
@@ -163,16 +322,155 @@ export default function OpportunitiesPage() {
     });
   };
 
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleDownloadTemplate = () => {
+    const escapeCsvValue = (value: string) =>
+      /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+
+    const csv = [opportunityTemplateHeaders, opportunityTemplateSampleRow]
+      .map((row) => row.map(escapeCsvValue).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = downloadUrl;
+    link.download = 'opportunities_import_template.csv';
+    link.click();
+    URL.revokeObjectURL(downloadUrl);
+  };
+
+  const handleImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      ensureCsvFile(file);
+      setIsImporting(true);
+
+      const parsedRows = parseCsvText(await file.text());
+      const existingKeys = new Set(
+        (((data?.data || []) as OpportunityRow[]).concat(importedOpportunities)).map((opportunity) =>
+          buildOpportunityDuplicateKey({
+            name: opportunity.name,
+            customerId: opportunity.customerId,
+            amount: Number(opportunity.amount ?? 0),
+            expectedCloseDate: opportunity.expectedCloseDate,
+          })
+        )
+      );
+      const duplicateRows: number[] = [];
+      const newOpportunities: OpportunityRow[] = [];
+
+      parsedRows.forEach((row, index) => {
+        const name = row.name;
+        const amount = parseCsvNumber(row.amount);
+        const expectedCloseDate = parseCsvDate(row.expectedclosedate || row.closeby || row.closedate);
+        const customerId = row.customerid;
+
+        if (!name || amount === undefined || !expectedCloseDate || !customerId) {
+          throw new Error(
+            `Row ${index + 2} is missing required fields. Required columns: name, amount, expectedCloseDate, customerId.`
+          );
+        }
+
+        const duplicateKey = buildOpportunityDuplicateKey({
+          name,
+          customerId,
+          amount,
+          expectedCloseDate,
+        });
+
+        if (existingKeys.has(duplicateKey)) {
+          duplicateRows.push(index + 2);
+          return;
+        }
+
+        const stage = normalizeCsvValue(row.stage) as OpportunityStage;
+        const status = normalizeCsvValue(row.status) as OpportunityStatus;
+        const probability = parseCsvNumber(row.probability) ?? 10;
+        const resolvedStage = opportunityStageValues.has(stage) ? stage : 'prospecting';
+        const resolvedStatus = opportunityStatusValues.has(status)
+          ? status
+          : resolvedStage === 'closed_won'
+          ? 'won'
+          : resolvedStage === 'closed_lost'
+          ? 'lost'
+          : 'open';
+
+        existingKeys.add(duplicateKey);
+        newOpportunities.push({
+          id: createImportedId('opportunity', index),
+          opportunityNumber: row.opportunitynumber || `OPP-IMP-${Date.now()}-${index + 1}`,
+          opportunityCode: row.opportunitycode || `OPP-IMP-${index + 1}`,
+          name,
+          description: row.description || undefined,
+          stage: resolvedStage,
+          status: resolvedStatus,
+          amount,
+          probability,
+          weightedValue: Number(((amount * probability) / 100).toFixed(2)),
+          expectedCloseDate,
+          actualCloseDate: parseCsvDate(row.actualclosedate),
+          customerId,
+          customer: undefined,
+          contactId: row.contactid || undefined,
+          assignedTo: row.assignedto || undefined,
+          products: row.products ? row.products.split('|').map((item) => item.trim()).filter(Boolean) : [],
+          competitors: row.competitors ? row.competitors.split('|').map((item) => item.trim()).filter(Boolean) : [],
+          lostReason: row.lostreason || undefined,
+          notes: row.notes || undefined,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          isClientImported: true,
+        });
+      });
+
+      if (newOpportunities.length === 0) {
+        toast.error(
+          duplicateRows.length > 0
+            ? `All CSV rows were duplicates. Duplicate row numbers: ${duplicateRows.join(', ')}.`
+            : 'No valid opportunities were found in the CSV file.'
+        );
+        return;
+      }
+
+      setImportedOpportunities((currentOpportunities) => [
+        ...newOpportunities,
+        ...currentOpportunities,
+      ]);
+      toast.success(
+        `${newOpportunities.length} opportunit${newOpportunities.length > 1 ? 'ies' : 'y'} imported.${duplicateRows.length > 0 ? ` ${duplicateRows.length} duplicate row${duplicateRows.length > 1 ? 's were' : ' was'} skipped.` : ''}`
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to import opportunities.');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const opportunities = useMemo<OpportunityRow[]>(
+    () => [...filteredImportedOpportunities, ...((data?.data || []) as OpportunityRow[])],
+    [data?.data, filteredImportedOpportunities]
+  );
+  const isEmpty = !isLoading && opportunities.length === 0 && !search && !stageFilter && !statusFilter;
+
   if (error) {
     return (
       <div className="flex items-center justify-center h-96">
-        <p className="text-red-600">Error loading opportunities: {(error as any)?.message}</p>
+        <p className="text-red-600">
+          Error loading opportunities: {error instanceof Error ? error.message : 'Unknown error'}
+        </p>
       </div>
     );
   }
-
-  const opportunities = data?.data || [];
-  const isEmpty = !isLoading && opportunities.length === 0 && !search && !stageFilter && !statusFilter;
 
   return (
     <div className="space-y-6">
@@ -183,10 +481,27 @@ export default function OpportunitiesPage() {
             Track and manage your sales opportunities
           </p>
         </div>
-        <Button onClick={() => router.push('/opportunities/new')}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Opportunity
-        </Button>
+        <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={handleImportFile}
+          />
+          <Button variant="outline" onClick={handleImportClick} disabled={isImporting}>
+            <Upload className="h-4 w-4 mr-2" />
+            {isImporting ? 'Importing...' : 'Import CSV'}
+          </Button>
+          <Button variant="outline" onClick={handleDownloadTemplate}>
+            <Download className="h-4 w-4 mr-2" />
+            Download Template
+          </Button>
+          <Button onClick={() => router.push('/opportunities/new')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Opportunity
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -198,7 +513,7 @@ export default function OpportunitiesPage() {
               <Target className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.data.total}</div>
+              <div className="text-2xl font-bold">{combinedTotalOpportunities}</div>
             </CardContent>
           </Card>
           <Card>
@@ -208,7 +523,7 @@ export default function OpportunitiesPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                ${(stats.data.totalValue / 1000000).toFixed(1)}M
+                ${(combinedTotalValue / 1000000).toFixed(1)}M
               </div>
             </CardContent>
           </Card>
@@ -219,7 +534,7 @@ export default function OpportunitiesPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                ${(stats.data.totalWeightedValue / 1000000).toFixed(1)}M
+                ${(combinedWeightedValue / 1000000).toFixed(1)}M
               </div>
             </CardContent>
           </Card>
@@ -228,7 +543,7 @@ export default function OpportunitiesPage() {
               <CardTitle className="text-sm font-medium">Win Rate</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.data.winRate?.toFixed(1) || 0}%</div>
+              <div className="text-2xl font-bold">{combinedWinRate.toFixed(1)}%</div>
             </CardContent>
           </Card>
         </div>
@@ -309,7 +624,11 @@ export default function OpportunitiesPage() {
             <DataTable
               columns={columns}
               data={opportunities}
-              onRowClick={(row) => router.push(`/opportunities/${row.id}`)}
+              onRowClick={(row) => {
+                if (!isImportedOpportunity(row)) {
+                  router.push(`/opportunities/${row.id}`);
+                }
+              }}
               enableRowSelection
               onRowSelectionChange={(rows) => setSelectedRows(rows.map((row) => row.id))}
             />

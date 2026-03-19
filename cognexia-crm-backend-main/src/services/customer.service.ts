@@ -457,6 +457,56 @@ export class CustomerService {
     }
   }
 
+  async findForExport(params: {
+    search?: string;
+    status?: string;
+    industry?: string;
+    segment?: string;
+    region?: string;
+    organizationId?: string;
+  }) {
+    try {
+      const { search, status, industry, segment, region, organizationId } = params;
+      const query = this.customerRepository.createQueryBuilder('customer');
+
+      if (organizationId) {
+        query.andWhere('customer.organizationId = :organizationId', { organizationId });
+      }
+
+      if (search) {
+        query.andWhere(
+          '(customer.companyName ILIKE :search OR customer.customerCode ILIKE :search)',
+          { search: `%${search}%` },
+        );
+      }
+
+      if (status) {
+        query.andWhere('customer.status = :status', { status });
+      }
+
+      if (industry) {
+        query.andWhere('customer.industry ILIKE :industry', { industry: `%${industry}%` });
+      }
+
+      if (segment) {
+        query.andWhere("customer.segmentation->>'segment' ILIKE :segment", {
+          segment: `%${segment}%`,
+        });
+      }
+
+      if (region) {
+        query.andWhere("customer.address->>'region' ILIKE :region", {
+          region: `%${region}%`,
+        });
+      }
+
+      return query.orderBy('customer.createdAt', 'DESC').getMany();
+    } catch (error) {
+      this.logger.error('Error exporting customers:', error);
+      throw error;
+    }
+  }
+
   async findById(customerId: string) {
     try {
       const customer = await this.customerRepository.findOne({ where: { id: customerId } });

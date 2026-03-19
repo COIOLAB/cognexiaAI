@@ -18,7 +18,7 @@ import { ContactController } from './controllers/contact.controller';
 import { CRMAIIntegrationController } from './controllers/crm-ai-integration.controller';
 import { MarketingController } from './controllers/marketing.controller';
 import { SupportController } from './controllers/support.controller';
-import { SLAController } from './controllers/sla.controller';
+// import { SLAController } from './controllers/sla.controller';
 import { OrganizationController } from './controllers/organization.controller';
 import { SubscriptionPlansController } from './controllers/subscription-plans.controller';
 import { AuditLogController } from './controllers/audit-log.controller';
@@ -113,7 +113,7 @@ import { LeadService } from './services/lead.service';
 import { CRMAIIntegrationService } from './services/crm-ai-integration.service';
 import { MarketingService } from './services/marketing.service';
 import { SupportService } from './services/support.service';
-import { SLAService } from './services/sla.service';
+// import { SLAService } from './services/sla.service';
 import { UserManagementService } from './services/user-management.service';
 import { UserTierService } from './services/user-tier.service';
 
@@ -176,14 +176,14 @@ import { IntegrationHubService, ERPIntegrationService, EmailIntegrationService, 
 import { CRMErrorHandlerMiddleware, CRMGlobalErrorHandler } from './middleware/crm-error-handler.middleware';
 
 // Security Guards
-import { 
-  TenantGuard, 
-  JwtAuthGuard, 
-  RBACGuard, 
+import {
+  TenantGuard,
+  JwtAuthGuard,
+  RBACGuard,
   RolesGuard,
-  ApiKeyGuard, 
-  RateLimitGuard, 
-  ResourceOwnerGuard 
+  ApiKeyGuard,
+  RateLimitGuard,
+  ResourceOwnerGuard
 } from './guards';
 
 // Sales & Marketing Module (from module 07)
@@ -500,27 +500,27 @@ import { Deployment } from './entities/deployment.entity';
         const synchronize = process.env.DATABASE_SYNC_SCHEMA === 'true';
         return dbUrl
           ? {
-              type: 'postgres',
-              url: dbUrl,
-              entities: [__dirname + '/entities/**/*.entity{.ts,.js}'],
-              synchronize,
-              logging: process.env.NODE_ENV === 'development',
-              ssl: sslConfig,
-              extra,
-            }
+            type: 'postgres',
+            url: dbUrl,
+            entities: [__dirname + '/entities/**/*.entity{.ts,.js}'],
+            synchronize,
+            logging: process.env.NODE_ENV === 'development',
+            ssl: sslConfig,
+            extra,
+          }
           : {
-              type: 'postgres',
-              host: process.env.DATABASE_HOST || 'localhost',
-              port: parseInt(process.env.DATABASE_PORT || '5432', 10),
-              username: process.env.DATABASE_USER || 'postgres',
-              password: process.env.DATABASE_PASSWORD,
-              database: process.env.DATABASE_NAME || 'postgres',
-              entities: [__dirname + '/entities/**/*.entity{.ts,.js}'],
-              synchronize,
-              logging: process.env.NODE_ENV === 'development',
-              ssl: sslConfig,
-              extra,
-            };
+            type: 'postgres',
+            host: process.env.DATABASE_HOST || 'localhost',
+            port: parseInt(process.env.DATABASE_PORT || '5432', 10),
+            username: process.env.DATABASE_USER || 'postgres',
+            password: process.env.DATABASE_PASSWORD,
+            database: process.env.DATABASE_NAME || 'postgres',
+            entities: [__dirname + '/entities/**/*.entity{.ts,.js}'],
+            synchronize,
+            logging: process.env.NODE_ENV === 'development',
+            ssl: sslConfig,
+            extra,
+          };
       })(),
     ),
     TypeOrmModule.forFeature([
@@ -538,7 +538,7 @@ import { Deployment } from './entities/deployment.entity';
       MarketingCampaign,
       EmailTemplate,
       MarketingAnalytics,
-      
+
       // Advanced Industry 5.0 Entities
       User,
       Role,
@@ -554,7 +554,7 @@ import { Deployment } from './entities/deployment.entity';
       CustomerExperience,
       HolographicSession,
       CustomerInsight,
-      
+
       // Support & Service Entities
       SupportTicket,
       StaffRole,
@@ -564,57 +564,57 @@ import { Deployment } from './entities/deployment.entity';
       BusinessRule,
       Dashboard,
       CustomerDigitalTwin,
-      
+
       // Phase 1: Import/Export
       ImportJob,
       ExportJob,
-      
+
       // Phase 1: Email System
       EmailCampaign,
       EmailSequence,
       EmailTracking,
       EmailLog,
-      
+
       // Phase 1: Activity & Tasks
       Task,
       Activity,
       Note,
       Event,
       Reminder,
-      
+
       // Phase 2: Reporting & Analytics
       Report,
       ReportSchedule,
       AnalyticsSnapshot,
-      
+
       // Phase 2: Document Management
       Document,
       DocumentVersion,
       DocumentSignature,
       Contract,
-      
+
       // Phase 2: Customer Portal
       PortalUser,
       PortalTicket,
       PortalSession,
-      
+
       // Phase 2: Lead Capture Forms
       Form,
       FormSubmission,
       FormField,
-      
+
       // Phase 3: Sales Automation
       SalesSequence,
       SequenceEnrollment,
       Territory,
-      
+
       // Phase 3: Product Catalog
       Product,
       ProductCategory,
       PriceList,
       Discount,
       ProductBundle,
-      
+
       // Phase 3: Telephony
       Call,
       CallRecording,
@@ -622,73 +622,73 @@ import { Deployment } from './entities/deployment.entity';
       PhoneNumber,
       PhoneVerification,
       IVRMenu,
-      
+
       // Phase 3: Mobile
       MobileDevice,
       NotificationProviderHealth,
       NotificationTemplate,
       PushNotification,
       OfflineSync,
-      
+
       // Payment & Billing
       BillingTransaction,
       OnboardingSession,
       UsageMetric,
       EnterprisePayment,
-      
+
       // Migration
       DataMigrationJob,
       ERPFieldMapping,
       ERPConnection,
-      
+
       // Industry 5.0 Complete API - Quantum Intelligence
       QuantumProfile,
       EntanglementAnalysis,
       QuantumState,
-      
+
       // Industry 5.0 - Holographic Experience
       HolographicProjection,
       SpatialSession,
       InteractiveHologram,
-      
+
       // Industry 5.0 - AR/VR Sales
       VRShowroom,
       VirtualMeeting,
       ProductDemo3D,
       VRConfiguration,
-      
+
       // Industry 5.0 - Contract Management
       ContractRenewal,
       ContractAmendment,
       ContractTemplate,
       ContractApproval,
-      
+
       // Industry 5.0 - Advanced Inventory
       Warehouse,
       StockLevel,
       InventoryTransfer,
       ReorderPoint,
       InventoryAudit,
-      
+
       // Industry 5.0 - Catalog Management
       Catalog,
       CatalogProduct,
       CatalogPublication,
       CatalogVersion,
-      
+
       // Industry 5.0 - LLM Integration
       LLMConversation,
       LLMMessage,
       LLMAnalysis,
       GeneratedContent,
       LLMModel,
-      
+
       // Industry 5.0 - Real-Time Analytics
       RealTimeEvent,
       LiveMetric,
       DashboardSubscription,
       AlertRule,
-      
+
       // ===== NEW: 18 Super Admin Feature Entities =====
       PlatformAnalyticsSnapshot,
       RevenueTransaction,
@@ -708,7 +708,7 @@ import { Deployment } from './entities/deployment.entity';
       APIKey,
       PushNotificationTemplate,
       WhiteLabelConfig,
-      
+
       // ===== NEW: 15 Advanced Feature Entities (19-33) =====
       ChurnPrediction,
       RevenueForecast,
@@ -741,16 +741,16 @@ import { Deployment } from './entities/deployment.entity';
     RootController,
     AuthController,
     CRMController,
-    SalesController, 
+    SalesController,
     SalesOrderController,
-    CustomerController, 
+    CustomerController,
     AccountController,
     ContactController,
     CRMAIIntegrationController,
     MarketingController,
     SupportController,
-    SLAController,
-    
+    // SLAController,
+
     // Core Management Controllers
     OrganizationController,
     UserManagementController,
@@ -758,11 +758,11 @@ import { Deployment } from './entities/deployment.entity';
     OrganizationFeaturesController,
     AnalyticsTelemetryController,
     SubscriptionPlansController,
-    
+
     // Big Bang Week 1: Staff & Support (Simple/Mock versions for rapid development)
     StaffManagementSimpleController,
     SupportTicketsSimpleController,
-    
+
     // ===== NEW: 18 Super Admin Feature Controllers =====
     PlatformAnalyticsController,
     RevenueBillingController,
@@ -782,7 +782,7 @@ import { Deployment } from './entities/deployment.entity';
     APIManagementController,
     MobileAdminController,
     WhiteLabelController,
-    
+
     // ===== NEW: 15 Advanced Feature Controllers (19-33) =====
     PredictiveAnalyticsController,
     RecommendationEngineController,
@@ -799,16 +799,16 @@ import { Deployment } from './entities/deployment.entity';
     SupportAnalyticsController,
     DeveloperPortalController,
     ReleaseManagementController,
-    
+
     // MFA Controller
     MFAController,
-    
+
     // Phase 1 Controllers
     ImportExportController,
     EmailController,
     ActivityController,
     AuditLogController,
-    
+
     // Phase 2 Controllers
     ReportingController,
     DocumentController,
@@ -816,11 +816,11 @@ import { Deployment } from './entities/deployment.entity';
     FormController,
     DashboardController,
     NotificationController,
-    
+
     // Phase 3 Controllers
     SequenceController,
     TerritoryController,
-    
+
     // Phase 3: Product Catalog Controllers
     ProductController,
     CategoryController,
@@ -828,20 +828,20 @@ import { Deployment } from './entities/deployment.entity';
     PriceListController,
     DiscountController,
     PricingController,
-    
+
     // Phase 3: Telephony Controllers
     CallController,
     CallQueueController,
     CallAnalyticsController,
     IVRMenuController,
-    
+
     // Phase 3: Mobile Controllers
     MobileDeviceController,
     PushNotificationController,
     OfflineSyncController,
     MobileSettingsController,
     MobileWebhookController,
-    
+
     // Billing & Payment Controllers
     StripePaymentController,
     StripeWebhookController,
@@ -849,7 +849,7 @@ import { Deployment } from './entities/deployment.entity';
     UsageTrackingController,
     OrganizationBillingController,
     EnterprisePaymentController,
-    
+
     // System Management Controllers
     MonitoringController,
     PerformanceController,
@@ -858,7 +858,7 @@ import { Deployment } from './entities/deployment.entity';
     MigrationController,
     IntegrationHubController,
     WorkflowController,
-    
+
     // Industry 5.0 Complete API Controllers
     QuantumIntelligenceController,
     HolographicExperienceController,
@@ -872,20 +872,20 @@ import { Deployment } from './entities/deployment.entity';
   providers: [
     // Gateways
     AnalyticsGateway,
-    
+
     // Core CRM Services
     AuthService,
     DemoDataService,
     CRMService,
-    SalesService, 
+    SalesService,
     SalesOrderService,
-    CustomerService, 
+    CustomerService,
     LeadService,
     CRMAIIntegrationService,
     MarketingService,
     SupportService,
-    SLAService,
-    
+    // SLAService,
+
     // ===== NEW: 18 Super Admin Feature Services =====
     PlatformAnalyticsService,
     RevenueBillingService,
@@ -905,7 +905,7 @@ import { Deployment } from './entities/deployment.entity';
     APIManagementService,
     MobileAdminService,
     WhiteLabelService,
-    
+
     // ===== NEW: 15 Advanced Feature Services (19-33) =====
     PredictiveAnalyticsService,
     RecommendationEngineService,
@@ -922,7 +922,7 @@ import { Deployment } from './entities/deployment.entity';
     SupportAnalyticsService,
     DeveloperPortalService,
     ReleaseManagementService,
-    
+
     // Advanced Industry 5.0 Services
     AICustomerIntelligenceService,
     QuantumPersonalizationEngine,
@@ -932,14 +932,14 @@ import { Deployment } from './entities/deployment.entity';
     EnterpriseSecurityComplianceService,
     QuantumCustomerIntelligenceFusionService,
     HolographicCustomerExperienceService,
-    
+
     // New Advanced Services for 100% Completion
     ConversationalAIService,
     RealTimeCustomerAnalyticsService,
     LLMService,
     WorkflowBuilderService,
     MFAService,
-    
+
     // Integration Hub Services
     IntegrationHubService,
     ERPIntegrationService,
@@ -947,18 +947,18 @@ import { Deployment } from './entities/deployment.entity';
     CalendarSyncService,
     MessagingPlatformIntegrationService,
     DataWarehouseConnectorService,
-    
+
     // Error Handling
     CRMErrorHandlerMiddleware,
     CRMGlobalErrorHandler,
-    
+
     // Security Guards (Legacy)
     RBACGuard,
     RolesGuard,
-    
+
     // JWT Strategy
     JwtStrategy,
-    
+
     // New Security Guards
     TenantGuard,
     JwtAuthGuard,
@@ -967,64 +967,64 @@ import { Deployment } from './entities/deployment.entity';
     ApiKeyGuard,
     RateLimitGuard,
     ResourceOwnerGuard,
-    
+
     // External Services (provided by imported modules)
     // AISalesMarketingService - provided by SalesMarketingModule
-    
+
     // Phase 1: Import/Export Services
     ImportService,
     ExportService,
-    
+
     // Phase 1: Email System Services
     EmailSenderService,
     EmailCampaignService,
     EmailNotificationService,
     NotificationSchedulerService,
-    
+
     // Phase 1: Activity & Task Services
     TaskService,
     ActivityLoggerService,
-    
+
     // Phase 12: Audit Logging
     AuditLogService,
     AuditLogInterceptor,
-    
+
     // Phase 2: Reporting & Analytics Services
     ReportBuilderService,
     FunnelAnalysisService,
     CohortAnalysisService,
     RevenueForecastingService,
     ReportSchedulerService,
-    
+
     // Phase 2: Document Management Services
     DocumentService,
     SignatureService,
     ContractService,
-    
+
     // Phase 2: Customer Portal Services
     PortalAuthService,
     PortalTicketService,
     PortalService,
-    
+
     // Phase 2: Lead Capture Forms Services
     FormService,
-    
+
     // Organization & Subscription Services
     OrganizationService,
     UserManagementService,
     UserTierService,
     SubscriptionService,
-    
+
     // Dashboard Services
     AdminDashboardService,
     UserDashboardService,
-    
+
     // Billing & Usage Services
     StripePaymentService,
     BillingTransactionService,
     UsageTrackingService,
     EnterpriseBillingService,
-    
+
     // System Services
     MetricsService,
     AnalyticsService,
@@ -1032,23 +1032,23 @@ import { Deployment } from './entities/deployment.entity';
     PerformanceInterceptor,
     ThrottlingService,
     OnboardingService,
-    
+
     // Migration Services
     UniversalCRMMigrationService,
     SalesforceMigrationService,
     DataMigrationService,
-    
+
     // Phase 3: Sales Automation Services
     SequenceEngineService,
     TerritoryManagerService,
     SequenceAnalyticsService,
-    
+
     // Phase 3: Product Catalog Services
     CatalogService,
     PricingEngineService,
     RecommendationEngineService,
     InventoryService,
-    
+
     // Phase 3: Telephony Services
     TwilioService,
     CallService,
@@ -1056,12 +1056,12 @@ import { Deployment } from './entities/deployment.entity';
     CallAnalyticsService,
     IVRMenuService,
     TelephonyWebSocketGateway,
-    
+
     // Phase 3: Mobile Services
     MobileDeviceService,
     PushNotificationService,
     OfflineSyncService,
-    
+
     // Industry 5.0 Complete API Services
     QuantumIntelligenceService,
     HolographicExperienceService,
@@ -1075,13 +1075,13 @@ import { Deployment } from './entities/deployment.entity';
   ],
   exports: [
     // Core Services
-    CRMService, 
-    SalesService, 
-    CustomerService, 
+    CRMService,
+    SalesService,
+    CustomerService,
     CRMAIIntegrationService,
     LLMService,
     MarketingService,
-    
+
     // Advanced Services
     AICustomerIntelligenceService,
     QuantumPersonalizationEngine,
@@ -1091,17 +1091,17 @@ import { Deployment } from './entities/deployment.entity';
     EnterpriseSecurityComplianceService,
     QuantumCustomerIntelligenceFusionService,
     HolographicCustomerExperienceService,
-    
+
     // New Advanced Services for 100% Completion
     ConversationalAIService,
     RealTimeCustomerAnalyticsService,
-    
+
     // Error Handling
     CRMGlobalErrorHandler,
-    
+
     // Guards (Legacy)
     RBACGuard,
-    
+
     // New Security Guards
     TenantGuard,
     JwtAuthGuard,
