@@ -381,10 +381,66 @@ export class EmailNotificationService implements OnModuleInit {
   // Additional methods called from auth.service.ts and notification.controller.ts
   async sendEmailVerification(userOrEmail: User | string, verificationUrl: string): Promise<void> {
     const email = this.resolveEmail(userOrEmail);
+    const firstName = typeof userOrEmail === 'object' ? userOrEmail.firstName : 'User';
+    
     this.logger.log(`[EMAIL] Email Verification sent to ${email}`);
+    
+    // Console log for development (the user can see this in terminal)
     console.log(`\n=== EMAIL: VERIFICATION ===`);
     console.log(`To: ${email}`);
     console.log(`Verification URL: ${verificationUrl}\n`);
+
+    const html = `
+      <h2>Email Verification</h2>
+      <p>Hello ${firstName},</p>
+      <p>Welcome to CognexiaAI CRM! Please verify your email by clicking the link below:</p>
+      <p><a href="${verificationUrl}">Verify Email</a></p>
+      <p>This link will expire in 24 hours.</p>
+    `;
+
+    await this.sendEmail(
+      email,
+      'Verify Your Email - CognexiaAI CRM',
+      html,
+    ).catch(err => this.logger.error(`Failed to send verification email: ${err.message}`));
+  }
+
+  /**
+   * Send Team Member Invitation Email
+   */
+  async sendInvitationEmail(userOrEmail: User | string, invitationUrl: string): Promise<void> {
+    const email = this.resolveEmail(userOrEmail);
+    const firstName = typeof userOrEmail === 'object' ? userOrEmail.firstName : 'Team Member';
+    
+    this.logger.log(`[EMAIL] Invitation sent to ${email}`);
+    
+    // Console log for development (the user can see this in terminal)
+    console.log(`\n=== EMAIL: TEAM INVITATION ===`);
+    console.log(`To: ${email}`);
+    console.log(`Invitation URL: ${invitationUrl}\n`);
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
+        <h2 style="color: #1E40AF;">You've Been Invited!</h2>
+        <p>Hello ${firstName},</p>
+        <p>You have been invited to join your team on <strong>CognexiaAI CRM</strong>.</p>
+        <p>Click the button below to accept the invitation and set up your account:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${invitationUrl}" style="background-color: #1E40AF; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Accept Invitation</a>
+        </div>
+        <p>If the button doesn't work, copy and paste this link into your browser:</p>
+        <p style="word-break: break-all; color: #666;">${invitationUrl}</p>
+        <p>This invitation link will be used to set your password and complete your profile.</p>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+        <p style="font-size: 12px; color: #999;">If you were not expecting this invitation, please ignore this email.</p>
+      </div>
+    `;
+
+    await this.sendEmail(
+      email,
+      'Invitation to join CognexiaAI CRM',
+      html,
+    ).catch(err => this.logger.error(`Failed to send invitation email: ${err.message}`));
   }
 
   async sendWelcomeEmail(userOrEmail: User | string, orgOrName: Organization | string): Promise<void> {

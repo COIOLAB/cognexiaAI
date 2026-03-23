@@ -61,6 +61,7 @@ const navigationSections = [
       { name: 'Contacts', href: '/contacts', icon: Contact },
       { name: 'Leads', href: '/leads', icon: UserPlus },
       { name: 'Opportunities', href: '/opportunities', icon: Target },
+      { name: 'Invite Team', href: '/team', icon: Users },
       {
         name: 'Sales',
         children: [

@@ -6,6 +6,7 @@ import {
   Param,
   Query,
   Put,
+  Delete,
   UseGuards,
 } from '@nestjs/common';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
@@ -191,5 +192,11 @@ export class UserManagementController {
       }
       throw error;
     }
+  }
+
+  @Delete(':id')
+  @UserTypes(UserType.SUPER_ADMIN, UserType.ORG_ADMIN)
+  async deleteUser(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.userManagementService.deleteUser(id, user as any);
   }
 }

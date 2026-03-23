@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, JoinColumn, DeleteDateColumn } from 'typeorm';
 import { IsEmail, IsOptional } from 'class-validator';
 import { CustomerInteraction } from './customer-interaction.entity';
 import { Organization } from './organization.entity';
@@ -97,6 +97,9 @@ export class User {
 
   @OneToMany(() => CustomerInteraction, interaction => interaction.assignedUser)
   interactions: CustomerInteraction[];
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 
   @CreateDateColumn()
   createdAt: Date;
