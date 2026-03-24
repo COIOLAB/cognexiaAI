@@ -11,18 +11,28 @@ import {
   HttpCode,
   Request,
   HttpStatus,
+  HttpException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { SupportService, CreateTicketDto, UpdateTicketDto, TicketSearchCriteria } from '../services/support.service';
+import {
+  SupportService,
+  CreateTicketDto,
+  UpdateTicketDto,
+  TicketSearchCriteria,
+  CreateKnowledgeBaseArticleDto,
+  UpdateKnowledgeBaseArticleDto,
+  KnowledgeBaseFilters,
+} from '../services/support.service';
 import { SupportTicket } from '../entities/support-ticket.entity';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { CustomerService } from '../services/customer.service';
 
 @ApiTags('Support & Service')
 @Controller('crm/support')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class SupportController {
-  constructor(private readonly supportService: SupportService) {}
+  constructor(private readonly supportService: SupportService, private readonly customerService: CustomerService) { }
 
   @Post('tickets')
   @ApiOperation({ summary: 'Create a new support ticket' })
@@ -31,10 +41,20 @@ export class SupportController {
   async createTicket(@Body() createDto: CreateTicketDto, @Request() req: any): Promise<SupportTicket> {
     const defaultOrgId = req.user?.organizationId;
     const defaultUserId = req.user?.userId || req.user?.id;
+
+    // Accept either customer email or customer UUID
+    const customer = await this.customerService.findByEmailOrId(createDto.customer_id);
+    if (!customer) {
+      throw new HttpException('Customer not found', HttpStatus.NOT_FOUND);
+    }
+    createDto.customer_id = customer.id;
+    console.log(customer);
+    console.log(createDto);
     return await this.supportService.createTicket({
       ...createDto,
       organizationId: createDto.organizationId || defaultOrgId,
       submittedBy: createDto.submittedBy || defaultUserId,
+
     });
   }
 
@@ -120,10 +140,10 @@ export class SupportController {
     @Query('start') start?: string,
     @Query('end') end?: string,
   ): Promise<any> {
-    const timeRange = start && end 
+    const timeRange = start && end
       ? { start: new Date(start), end: new Date(end) }
       : undefined;
-    
+
     return await this.supportService.getTicketStatistics(timeRange);
   }
 
@@ -134,7 +154,103 @@ export class SupportController {
     @Query('q') query: string,
     @Query('limit') limit: number = 10,
   ): Promise<any> {
-    return await this.supportService.searchKnowledgeBase(query, limit);
+    const data = await this.supportService.searchKnowledgeBase(query, limit);
+    return { data };
+  }
+
+  @Get('knowledge-base')
+  @ApiOperation({ summary: 'List knowledge base articles' })
+  @ApiResponse({ status: 200, description: 'Knowledge base articles list' })
+  async listKnowledgeBaseArticles(@Query() filters: KnowledgeBaseFilters) {
+    return await this.supportService.listKnowledgeBaseArticles(filters);
+  }
+
+  @Get('knowledge-base/stats')
+  @ApiOperation({ summary: 'Get knowledge base stats' })
+  @ApiResponse({ status: 200, description: 'Knowledge base statistics' })
+  async getKnowledgeBaseStats() {
+    return await this.supportService.getKnowledgeBaseStats();
+  }
+
+  @Get('knowledge-base/featured')
+  @ApiOperation({ summary: 'Get featured articles' })
+  @ApiResponse({ status: 200, description: 'Featured knowledge base articles' })
+  async getFeaturedArticles(@Query('limit') limit: number = 5) {
+    const data = await this.supportService.getFeaturedArticles(limit);
+    return { data };
+  }
+
+  @Get('knowledge-base/:id')
+  @ApiOperation({ summary: 'Get knowledge base article by ID' })
+  @ApiResponse({ status: 200, description: 'Knowledge base article' })
+  async getKnowledgeBaseArticle(@Param('id') id: string) {
+    return await this.supportService.getKnowledgeBaseArticleById(id);
+  }
+
+  @Post('knowledge-base')
+  @ApiOperation({ summary: 'Create knowledge base article' })
+  @ApiResponse({ status: 201, description: 'Knowledge base article created' })
+  async createKnowledgeBaseArticle(
+    @Body() createDto: CreateKnowledgeBaseArticleDto,
+    @Request() req: any,
+  ) {
+    const authorId = req.user?.id || req.user?.userId || createDto.authorId;
+    const organizationId =
+      req.user?.organizationId || req.user?.tenantId || req.organizationId;
+    return await this.supportService.createKnowledgeBaseArticle(
+      { ...createDto, organizationId },
+      authorId
+    );
+  }
+
+  @Put('knowledge-base/:id')
+  @ApiOperation({ summary: 'Update knowledge base article' })
+  @ApiResponse({ status: 200, description: 'Knowledge base article updated' })
+  async updateKnowledgeBaseArticle(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateKnowledgeBaseArticleDto,
+  ) {
+    return await this.supportService.updateKnowledgeBaseArticle(id, updateDto);
+  }
+
+  @Delete('knowledge-base/:id')
+  @ApiOperation({ summary: 'Delete knowledge base article' })
+  @ApiResponse({ status: 200, description: 'Knowledge base article deleted' })
+  async deleteKnowledgeBaseArticle(@Param('id') id: string) {
+    await this.supportService.deleteKnowledgeBaseArticle(id);
+    return { success: true };
+  }
+
+  @Post('knowledge-base/:id/publish')
+  @ApiOperation({ summary: 'Publish knowledge base article' })
+  @ApiResponse({ status: 200, description: 'Knowledge base article published' })
+  async publishKnowledgeBaseArticle(@Param('id') id: string) {
+    return await this.supportService.publishKnowledgeBaseArticle(id);
+  }
+
+  @Post('knowledge-base/:id/rate')
+  @ApiOperation({ summary: 'Rate knowledge base article' })
+  @ApiResponse({ status: 200, description: 'Knowledge base article rated' })
+  async rateKnowledgeBaseArticle(
+    @Param('id') id: string,
+    @Body('isHelpful') isHelpful: boolean,
+  ) {
+    return await this.supportService.rateKnowledgeBaseArticle(id, Boolean(isHelpful));
+  }
+
+  @Post('knowledge-base/:id/view')
+  @ApiOperation({ summary: 'Increment knowledge base article view count' })
+  @ApiResponse({ status: 200, description: 'Knowledge base article view count incremented' })
+  async incrementKnowledgeBaseView(@Param('id') id: string) {
+    return await this.supportService.incrementKnowledgeBaseView(id);
+  }
+
+  @Get('knowledge-base/:id/related')
+  @ApiOperation({ summary: 'Get related knowledge base articles' })
+  @ApiResponse({ status: 200, description: 'Related knowledge base articles' })
+  async getRelatedKnowledgeBaseArticles(@Param('id') id: string) {
+    const data = await this.supportService.getRelatedKnowledgeBaseArticles(id);
+    return { data };
   }
 
   @Post('sla/check-compliance')

@@ -18,8 +18,8 @@ const ticketSchema = z.object({
   description: z.string().min(20, 'Description must be at least 20 characters'),
   priority: z.enum(['low', 'medium', 'high', 'urgent', 'critical']),
   category: z.enum(['technical', 'billing', 'general_inquiry', 'feature_request', 'bug', 'complaint', 'other']),
-  channel: z.enum(['email', 'phone', 'chat', 'web', 'mobile', 'social_media', 'bot']),
-  customerId: z.string().min(1, 'Customer ID is required'),
+  channel: z.enum(['web', 'email', 'phone', 'chat', 'whatsapp', 'slack']),
+  customerId: z.string().min(1, 'Customer Email ID is required'),
   tags: z.string().optional(),
 });
 
@@ -152,20 +152,19 @@ const onFormSubmit = (data: TicketFormData) => {
               <Select onValueChange={(value) => setValue('channel', value as any)} defaultValue={watch('channel')}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="web">Web Portal</SelectItem>
                   <SelectItem value="email">Email</SelectItem>
                   <SelectItem value="phone">Phone</SelectItem>
                   <SelectItem value="chat">Live Chat</SelectItem>
-                  <SelectItem value="web">Web Portal</SelectItem>
-                  <SelectItem value="mobile">Mobile App</SelectItem>
-                  <SelectItem value="social_media">Social Media</SelectItem>
-                  <SelectItem value="bot">Chatbot</SelectItem>
+                  <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                  <SelectItem value="slack">Slack</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="customerId">Customer ID *</Label>
-              <Input id="customerId" placeholder="Customer UUID" {...register('customerId')} />
+              <Label htmlFor="customerId">Email ID *</Label>
+              <Input id="customerId" placeholder="Customer Email ID" {...register('customerId')} />
               {errors.customerId && <p className="text-sm text-destructive">{errors.customerId.message}</p>}
             </div>
 

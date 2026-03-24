@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Customer, CustomerStatus } from '../entities/customer.entity';
 import { Contact } from '../entities/contact.entity';
 import { CustomerInteraction, InteractionType } from '../entities/customer-interaction.entity';
@@ -16,7 +16,7 @@ export class CustomerService {
     private contactRepository: Repository<Contact>,
     @InjectRepository(CustomerInteraction)
     private interactionRepository: Repository<CustomerInteraction>,
-  ) {}
+  ) { }
 
   async findAllContacts(customerId: string) {
     try {
@@ -32,8 +32,24 @@ export class CustomerService {
 
   async createContact(contactData: any, createdBy: string) {
     try {
+      let organizationId = contactData.organizationId;
+      let customerId = contactData.customerId;
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (customerId && !uuidRegex.test(customerId)) {
+        const customerByCode = await this.customerRepository.findOne({ where: { customerCode: customerId } });
+        if (customerByCode) {
+          customerId = customerByCode.id;
+          if (!organizationId) organizationId = customerByCode.organizationId;
+        }
+      }
+      if (!organizationId && customerId) {
+        const customer = await this.customerRepository.findOne({ where: { id: customerId } });
+        organizationId = customer?.organizationId;
+      }
       const contactEntity = this.contactRepository.create({
         ...contactData,
+        customerId,
+        organizationId,
         createdBy: createdBy,
         updatedBy: createdBy,
       }) as unknown as Contact;
@@ -43,7 +59,7 @@ export class CustomerService {
 
       const savedContact = await this.contactRepository.save(contactEntity) as unknown as Contact;
       this.logger.log(`Contact created: ${savedContact.id}`);
-      
+
       return savedContact;
     } catch (error) {
       this.logger.error('Error creating contact:', error);
@@ -54,7 +70,7 @@ export class CustomerService {
   async updateContact(id: string, updateData: any, updatedBy: string) {
     try {
       const contact = await this.contactRepository.findOne({ where: { id } });
-      
+
       if (!contact) {
         throw new NotFoundException(`Contact with ID ${id} not found`);
       }
@@ -77,15 +93,15 @@ export class CustomerService {
         createdBy: createdBy,
         updatedBy: createdBy,
       });
-      
+
       if (Array.isArray(interactionEntity)) {
         throw new Error('Failed to create interaction entity');
       }
       const savedInteraction = await this.interactionRepository.save(interactionEntity) as unknown as CustomerInteraction;
-      
+
       // Update customer interaction metrics
       await this.updateCustomerInteractionMetrics(savedInteraction.customerId);
-      
+
       // Update contact metrics if contact is specified
       if (savedInteraction.contactId) {
         await this.updateContactInteractionMetrics(savedInteraction.contactId);
@@ -144,8 +160,8 @@ export class CustomerService {
       }
 
       if (criteria.minRevenue) {
-        queryBuilder.andWhere("CAST(customer.salesMetrics->>'totalRevenue' AS DECIMAL) >= :minRevenue", { 
-          minRevenue: criteria.minRevenue 
+        queryBuilder.andWhere("CAST(customer.salesMetrics->>'totalRevenue' AS DECIMAL) >= :minRevenue", {
+          minRevenue: criteria.minRevenue
         });
       }
 
@@ -154,7 +170,7 @@ export class CustomerService {
       }
 
       const customers = await queryBuilder.getMany();
-      
+
       return {
         criteria,
         customerCount: customers.length,
@@ -201,6 +217,75 @@ export class CustomerService {
     }
   }
 
+  async getStats() {
+    try {
+      const customers = await this.customerRepository.find();
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      const stats = customers.reduce(
+        (accumulator, customer) => {
+          const totalRevenue = Number(customer.salesMetrics?.totalRevenue || 0);
+          const tier = customer.segmentation?.tier || 'unknown';
+          const region = customer.address?.region || 'unknown';
+          const createdAt = customer.createdAt ? new Date(customer.createdAt) : null;
+
+          accumulator.totalCustomers += 1;
+          accumulator.totalRevenue += totalRevenue;
+
+          if (customer.status === CustomerStatus.ACTIVE) {
+            accumulator.activeCustomers += 1;
+          }
+
+          if (customer.status === CustomerStatus.CHURNED) {
+            accumulator.churnedCustomers += 1;
+          }
+
+          if (
+            createdAt &&
+            createdAt.getMonth() === currentMonth &&
+            createdAt.getFullYear() === currentYear
+          ) {
+            accumulator.newThisMonth += 1;
+          }
+
+          accumulator.tierDistribution[tier] = (accumulator.tierDistribution[tier] || 0) + 1;
+          accumulator.regionalDistribution[region] =
+            (accumulator.regionalDistribution[region] || 0) + 1;
+
+          return accumulator;
+        },
+        {
+          totalCustomers: 0,
+          activeCustomers: 0,
+          churnedCustomers: 0,
+          newThisMonth: 0,
+          totalRevenue: 0,
+          tierDistribution: {} as Record<string, number>,
+          regionalDistribution: {} as Record<string, number>,
+        },
+      );
+
+      return {
+        totalCustomers: stats.totalCustomers,
+        activeCustomers: stats.activeCustomers,
+        newThisMonth: stats.newThisMonth,
+        churnRate: stats.totalCustomers
+          ? (stats.churnedCustomers / stats.totalCustomers) * 100
+          : 0,
+        averageRevenue: stats.totalCustomers
+          ? stats.totalRevenue / stats.totalCustomers
+          : 0,
+        tierDistribution: stats.tierDistribution,
+        regionalDistribution: stats.regionalDistribution,
+      };
+    } catch (error) {
+      this.logger.error('Error getting customer stats:', error);
+      throw error;
+    }
+  }
+
   private async updateCustomerInteractionMetrics(customerId: string) {
     try {
       const customer = await this.customerRepository.findOne({ where: { id: customerId } });
@@ -208,9 +293,9 @@ export class CustomerService {
 
       if (customer && interactions.length > 0) {
         const lastInteraction = interactions.sort((a, b) => b.date.getTime() - a.date.getTime())[0];
-        
+
         customer.relationshipMetrics.lastInteractionDate = lastInteraction.date.toISOString();
-        
+
         await this.customerRepository.save(customer);
       }
     } catch (error) {
@@ -225,11 +310,11 @@ export class CustomerService {
 
       if (contact && interactions.length > 0) {
         const lastInteraction = interactions.sort((a, b) => b.date.getTime() - a.date.getTime())[0];
-        
+
         contact.lastInteractionDate = lastInteraction.date;
         contact.totalInteractions = interactions.length;
         contact.updateEngagementScore();
-        
+
         await this.contactRepository.save(contact);
       }
     } catch (error) {
@@ -267,7 +352,7 @@ export class CustomerService {
     }
 
     if (customer.salesMetrics.outstandingBalance && customer.salesMetrics.creditLimit &&
-        customer.salesMetrics.outstandingBalance > customer.salesMetrics.creditLimit * 0.8) {
+      customer.salesMetrics.outstandingBalance > customer.salesMetrics.creditLimit * 0.8) {
       alerts.push('Approaching credit limit');
     }
 
@@ -278,49 +363,55 @@ export class CustomerService {
     return alerts;
   }
 
-  async createCustomer(createCustomerDto: any, createdBy: string, organizationId?: string) {
+  async createCustomer(createCustomerDto: any, createdBy: string) {
     try {
-      const customerCode =
-        createCustomerDto.customerCode ||
-        `CUST-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+      const customerCode = createCustomerDto.customerCode || await this.generateCustomerCode();
+      const nowIso = new Date().toISOString();
+      const preferences = createCustomerDto.preferences ?? {
+        language: 'en',
+        currency: 'USD',
+        timezone: 'UTC',
+        communicationChannels: ['email'],
+        marketingOptIn: true,
+        newsletterOptIn: false,
+        eventInvitations: false,
+        privacySettings: {
+          dataSharing: false,
+          analytics: true,
+          marketing: true,
+        },
+      };
+      const salesMetrics = createCustomerDto.salesMetrics ?? {
+        totalRevenue: 0,
+        averageOrderValue: 0,
+        paymentTerms: 'NET30',
+        outstandingBalance: 0,
+      };
+      const relationshipMetrics = createCustomerDto.relationshipMetrics ?? {
+        customerSince: nowIso,
+        loyaltyScore: 5,
+        satisfactionScore: 5,
+        npsScore: 0,
+        interactionFrequency: 'weekly',
+      };
+      const segmentation = createCustomerDto.segmentation ?? {
+        segment: 'prospect',
+        tier: 'bronze',
+        riskLevel: 'medium',
+        growthPotential: 'medium',
+      };
+      const demographics = createCustomerDto.demographics ?? {};
+      const tags = Array.isArray(createCustomerDto.tags) ? createCustomerDto.tags : [];
 
       const customer = this.customerRepository.create({
         ...createCustomerDto,
-        organizationId: organizationId || createCustomerDto.organizationId || createCustomerDto.orgId || null,
         customerCode,
-        preferences: createCustomerDto.preferences || {
-          language: 'en',
-          currency: 'USD',
-          timezone: 'UTC',
-          communicationChannels: ['email'],
-          marketingOptIn: true,
-          newsletterOptIn: true,
-          eventInvitations: true,
-          privacySettings: {
-            dataSharing: true,
-            analytics: true,
-          marketing: true,
-        },
-      },
-        salesMetrics: createCustomerDto.salesMetrics || {
-          totalRevenue: 0,
-          averageOrderValue: 0,
-          paymentTerms: 'Net 30',
-          orderFrequency: 'monthly',
-        },
-        relationshipMetrics: createCustomerDto.relationshipMetrics || {
-          customerSince: new Date().toISOString(),
-          loyaltyScore: 0,
-          satisfactionScore: 0,
-          npsScore: 0,
-          interactionFrequency: 'monthly',
-        },
-        segmentation: createCustomerDto.segmentation || {
-          segment: 'general',
-          tier: 'bronze',
-          riskLevel: 'medium',
-          growthPotential: 'medium',
-        },
+        demographics,
+        preferences,
+        salesMetrics,
+        relationshipMetrics,
+        segmentation,
+        tags,
         status: CustomerStatus.ACTIVE,
         createdBy,
         updatedBy: createdBy
@@ -332,41 +423,87 @@ export class CustomerService {
     }
   }
 
-  async findOne(id: string) {
-    const customer = await this.customerRepository.findOne({ where: { id } });
-    if (!customer) {
-      throw new NotFoundException('Customer not found');
-    }
-    return customer;
+  private async generateCustomerCode(): Promise<string> {
+    const year = new Date().getFullYear();
+    const count = await this.customerRepository.count();
+    return `C-${year}-${String(count + 1).padStart(3, '0')}`;
   }
 
-  async findAll(params: { page?: number; limit?: number; search?: string; status?: string }) {
+  async findAll(params: { page?: number; limit?: number; search?: string; organizationId?: string }) {
     try {
-      const { page = 1, limit = 10, search, status } = params;
+      const { page = 1, limit = 10, search, organizationId } = params;
       const query = this.customerRepository.createQueryBuilder('customer');
 
-      if (status) {
-        query.andWhere('customer.status = :status', { status });
-      } else {
-        query.andWhere('customer.status != :inactive', { inactive: CustomerStatus.INACTIVE });
+      if (organizationId) {
+        query.andWhere('customer.organizationId = :organizationId', { organizationId });
       }
-
+      
       if (search) {
         query.andWhere('customer.companyName ILIKE :search OR customer.customerCode ILIKE :search', {
           search: `%${search}%`
         });
       }
-      
+
       const [data, total] = await query
         .skip((page - 1) * limit)
         .take(limit)
         .getManyAndCount();
-      
+
       return { data: data || [], total: total || 0, page, limit };
     } catch (error) {
       this.logger.error('Error finding customers:', error);
       const { page = 1, limit = 10 } = params;
       return { data: [], total: 0, page, limit };
+    }
+  }
+
+  async findForExport(params: {
+    search?: string;
+    status?: string;
+    industry?: string;
+    segment?: string;
+    region?: string;
+    organizationId?: string;
+  }) {
+    try {
+      const { search, status, industry, segment, region, organizationId } = params;
+      const query = this.customerRepository.createQueryBuilder('customer');
+
+      if (organizationId) {
+        query.andWhere('customer.organizationId = :organizationId', { organizationId });
+      }
+
+      if (search) {
+        query.andWhere(
+          '(customer.companyName ILIKE :search OR customer.customerCode ILIKE :search)',
+          { search: `%${search}%` },
+        );
+      }
+
+      if (status) {
+        query.andWhere('customer.status = :status', { status });
+      }
+
+      if (industry) {
+        query.andWhere('customer.industry ILIKE :industry', { industry: `%${industry}%` });
+      }
+
+      if (segment) {
+        query.andWhere("customer.segmentation->>'segment' ILIKE :segment", {
+          segment: `%${segment}%`,
+        });
+      }
+
+      if (region) {
+        query.andWhere("customer.address->>'region' ILIKE :region", {
+          region: `%${region}%`,
+        });
+      }
+
+      return query.orderBy('customer.createdAt', 'DESC').getMany();
+    } catch (error) {
+      this.logger.error('Error exporting customers:', error);
+      throw error;
     }
   }
 
@@ -383,6 +520,57 @@ export class CustomerService {
     }
   }
 
+  async findByEmail(customerEmail: string) {
+    try {
+      const email = (customerEmail || '').trim().toLowerCase();
+      if (!email) {
+        return null;
+      }
+
+      // 1) Exact match on primaryContact.email (case/space-insensitive)
+      const exact = await this.customerRepository
+        .createQueryBuilder('customer')
+        .where(`LOWER(TRIM(customer."primaryContact"->>'email')) = :email`, { email })
+        .getOne();
+      if (exact) return exact;
+
+      // 2) Fallback: contains match on the JSON blob to handle unexpected casing/format
+      const like = await this.customerRepository
+        .createQueryBuilder('customer')
+        .where(`customer."primaryContact"::text ILIKE :pattern`, { pattern: `%${email}%` })
+        .getOne();
+
+      return like || null;
+    } catch (error) {
+      this.logger.error(`Error finding customer ${customerEmail}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Flexible lookup: try email (case/space-insensitive) then UUID
+   */
+  async findByEmailOrId(value: string) {
+    const trimmed = (value || '').trim();
+    if (!trimmed) return null;
+
+    // Try email match
+    const byEmail = await this.findByEmail(trimmed);
+    if (byEmail) return byEmail;
+
+    // If it looks like a UUID, try direct id lookup
+    if (/^[0-9a-fA-F-]{32,36}$/.test(trimmed)) {
+      try {
+        const byId = await this.customerRepository.findOne({ where: { id: trimmed } });
+        if (byId) return byId;
+      } catch (error) {
+        this.logger.error(`Error finding customer by id ${trimmed}:`, error);
+      }
+    }
+
+    return null;
+  }
+
   async updateCustomer(customerId: string, updateCustomerDto: any, updatedBy: string) {
     try {
       const customer = await this.findById(customerId);
@@ -397,9 +585,6 @@ export class CustomerService {
   async deleteCustomer(customerId: string, deletedBy: string) {
     try {
       const customer = await this.findById(customerId);
-      if (!customer) {
-        throw new NotFoundException('Customer not found');
-      }
       customer.status = CustomerStatus.INACTIVE;
       customer.updatedBy = deletedBy;
       await this.customerRepository.save(customer);
@@ -410,35 +595,22 @@ export class CustomerService {
     }
   }
 
-  async getStats() {
-    const total = await this.customerRepository.count();
-    const active = await this.customerRepository.count({ where: { status: CustomerStatus.ACTIVE } as any });
+  async bulkDelete(customerIds: string[], deletedBy: string) {
+    try {
+      if (!customerIds || customerIds.length === 0) {
+        return { success: true, deleted: 0 };
+      }
 
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-    const newThisMonth = await this.customerRepository.count({
-      where: { createdAt: Between(startOfMonth, new Date()) } as any,
-    });
+      await this.customerRepository.update(
+        { id: In(customerIds) },
+        { status: CustomerStatus.INACTIVE, updatedBy: deletedBy },
+      );
 
-    const avgRevenueRow = await this.customerRepository
-      .createQueryBuilder('customer')
-      .select(`AVG(("customer"."salesMetrics"->>'totalRevenue')::numeric)`, 'avg')
-      .getRawOne();
-    const averageRevenue = Number(avgRevenueRow?.avg || 0);
-
-    // Simple churn proxy: inactive count / total
-    const churnRate = total > 0 ? ((total - active) / total) * 100 : 0;
-
-    return {
-      totalCustomers: total,
-      activeCustomers: active,
-      newThisMonth,
-      churnRate,
-      averageRevenue,
-      tierDistribution: {}, // placeholder until tiers are stored
-      regionalDistribution: {}, // placeholder until regions are stored
-    };
+      return { success: true, deleted: customerIds.length, message: 'Customers deleted successfully' };
+    } catch (error) {
+      this.logger.error('Error bulk deleting customers:', error);
+      throw error;
+    }
   }
 
   async bulkCreateCustomers(customers: any[], createdBy: string) {
@@ -465,7 +637,7 @@ export class CustomerService {
   async searchCustomers(searchCriteria: any) {
     try {
       const query = this.customerRepository.createQueryBuilder('customer');
-      
+
       if (searchCriteria.name) {
         query.andWhere('customer.name ILIKE :name', { name: `%${searchCriteria.name}%` });
       }
@@ -475,7 +647,7 @@ export class CustomerService {
       if (searchCriteria.status) {
         query.andWhere('customer.status = :status', { status: searchCriteria.status });
       }
-      
+
       const results = await query.getMany();
       return { success: true, data: results || [], count: (results || []).length };
     } catch (error) {

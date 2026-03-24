@@ -225,6 +225,12 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
                     </div>
                   </div>
                 )}
+                {account.details?.phone && (
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">Phone</div>
+                    <div className="mt-1">{account.details.phone}</div>
+                  </div>
+                )}
                 {account.parentAccount && (
                   <div>
                     <div className="text-sm font-medium text-muted-foreground">Parent Account</div>

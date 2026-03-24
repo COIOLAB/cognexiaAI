@@ -350,7 +350,7 @@ export default function DashboardPage() {
       icon: Sparkles,
       tone: 'bg-gradient-to-br from-emerald-500/10 via-transparent to-emerald-500/20',
       links: [
-        { label: 'Accounts', href: '/accounts' },
+        { label: 'Clients', href: '/accounts' },
         { label: 'Leads', href: '/leads' },
         { label: 'Opportunities', href: '/opportunities' },
         { label: 'Tasks & Activities', href: '/operations/tasks' },

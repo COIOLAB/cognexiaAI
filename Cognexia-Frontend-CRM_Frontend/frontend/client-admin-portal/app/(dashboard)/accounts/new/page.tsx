@@ -22,8 +22,8 @@ export default function NewAccountPage() {
   return (
     <div className="flex flex-col gap-6 p-6">
       <PageHeader
-        title="New Account"
-        subtitle="Create a new organizational account"
+        title="New Client"
+        subtitle="Create a new Client"
         actions={
           <Button variant="outline" onClick={() => router.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -31,7 +31,7 @@ export default function NewAccountPage() {
           </Button>
         }
       />
-      <AccountForm onSubmit={handleSubmit} isLoading={createMutation.isPending} submitLabel="Create Account" />
+      <AccountForm onSubmit={handleSubmit} isLoading={createMutation.isPending} submitLabel="Create Client" />
     </div>
   );
 }

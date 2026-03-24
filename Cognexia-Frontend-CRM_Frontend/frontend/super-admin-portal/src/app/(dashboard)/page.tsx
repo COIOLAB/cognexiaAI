@@ -129,7 +129,7 @@ export default function DashboardPage() {
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <h3 className="font-semibold text-gray-900">Revenue This Month</h3>
           <p className="text-3xl font-bold text-green-600 mt-2">
-            {/* ${metrics.revenueThisMonth.toLocaleString()} */}0
+            ${metrics.revenueThisMonth.toLocaleString()}
           </p>
         </div>
         

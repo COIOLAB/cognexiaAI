@@ -77,7 +77,7 @@ export const campaignApi = {
    * Get campaign statistics
    */
   getCampaignStats: async () => {
-    const { data } = await api.get('/crm/marketing/campaigns/stats');
+    const { data } = await api.get('/crm/marketing/campaigns/status');
     return data;
   },
 

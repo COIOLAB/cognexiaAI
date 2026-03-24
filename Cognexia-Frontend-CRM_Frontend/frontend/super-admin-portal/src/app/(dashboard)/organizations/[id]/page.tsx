@@ -15,14 +15,14 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  ArrowLeft, 
-  Users, 
-  CreditCard, 
-  Calendar, 
-  Mail, 
-  Phone, 
-  Globe, 
+import {
+  ArrowLeft,
+  Users,
+  CreditCard,
+  Calendar,
+  Mail,
+  Phone,
+  Globe,
   MapPin,
   Shield,
   TrendingUp,
@@ -112,7 +112,7 @@ export default function OrganizationDetailsPage({ params }: { params: Promise<{ 
     queryFn: async () => {
       const response = await apiClient.get(`/organizations/${id}`);
       const orgData = response.data?.data ?? response.data;
-      
+
       // Ensure all expected fields exist with defaults
       return {
         ...orgData,
@@ -372,14 +372,14 @@ export default function OrganizationDetailsPage({ params }: { params: Promise<{ 
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Seat Usage</CardTitle>
+                <CardTitle>Users Usage</CardTitle>
                 <CardDescription>
-                  {seatUsage.currentUsers} of {seatUsage.maxUsers} seats used
+                  {seatUsage.currentUsers} of {seatUsage.maxUsers} users used
                 </CardDescription>
               </div>
               <Button onClick={() => setSeatLimitDialogOpen(true)}>
                 <Edit className="h-4 w-4 mr-2" />
-                Adjust Seat Limit
+                Adjust User Limit
               </Button>
             </div>
           </CardHeader>
@@ -387,7 +387,7 @@ export default function OrganizationDetailsPage({ params }: { params: Promise<{ 
             <Progress value={seatUsage.usagePercentage} className="h-3" />
             <div className="flex items-center justify-between text-sm">
               <span>{seatUsage.usagePercentage.toFixed(1)}% utilized</span>
-              <span>{seatUsage.availableSeats} seats available</span>
+              <span>{seatUsage.availableSeats} users available</span>
             </div>
             {isAtLimit && (
               <Alert variant="destructive">
@@ -651,7 +651,7 @@ export default function OrganizationDetailsPage({ params }: { params: Promise<{ 
                   </TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
-                  <Badge variant={user.userType === 'super_admin' ? 'default' : 'secondary'}>
+                    <Badge variant={user.userType === 'super_admin' ? 'default' : 'secondary'}>
                       <Shield className="h-3 w-3 mr-1" />
                       {user.userType === 'super_admin' ? 'Super Admin' : user.userType === 'org_admin' ? 'Org Admin' : 'User'}
                     </Badge>

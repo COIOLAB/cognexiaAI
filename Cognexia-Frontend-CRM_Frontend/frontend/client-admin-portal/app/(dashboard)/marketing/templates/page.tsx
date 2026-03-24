@@ -101,7 +101,7 @@ export default function TemplatesPage() {
               <div className="flex-1">
                 {total > 0 && (
                   <span>
-                    {rangeStart}â€“{rangeEnd} of {total}
+                    {rangeStart}–{rangeEnd} of {total}
                   </span>
                 )}
               </div>

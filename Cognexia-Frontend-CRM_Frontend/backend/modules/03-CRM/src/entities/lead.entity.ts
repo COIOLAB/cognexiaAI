@@ -8,6 +8,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
+import { Organization } from './organization.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { Customer } from './customer.entity';
 
@@ -82,6 +83,11 @@ export class Lead {
   @ApiProperty({ description: 'Lead status', enum: LeadStatus })
   @Column({ type: 'simple-enum', enum: LeadStatus, default: LeadStatus.NEW })
   status: LeadStatus;
+
+  @ManyToOne(() => Organization, (organization) => organization.leads, { nullable: true })
+  @JoinColumn({ name: 'organization_id' })
+  organization?: Organization;
+
 
   @ApiProperty({ description: 'Lead source', enum: LeadSource })
   @Column({ type: 'simple-enum', enum: LeadSource })
@@ -307,7 +313,7 @@ export class Lead {
       this.qualification.need,
       this.qualification.timeline,
     ];
-    
+
     const qualifiedCount = statuses.filter(s => s === QualificationStatus.QUALIFIED).length;
     return (qualifiedCount / 4) * 100;
   }
@@ -333,11 +339,11 @@ export class Lead {
 
   shouldFollowUp(): boolean {
     if (!this.lastContactDate) return true;
-    
+
     const daysSinceContact = Math.floor(
       (Date.now() - this.lastContactDate.getTime()) / (1000 * 60 * 60 * 24)
     );
-    
+
     // Follow up frequency based on score
     if (this.score >= 80) return daysSinceContact >= 3;
     if (this.score >= 60) return daysSinceContact >= 7;
@@ -359,7 +365,7 @@ export class Lead {
       lastUpdated: new Date().toISOString(),
       scoringModel: 'default_v1',
     };
-    
+
     this.score = this.leadScoring.totalScore;
     this.grade = this.calculateGrade();
   }

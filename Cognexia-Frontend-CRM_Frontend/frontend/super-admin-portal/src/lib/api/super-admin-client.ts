@@ -371,6 +371,19 @@ export const onboardingAPI = {
     const response = await apiClient.get('/onboarding/progress');
     return response.data;
   },
+
+  getOrganizationsExport: async () => {
+    const response = await apiClient.get('/onboarding/organizations-export');
+    return response.data as Array<{
+      name: string;
+      email: string;
+      adminFirstName: string;
+      adminLastName: string;
+      phone: string;
+      address: string;
+      website: string;
+    }>;
+  },
   
   bulkImport: async (data: any[]) => {
     const response = await apiClient.post('/onboarding/bulk-import', { data });

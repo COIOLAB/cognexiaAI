@@ -39,6 +39,43 @@ export interface TicketSearchCriteria {
   tags?: string[];
 }
 
+export interface CreateKnowledgeBaseArticleDto {
+  title: string;
+  content: string;
+  summary?: string;
+  type?: string;
+  category?: string;
+  tags?: string[];
+  keywords?: string[];
+  visibility?: string;
+  attachments?: any[];
+  videoLinks?: any[];
+  authorId?: string;
+}
+
+export interface UpdateKnowledgeBaseArticleDto {
+  title?: string;
+  content?: string;
+  summary?: string;
+  status?: string;
+  type?: string;
+  category?: string;
+  tags?: string[];
+  keywords?: string[];
+  visibility?: string;
+}
+
+export interface KnowledgeBaseFilters {
+  page?: number;
+  limit?: number;
+  status?: string;
+  type?: string;
+  category?: string;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
 @Injectable()
 export class SupportService {
   constructor(
@@ -333,7 +370,7 @@ export class SupportService {
   /**
    * Search knowledge base for relevant articles
    */
-  async searchKnowledgeBase(query: string, limit: number = 10): Promise<KnowledgeBaseArticle[]> {
+  async searchKnowledgeBase(query: string, limit: number = 10): Promise<any[]> {
     const parsedLimit = Number(limit);
     const safeLimit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 10;
     const articles = await this.knowledgeBaseRepository
@@ -348,7 +385,204 @@ export class SupportService {
       .limit(safeLimit)
       .getMany();
 
-    return articles;
+    return articles.map((article) => this.serializeArticle(article));
+  }
+
+  async listKnowledgeBaseArticles(filters: KnowledgeBaseFilters = {}) {
+    const page = Math.max(1, Number(filters.page) || 1);
+    const limit = Math.max(1, Number(filters.limit) || 20);
+    const sortOrder = filters.sortOrder === 'asc' ? 'ASC' : 'DESC';
+    const sortBy = this.normalizeSortBy(filters.sortBy);
+
+    const query = this.knowledgeBaseRepository.createQueryBuilder('article');
+
+    const status = this.normalizeEnum(filters.status, 'status');
+    if (status) {
+      query.andWhere('article.status = :status', { status });
+    }
+
+    const type = this.normalizeEnum(filters.type, 'type');
+    if (type) {
+      query.andWhere('article.type = :type', { type });
+    }
+
+    if (filters.category) {
+      query.andWhere('article.category = :category', { category: filters.category });
+    }
+
+    if (filters.search) {
+      query.andWhere(
+        '(article.title ILIKE :search OR article.content ILIKE :search OR article.summary ILIKE :search)',
+        { search: `%${filters.search}%` }
+      );
+    }
+
+    query.orderBy(sortBy, sortOrder).skip((page - 1) * limit).take(limit);
+
+    const [articles, total] = await query.getManyAndCount();
+
+    return {
+      data: articles.map((article) => this.serializeArticle(article)),
+      total,
+      page,
+      limit,
+    };
+  }
+
+  async getKnowledgeBaseArticleById(id: string) {
+    const article = await this.knowledgeBaseRepository.findOne({ where: { id }, relations: ['author'] });
+    if (!article) {
+      throw new NotFoundException(`Knowledge base article ${id} not found`);
+    }
+    return this.serializeArticle(article);
+  }
+
+  async createKnowledgeBaseArticle(createDto: CreateKnowledgeBaseArticleDto, authorId?: string) {
+    if (!authorId) {
+      throw new BadRequestException('Author is required to create an article');
+    }
+
+    const articleNumber = await this.generateArticleNumber();
+    const article = this.knowledgeBaseRepository.create({
+      article_number: articleNumber,
+      title: createDto.title,
+      content: createDto.content,
+      summary: createDto.summary || null,
+      type: this.normalizeEnum(createDto.type, 'type') || 'HOW_TO',
+      visibility: this.normalizeEnum(createDto.visibility, 'visibility') || 'INTERNAL',
+      category: createDto.category || null,
+      tags: createDto.tags || [],
+      keywords: createDto.keywords || [],
+      author_id: authorId,
+      status: 'DRAFT',
+      attachments: createDto.attachments || [],
+      video_links: createDto.videoLinks || [],
+    } as any);
+
+    const saved = await this.knowledgeBaseRepository.save(article);
+    return this.serializeArticle(saved);
+  }
+
+  async updateKnowledgeBaseArticle(id: string, updateDto: UpdateKnowledgeBaseArticleDto) {
+    const article = await this.knowledgeBaseRepository.findOne({ where: { id } });
+    if (!article) {
+      throw new NotFoundException(`Knowledge base article ${id} not found`);
+    }
+
+    Object.assign(article, {
+      title: updateDto.title ?? article.title,
+      content: updateDto.content ?? article.content,
+      summary: updateDto.summary ?? article.summary,
+      status: this.normalizeEnum(updateDto.status, 'status') || article.status,
+      type: this.normalizeEnum(updateDto.type, 'type') || article.type,
+      visibility: this.normalizeEnum(updateDto.visibility, 'visibility') || article.visibility,
+      category: updateDto.category ?? article.category,
+      tags: updateDto.tags ?? article.tags,
+      keywords: updateDto.keywords ?? article.keywords,
+    });
+
+    const saved = await this.knowledgeBaseRepository.save(article);
+    return this.serializeArticle(saved);
+  }
+
+  async deleteKnowledgeBaseArticle(id: string) {
+    const article = await this.knowledgeBaseRepository.findOne({ where: { id } });
+    if (!article) {
+      throw new NotFoundException(`Knowledge base article ${id} not found`);
+    }
+    await this.knowledgeBaseRepository.remove(article);
+  }
+
+  async publishKnowledgeBaseArticle(id: string) {
+    const article = await this.knowledgeBaseRepository.findOne({ where: { id } });
+    if (!article) {
+      throw new NotFoundException(`Knowledge base article ${id} not found`);
+    }
+    (article as any).status = 'PUBLISHED';
+    (article as any).published_at = new Date();
+    const saved = await this.knowledgeBaseRepository.save(article);
+    return this.serializeArticle(saved);
+  }
+
+  async rateKnowledgeBaseArticle(id: string, isHelpful: boolean) {
+    const article = await this.knowledgeBaseRepository.findOne({ where: { id } });
+    if (!article) {
+      throw new NotFoundException(`Knowledge base article ${id} not found`);
+    }
+    if (isHelpful) {
+      article.helpful_count = (article.helpful_count || 0) + 1;
+    } else {
+      article.not_helpful_count = (article.not_helpful_count || 0) + 1;
+    }
+    const totalRatings = (article.helpful_count || 0) + (article.not_helpful_count || 0);
+    article.average_rating = totalRatings > 0 ? (article.helpful_count / totalRatings) * 5 : 0;
+    article.rating_count = totalRatings;
+    const saved = await this.knowledgeBaseRepository.save(article);
+    return this.serializeArticle(saved);
+  }
+
+  async incrementKnowledgeBaseView(id: string) {
+    const article = await this.knowledgeBaseRepository.findOne({ where: { id } });
+    if (!article) {
+      throw new NotFoundException(`Knowledge base article ${id} not found`);
+    }
+    article.view_count = (article.view_count || 0) + 1;
+    const saved = await this.knowledgeBaseRepository.save(article);
+    return this.serializeArticle(saved);
+  }
+
+  async getRelatedKnowledgeBaseArticles(id: string) {
+    const article = await this.knowledgeBaseRepository.findOne({ where: { id } });
+    if (!article) {
+      throw new NotFoundException(`Knowledge base article ${id} not found`);
+    }
+    if (!article.related_articles || article.related_articles.length === 0) {
+      return [];
+    }
+    const related = await this.knowledgeBaseRepository.find({
+      where: { id: In(article.related_articles) },
+    });
+    return related.map((item) => this.serializeArticle(item));
+  }
+
+  async getKnowledgeBaseStats() {
+    const [totalArticles, published, drafts, allArticles] = await Promise.all([
+      this.knowledgeBaseRepository.count(),
+      this.knowledgeBaseRepository.count({ where: { status: 'PUBLISHED' as any } }),
+      this.knowledgeBaseRepository.count({ where: { status: 'DRAFT' as any } }),
+      this.knowledgeBaseRepository.find({ select: ['type', 'view_count', 'helpful_count', 'not_helpful_count'] }),
+    ]);
+
+    const totalViews = allArticles.reduce((sum, article) => sum + (article.view_count || 0), 0);
+    const totalHelpful = allArticles.reduce((sum, article) => sum + (article.helpful_count || 0), 0);
+    const totalNotHelpful = allArticles.reduce((sum, article) => sum + (article.not_helpful_count || 0), 0);
+    const totalRatings = totalHelpful + totalNotHelpful;
+    const avgHelpfulness = totalRatings > 0 ? (totalHelpful / totalRatings) * 100 : 0;
+
+    const byType: Record<string, number> = {};
+    allArticles.forEach((article) => {
+      const key = this.toClientEnum(article.type);
+      byType[key] = (byType[key] || 0) + 1;
+    });
+
+    return {
+      totalArticles,
+      published,
+      drafts,
+      totalViews,
+      avgHelpfulness,
+      byType,
+    };
+  }
+
+  async getFeaturedArticles(limit: number = 5) {
+    const safeLimit = Math.max(1, Number(limit) || 5);
+    const featured = await this.knowledgeBaseRepository.find({
+      where: { is_featured: true as any },
+      order: { created_at: 'DESC' as any },
+      take: safeLimit,
+    });
+    return featured.map((article) => this.serializeArticle(article));
   }
 
   /**
@@ -376,6 +610,67 @@ export class SupportService {
     const count = await this.ticketRepository.count();
     const year = new Date().getFullYear();
     return `TKT-${year}-${(count + 1).toString().padStart(6, '0')}`;
+  }
+
+  private async generateArticleNumber(): Promise<string> {
+    const count = await this.knowledgeBaseRepository.count();
+    const year = new Date().getFullYear();
+    return `KB-${year}-${(count + 1).toString().padStart(6, '0')}`;
+  }
+
+  private normalizeEnum(value: string | undefined, type: 'status' | 'visibility' | 'type'): string | undefined {
+    if (!value) return undefined;
+    const normalized = value.toString().toUpperCase();
+    const map: Record<string, string[]> = {
+      status: ['DRAFT', 'REVIEW', 'PUBLISHED', 'ARCHIVED'],
+      visibility: ['PUBLIC', 'INTERNAL', 'CUSTOMER', 'PARTNER'],
+      type: ['HOW_TO', 'TROUBLESHOOTING', 'FAQ', 'BEST_PRACTICE', 'POLICY', 'ANNOUNCEMENT', 'TUTORIAL'],
+    };
+    return map[type].includes(normalized) ? normalized : undefined;
+  }
+
+  private toClientEnum(value?: string) {
+    return value ? value.toString().toLowerCase() : '';
+  }
+
+  private normalizeSortBy(sortBy?: string) {
+    switch (sortBy) {
+      case 'updatedAt':
+        return 'article.updated_at';
+      case 'viewCount':
+        return 'article.view_count';
+      case 'title':
+        return 'article.title';
+      default:
+        return 'article.created_at';
+    }
+  }
+
+  private serializeArticle(article: KnowledgeBaseArticle) {
+    return {
+      id: article.id,
+      articleNumber: article.article_number,
+      title: article.title,
+      content: article.content,
+      summary: article.summary || '',
+      status: this.toClientEnum(article.status),
+      visibility: this.toClientEnum(article.visibility),
+      type: this.toClientEnum(article.type),
+      category: article.category || '',
+      tags: article.tags || [],
+      keywords: article.keywords || [],
+      viewCount: article.view_count || 0,
+      helpfulCount: article.helpful_count || 0,
+      notHelpfulCount: article.not_helpful_count || 0,
+      relatedArticles: article.related_articles || [],
+      attachments: article.attachments || [],
+      videoLinks: article.video_links || [],
+      author: article.author_id,
+      authorName: article.author ? (article.author as any).fullName || article.author?.email : undefined,
+      publishedAt: article.published_at ? article.published_at.toISOString() : undefined,
+      createdAt: article.created_at ? article.created_at.toISOString() : undefined,
+      updatedAt: article.updated_at ? article.updated_at.toISOString() : undefined,
+    };
   }
 
   private async findApplicableSLA(ticket: SupportTicket): Promise<SLA | null> {

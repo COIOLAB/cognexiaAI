@@ -456,17 +456,12 @@ export enum LeadStatus {
 }
 
 export enum LeadSource {
-  WEBSITE_FORM = 'website_form',
-  LINKEDIN_CAMPAIGN = 'linkedin_campaign',
-  GOOGLE_ADS = 'google_ads',
-  FACEBOOK_ADS = 'facebook_ads',
-  EMAIL_CAMPAIGN = 'email_campaign',
+  WEBSITE = 'website',
   REFERRAL = 'referral',
-  TRADE_SHOW = 'trade_show',
-  WEBINAR = 'webinar',
+  SOCIAL_MEDIA = 'social_media',
+  EMAIL_CAMPAIGN = 'email_campaign',
   COLD_CALL = 'cold_call',
-  INBOUND_CALL = 'inbound_call',
-  CONTENT_MARKETING = 'content_marketing',
+  TRADE_SHOW = 'trade_show',
   PARTNER = 'partner',
   OTHER = 'other',
 }
@@ -474,7 +469,6 @@ export enum LeadSource {
 export interface Lead {
   id: string;
   leadCode: string;
-  organizationId?: string;
   firstName: string;
   lastName: string;
   fullName: string;
@@ -497,7 +491,6 @@ export interface Lead {
 }
 
 export interface CreateLeadDto {
-  organizationId?: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -524,7 +517,6 @@ export interface LeadFilters {
   search?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
-  organizationId?: string;
 }
 
 export interface QualifyLeadDto {
@@ -557,8 +549,9 @@ export enum OpportunityStatus {
 }
 
 export interface Opportunity {
+  opportunityNumber: String;
   id: string;
-  opportunityNumber: string;
+  opportunityCode: string;
   name: string;
   description?: string;
   stage: OpportunityStage;
@@ -649,6 +642,7 @@ export interface Account {
     employees?: number;
     annualRevenue?: number;
     description?: string;
+    phone?: string;
     territory?: string;
     segment?: string;
     tier?: string;
@@ -664,11 +658,14 @@ export interface Account {
 
 export interface CreateAccountDto {
   name: string;
-  type: AccountType;
-  industry: string;
-  owner: string;
+  type?: AccountType;
+  industry?: string;
+  owner?: string;
   website?: string;
   parentAccount?: string;
+  parentAccountId?: string;
+  description?: string;
+  phone?: string;
   team?: string[];
   revenue?: number;
   priorityScore?: number;
@@ -676,6 +673,7 @@ export interface CreateAccountDto {
     employees?: number;
     annualRevenue?: number;
     description?: string;
+    phone?: string;
     territory?: string;
     segment?: string;
     tier?: string;
@@ -994,7 +992,7 @@ export enum CampaignType {
   DISPLAY_ADS = 'display_ads',
   CONTENT_MARKETING = 'content_marketing',
   WEBINAR = 'webinar',
-  MIXED = 'mixed',
+  EVENT = 'event',
 }
 
 export enum CampaignStatus {
@@ -1061,7 +1059,7 @@ export interface CreateCampaignDto {
   budget: number;
   objectives?: string[];
   channels?: ChannelType[];
-  targetSegment?: Campaign['targetAudience'];
+  targetAudience?: Campaign['targetAudience'];
 }
 
 export interface UpdateCampaignDto extends Partial<CreateCampaignDto> {
@@ -1235,37 +1233,62 @@ export interface EmailCampaignStats {
 // =================== MARKETING - SEGMENT TYPES ===================
 
 export enum SegmentType {
-  STATIC = 'static',
-  DYNAMIC = 'dynamic',
-  BEHAVIORAL = 'behavioral',
   DEMOGRAPHIC = 'demographic',
+  BEHAVIORAL = 'behavioral',
+  GEOGRAPHIC = 'geographic',
+  PSYCHOGRAPHIC = 'psychographic',
+  FIRMOGRAPHIC = 'firmographic',
+  TECHNOGRAPHIC = 'technographic',
+  VALUE_BASED = 'value_based',
+  LIFECYCLE = 'lifecycle',
 }
 
-export interface SegmentCriteria {
+export enum SegmentCriteria {
+  DEMOGRAPHIC = 'demographic',
+  BEHAVIORAL = 'behavioral',
+  GEOGRAPHIC = 'geographic',
+  PSYCHOGRAPHIC = 'psychographic',
+  TRANSACTIONAL = 'transactional',
+  ENGAGEMENT = 'engagement',
+}
+
+export interface SegmentCondition {
   field: string;
   operator: string;
   value: any;
 }
 
+export interface SegmentRules {
+  rules: SegmentCondition[];
+  conditions: 'AND' | 'OR' | string;
+}
+
 export interface MarketingSegment {
   id: string;
   name: string;
+  description?: string;
   type: SegmentType;
-  criteria: SegmentCriteria[];
-  size: number;
+  criteria: SegmentRules;
+  customerCount?: number;
+  segmentValue?: number;
+  size?: number;
+  lastCalculated?: string;
   contactIds?: string[];
   campaignIds?: string[];
   lastRefresh?: string;
   isActive: boolean;
+  tags?: string[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateSegmentDto {
   name: string;
-  type: SegmentType;
-  criteria: SegmentCriteria[];
-  contactIds?: string[];
+  description: string;
+  criteria: SegmentCriteria;
+  conditions: SegmentCondition[];
+  tags?: string[];
+  isActive?: boolean;
 }
 
 export interface UpdateSegmentDto extends Partial<CreateSegmentDto> {
@@ -1452,13 +1475,12 @@ export enum TicketCategory {
 }
 
 export enum TicketChannel {
+  WEB = 'web',
   EMAIL = 'email',
   PHONE = 'phone',
   CHAT = 'chat',
-  WEB = 'web',
-  MOBILE = 'mobile',
-  SOCIAL_MEDIA = 'social_media',
-  BOT = 'bot',
+  WHATSAPP = 'whatsapp',
+  SLACK = 'slack',
 }
 
 export interface SupportTicket {
@@ -1607,6 +1629,7 @@ export interface KnowledgeBaseArticle {
   viewCount: number;
   helpfulCount: number;
   notHelpfulCount: number;
+  organizationId?: string;
   relatedArticles?: string[];
   attachments?: string[];
   videoLinks?: string[];
@@ -1628,6 +1651,7 @@ export interface CreateArticleDto {
   visibility: ArticleVisibility;
   attachments?: string[];
   videoLinks?: string[];
+  organizationId?: string;
 }
 
 export interface UpdateArticleDto {
@@ -1640,6 +1664,7 @@ export interface UpdateArticleDto {
   tags?: string[];
   keywords?: string[];
   visibility?: ArticleVisibility;
+  organizationId?: string | null;
 }
 
 export interface ArticleFilters {
@@ -1651,6 +1676,7 @@ export interface ArticleFilters {
   search?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  organizationId?: string;
 }
 
 export interface ArticleStats {
@@ -2496,7 +2522,7 @@ export interface Product {
 }
 
 export interface CreateProductDto {
-  sku: string;
+  sku?: string;
   name: string;
   description?: string;
   shortDescription?: string;
@@ -3300,4 +3326,42 @@ export interface CallAnalytics {
   callsByDay: Array<{ day: string; count: number }>;
   topAgents: Array<{ agentId: string; agentName: string; callCount: number; avgDuration: number }>;
   dispositionBreakdown: Record<string, number>;
+}
+
+// =================== AUDIT LOG TYPES ===================
+
+export enum AuditAction {
+  CREATE = 'create',
+  READ = 'read',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LOGIN = 'login',
+  LOGOUT = 'logout',
+  EXPORT = 'export',
+  IMPORT = 'import',
+  APPROVE = 'approve',
+  REJECT = 'reject',
+}
+
+export interface AuditLog {
+  id: string;
+  organizationId?: string;
+  user_id?: string;
+  user_email?: string;
+  action: AuditAction | string;
+  entity_type?: string;
+  entity_id?: string;
+  metadata?: Record<string, any>;
+  ip_address?: string;
+  user_agent?: string;
+  status: 'success' | 'failed' | 'partial';
+  created_at: string;
+}
+
+export interface AuditLogFilters extends PaginationParams {
+  userId?: string;
+  entityType?: string;
+  action?: string;
+  startDate?: string;
+  endDate?: string;
 }

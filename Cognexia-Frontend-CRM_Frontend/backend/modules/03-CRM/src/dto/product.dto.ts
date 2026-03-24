@@ -70,6 +70,10 @@ export class UpdateProductDto {
   @IsOptional()
   description?: string;
 
+  @IsEnum(ProductType)
+  @IsOptional()
+  type?: ProductType;
+
   @IsEnum(ProductStatus)
   @IsOptional()
   status?: ProductStatus;
@@ -143,7 +147,15 @@ export class CreateCategoryDto {
 
   @IsString()
   @IsOptional()
+  slug?: string;
+
+  @IsString()
+  @IsOptional()
   description?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  active?: boolean;
 
   @IsUUID()
   @IsOptional()
