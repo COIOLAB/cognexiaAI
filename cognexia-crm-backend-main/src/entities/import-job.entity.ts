@@ -15,6 +15,7 @@ export enum ImportType {
   CONTACT = 'contact',
   OPPORTUNITY = 'opportunity',
   PRODUCT = 'product',
+  QUOTE = 'quote',
 }
 
 @Entity('import_jobs')
@@ -32,8 +33,8 @@ export class ImportJob {
   @Column({ type: 'uuid' })
   user_id: string;
 
-  @Column({ type: 'simple-enum', enum: ImportType })
-  import_type: ImportType;
+  @Column({ type: 'simple-enum', enum: ImportType, nullable: true })
+  import_type?: ImportType | null;
 
   @Column({ type: 'simple-enum', enum: ImportStatus, default: ImportStatus.PENDING })
   status: ImportStatus;

@@ -61,6 +61,7 @@ interface InviteUserForm {
   firstName: string;
   lastName: string;
   role: string;
+  managerId: string;
 }
 
 export default function TeamManagementPage() {
@@ -73,7 +74,12 @@ export default function TeamManagementPage() {
     email: '',
     firstName: '',
     lastName: '',
+<<<<<<< Updated upstream
     role: 'USER',
+=======
+    role: 'ORG_USER',
+    managerId: 'none',
+>>>>>>> Stashed changes
   });
 
   // Fetch team members
@@ -102,8 +108,14 @@ export default function TeamManagementPage() {
         email: data.email,
         firstName: data.firstName,
         lastName: data.lastName,
+<<<<<<< Updated upstream
         userType: data.role === 'ADMIN' ? 'org_admin' : 'org_user',
         roleIds: data.role ? [data.role.toLowerCase()] : [],
+=======
+        userType: data.role === 'ORG_ADMIN' ? 'org_admin' : 'org_user',
+        roleIds: data.role ? [data.role] : [],
+        ...(data.managerId && data.managerId !== 'none' ? { managerId: data.managerId } : {}),
+>>>>>>> Stashed changes
       });
       return response.data;
     },
@@ -115,7 +127,11 @@ export default function TeamManagementPage() {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
       queryClient.invalidateQueries({ queryKey: ['seat-usage'] });
       setInviteDialogOpen(false);
+<<<<<<< Updated upstream
       setInviteForm({ email: '', firstName: '', lastName: '', role: 'USER' });
+=======
+      setInviteForm({ email: '', firstName: '', lastName: '', role: 'ORG_USER', managerId: 'none' });
+>>>>>>> Stashed changes
     },
     onError: (error: any) => {
       toast({
@@ -254,6 +270,24 @@ export default function TeamManagementPage() {
                   <SelectContent>
                     <SelectItem value="ADMIN">Admin</SelectItem>
                     <SelectItem value="USER">User</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="managerId">Reports To (Optional)</Label>
+                <Select value={inviteForm.managerId} onValueChange={(value) => setInviteForm({ ...inviteForm, managerId: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a manager" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {teamMembers
+                      ?.filter(m => m.roles?.some(r => ['OWNER', 'ORG_ADMIN', 'ADMIN', 'SALES_MANAGER', 'MARKETING_MANAGER', 'SUPPORT_MANAGER', 'SUPPORT_AGENT'].includes(r.toUpperCase())))
+                      .map(manager => (
+                        <SelectItem key={manager.id} value={manager.id}>
+                          {manager.firstName} {manager.lastName} - ({getRoleLabel(manager.roles)})
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>

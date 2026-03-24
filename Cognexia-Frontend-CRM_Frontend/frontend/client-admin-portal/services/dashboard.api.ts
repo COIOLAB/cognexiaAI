@@ -81,6 +81,20 @@ export const dashboardApi = {
     return unwrap(response.data);
   },
 
+  // Team activities for dashboard
+  getTeamActivities: async (limit: number = 10) => {
+    const response = await apiClient.get('/activity/team', {
+      params: { limit },
+    });
+    return unwrap(response.data);
+  },
+
+  // Team members (direct reports)
+  getTeamMembers: async () => {
+    const response = await apiClient.get(`${BASE_URL}/user/team-members`);
+    return unwrap(response.data);
+  },
+
   // Performance metrics for dashboard
   getPerformanceMetrics: async (period: 'day' | 'week' | 'month' = 'month') => {
     const response = await apiClient.get(`${BASE_URL}/user/performance-metrics`, {

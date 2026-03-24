@@ -31,7 +31,7 @@ export class DashboardController {
   constructor(
     private readonly adminDashboardService: AdminDashboardService,
     private readonly userDashboardService: UserDashboardService,
-  ) {}
+  ) { }
 
   // ==================== ADMIN DASHBOARD ENDPOINTS ====================
 
@@ -68,7 +68,7 @@ export class DashboardController {
     try {
       const start = startDate ? new Date(startDate) : undefined;
       const end = endDate ? new Date(endDate) : undefined;
-      
+
       const metrics = await this.adminDashboardService.getRevenueMetrics(start, end);
       return {
         success: true,
@@ -95,7 +95,7 @@ export class DashboardController {
     try {
       const start = startDate ? new Date(startDate) : undefined;
       const end = endDate ? new Date(endDate) : undefined;
-      
+
       const metrics = await this.adminDashboardService.getUsageMetrics(start, end);
       return {
         success: true,
@@ -247,11 +247,44 @@ export class DashboardController {
   @UserTypes(UserType.ORG_ADMIN, UserType.ORG_USER)
   async getUserMetrics(@Request() req) {
     try {
+<<<<<<< Updated upstream
       const organizationId = req.user.organizationId;
       const metrics = await this.userDashboardService.getUserMetrics(organizationId);
+=======
+      const organizationId = this.resolveOrganizationId(req);
+      const userId = req.user?.userId;
+      const metrics = await this.userDashboardService.getUserMetrics(organizationId, userId);
+>>>>>>> Stashed changes
       return {
         success: true,
         data: metrics,
+      };
+    } catch (error) {
+      throw new HttpException(
+        { success: false, message: error.message },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Get team members for a manager
+   */
+  @Get('user/team-members')
+  @UserTypes(UserType.ORG_ADMIN, UserType.ORG_USER)
+  async getTeamMembers(@Request() req) {
+    try {
+      const organizationId = this.resolveOrganizationId(req);
+      const userId = req.user?.userId;
+      
+      if (!userId) {
+        throw new Error('User ID not found in request');
+      }
+
+      const members = await this.userDashboardService.getTeamMembers(organizationId, userId);
+      return {
+        success: true,
+        data: members,
       };
     } catch (error) {
       throw new HttpException(
@@ -511,7 +544,7 @@ export class DashboardController {
     try {
       const userId = req.user.userId;
       const dashboard = await this.userDashboardService.getDashboard(id, userId);
-      
+
       if (!dashboard) {
         throw new HttpException(
           { success: false, message: 'Dashboard not found' },
@@ -566,7 +599,7 @@ export class DashboardController {
     try {
       const userId = req.user.userId;
       const dashboard = await this.userDashboardService.getDashboard(id, userId);
-      
+
       if (!dashboard) {
         throw new HttpException(
           { success: false, message: 'Dashboard not found' },

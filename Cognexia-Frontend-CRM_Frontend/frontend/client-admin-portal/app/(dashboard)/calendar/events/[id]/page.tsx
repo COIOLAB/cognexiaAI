@@ -28,11 +28,20 @@ export default function EventDetailPage() {
   const deleteEvent = useDeleteEvent();
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center py-20 text-muted-foreground">
+        Loading event...
+      </div>
+    );
   }
 
   if (!event) {
-    return <div>Event not found</div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <p className="text-muted-foreground">Event not found.</p>
+        <Link href="/calendar" className="text-blue-600 hover:underline text-sm">← Back to Calendar</Link>
+      </div>
+    );
   }
 
   const handleDelete = () => {

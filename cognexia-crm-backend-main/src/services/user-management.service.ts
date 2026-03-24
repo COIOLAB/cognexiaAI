@@ -15,6 +15,7 @@ export interface InviteUserDto {
   userType: UserType;
   roleIds?: string[];
   phoneNumber?: string;
+  managerId?: string;
 }
 
 export interface CreateUserDto {
@@ -27,6 +28,7 @@ export interface CreateUserDto {
   phoneNumber?: string;
   roles?: string[];
   permissions?: string[];
+  managerId?: string;
 }
 
 export interface AcceptInvitationDto {
@@ -43,6 +45,7 @@ export interface UpdateUserDto {
   organizationId?: string;
   permissions?: string[];
   preferences?: Record<string, any>;
+  managerId?: string;
 }
 
 export interface BulkUserOperation {
@@ -121,6 +124,15 @@ export class UserManagementService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
+
+    // Validate managerId if provided
+    if (dto.managerId) {
+      const manager = await this.userRepository.findOne({ where: { id: dto.managerId, organizationId: dto.organizationId } });
+      if (!manager) {
+        throw new BadRequestException('Manager not found in this organization');
+      }
+    }
+
     const user = this.userRepository.create({
       email,
       firstName: dto.firstName,
@@ -130,6 +142,7 @@ export class UserManagementService {
       organizationId: dto.organizationId,
       roles: dto.roles || [],
       permissions: dto.permissions || [],
+      managerId: dto.managerId,
       passwordHash,
       isActive: true,
       isEmailVerified: true,
@@ -184,6 +197,7 @@ export class UserManagementService {
       throw new NotFoundException('Organization not found');
     }
 
+<<<<<<< Updated upstream
     // Check seat limit using user tier service (super admins excluded)
     if (dto.userType !== UserType.SUPER_ADMIN) {
       if (this.userTierService) {
@@ -191,6 +205,106 @@ export class UserManagementService {
       } else {
         // Fallback to basic check
         const currentUserCount = await this.userRepository.count({
+=======
+      // Check seat limit using user tier service (super admins excluded)
+      if (dto.userType !== UserType.SUPER_ADMIN) {
+        if (this.userTierService) {
+          await this.userTierService.validateUserAddition(organizationId);
+        } else {
+          // Fallback to basic check
+          const currentUserCount = await this.userRepository.count({
+            where: { organizationId: organizationId, isActive: true },
+          });
+
+          if (currentUserCount >= organization.maxUsers) {
+            throw new BadRequestException(
+              `User limit reached (${organization.maxUsers} users). Please upgrade your plan.`
+            );
+          }
+        }
+      }
+
+      // Check if email already exists globally (including soft-deleted users)
+      const existingUser = await this.userRepository.findOne({
+        where: { email: dto.email.toLowerCase() },
+        withDeleted: true,
+      });
+
+      if (existingUser) {
+        if (existingUser.organizationId === organizationId) {
+          if (existingUser.deletedAt) {
+            throw new ConflictException('A deleted user with this email already exists in your organization. Please contact support to restore.');
+          }
+          throw new ConflictException('User with this email already exists in your organization');
+        } else {
+          throw new ConflictException('User with this email is already registered with another organization');
+        }
+      }
+
+      // Generate invitation token
+      const invitationToken = crypto.randomBytes(32).toString('hex');
+      const invitationExpiry = new Date();
+      invitationExpiry.setDate(invitationExpiry.getDate() + 7); // 7 days
+
+      let hashedToken: string;
+      try {
+        this.logger.log(`Hashing invitation token...`);
+        hashedToken = await bcrypt.hash(invitationToken, 10);
+        this.logger.log(`Token hashed successfully.`);
+      } catch (hashError: any) {
+        this.logger.error(`Bcrypt error: ${hashError.message}`);
+        throw new BadRequestException(`Failed to hash invitation token: ${hashError.message}`);
+      }
+
+      // Validate managerId if provided
+      if (dto.managerId) {
+        const manager = await this.userRepository.findOne({ where: { id: dto.managerId, organizationId } });
+        if (!manager) {
+          throw new BadRequestException('Manager not found in this organization');
+        }
+      }
+
+      // Create user with pending invitation
+      const user = this.userRepository.create({
+        email: dto.email.toLowerCase(),
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        phoneNumber: dto.phoneNumber,
+        userType: dto.userType,
+        organizationId: organizationId,
+        managerId: dto.managerId,
+        isInvited: true,
+        invitedAt: new Date(),
+        invitationToken: hashedToken,
+        isActive: false,
+        isEmailVerified: false,
+        passwordHash: '', // Set on invitation acceptance
+      });
+
+      let savedUser: User;
+      try {
+        savedUser = await this.userRepository.save(user);
+      } catch (saveError: any) {
+        this.logger.error(`Database Error saving invited user: ${saveError.message}`);
+        if (saveError.detail) this.logger.error(`Error details: ${saveError.detail}`);
+        throw new BadRequestException(`Failed to save invited user: ${saveError.message}`);
+      }
+
+      // Assign roles if provided (store as role IDs in roles array)
+      if (dto.roleIds && dto.roleIds.length > 0) {
+        try {
+          savedUser.roles = dto.roleIds;
+          await this.userRepository.save(savedUser);
+        } catch (roleError: any) {
+          this.logger.error(`Error saving roles for user ${savedUser.id}: ${roleError.message}`);
+          // Optionally don't fail here if the user was already saved
+        }
+      }
+
+      // Update organization user count
+      try {
+        organization.currentUserCount = await this.userRepository.count({
+>>>>>>> Stashed changes
           where: { organizationId: organizationId, isActive: true },
         });
 
@@ -516,6 +630,23 @@ export class UserManagementService {
 
     if (dto.preferences) {
       user.preferences = { ...(user.preferences || {}), ...dto.preferences };
+    }
+
+    if (dto.managerId !== undefined) {
+      if (dto.managerId === user_id) {
+         throw new BadRequestException('A user cannot be their own manager');
+      }
+      
+      if (dto.managerId) {
+        const manager = await this.userRepository.findOne({ where: { id: dto.managerId, organizationId: user.organizationId } });
+        if (!manager) {
+          throw new BadRequestException('Manager not found in this organization');
+        }
+      }
+      
+      changes.before.managerId = user.managerId;
+      user.managerId = dto.managerId;
+      changes.after.managerId = dto.managerId;
     }
 
     const updatedUser = await this.userRepository.save(user);

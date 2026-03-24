@@ -8,6 +8,7 @@ export enum ActivityType {
   MEETING = 'meeting',
   TASK_CREATED = 'task_created',
   TASK_COMPLETED = 'task_completed',
+  EVENT_CREATED = 'event_created',
   STATUS_CHANGED = 'status_changed',
   FIELD_UPDATED = 'field_updated',
   FILE_UPLOADED = 'file_uploaded',

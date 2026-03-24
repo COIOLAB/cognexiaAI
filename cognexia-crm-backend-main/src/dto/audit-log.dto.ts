@@ -58,8 +58,9 @@ export class CreateAuditLogDto {
   @IsString()
   entity_type: string;
 
+  @IsOptional()
   @IsUUID()
-  entity_id: string;
+  entity_id?: string;
 
   description: string;
 

@@ -44,7 +44,7 @@ export class ImportExportController {
       type: 'object',
       properties: {
         file: { type: 'string', format: 'binary' },
-        importType: { type: 'string', enum: ['customer', 'lead', 'contact', 'opportunity', 'product'] },
+        importType: { type: 'string', enum: Object.values(ImportType) },
         mapping: { type: 'object' },
         skipDuplicates: { type: 'boolean' },
         updateExisting: { type: 'boolean' },

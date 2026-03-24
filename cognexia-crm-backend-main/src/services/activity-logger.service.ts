@@ -5,6 +5,12 @@ import { Activity, ActivityType } from '../entities/activity.entity';
 import { Note } from '../entities/note.entity';
 import { CreateActivityDto, CreateNoteDto } from '../dto/activity.dto';
 import { throwNotFound } from '../utils/error-handler.util';
+<<<<<<< Updated upstream
+=======
+import { AuditLogService } from './audit-log.service';
+import { AuditAction } from '../entities/audit-log.entity';
+import { User } from '../entities/user.entity';
+>>>>>>> Stashed changes
 
 @Injectable()
 export class ActivityLoggerService {
@@ -13,6 +19,12 @@ export class ActivityLoggerService {
     private activityRepo: Repository<Activity>,
     @InjectRepository(Note)
     private noteRepo: Repository<Note>,
+<<<<<<< Updated upstream
+=======
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+    private auditLogService: AuditLogService,
+>>>>>>> Stashed changes
   ) { }
 
   /**
@@ -82,6 +94,44 @@ export class ActivityLoggerService {
     });
 
     await this.activityRepo.save(activity);
+  }
+
+  /**
+   * Log event created
+   */
+  async logEventCreated(
+    organizationId: string,
+    userId: string,
+    eventId: string,
+    eventTitle: string,
+    eventType: string,
+  ): Promise<void> {
+    const activity = this.activityRepo.create({
+      organizationId: organizationId,
+      activity_type: ActivityType.EVENT_CREATED,
+      title: `Scheduled a ${eventType}: ${eventTitle}`,
+      performed_by: userId,
+      related_to_id: eventId,
+      related_to_type: 'event',
+      is_system_generated: true,
+    });
+
+    await this.activityRepo.save(activity);
+
+    // Also log to Audit Log
+    try {
+      await this.auditLogService.log(
+        organizationId,
+        userId,
+        AuditAction.CREATE,
+        'event',
+        eventId,
+        `Scheduled ${eventType}: ${eventTitle}`,
+        { eventTitle, eventType }
+      );
+    } catch (e) {
+      console.error('Failed to log event creation to audit log:', e);
+    }
   }
 
   /**
@@ -204,6 +254,37 @@ export class ActivityLoggerService {
       return { data: data || [], total: total || 0, page, limit };
     } catch (error) {
       return { data: [], total: 0, page, limit };
+    }
+  }
+
+  /**
+   * Get team activities (manager + subordinates)
+   */
+  async getTeamActivities(
+    managerId: string,
+    organizationId: string,
+    limit: number = 50,
+  ): Promise<Activity[]> {
+    try {
+      // Find all subordinates
+      const subordinates = await this.userRepository.find({
+        where: { managerId, organizationId },
+        select: ['id'],
+      });
+
+      const teamIds = [managerId, ...subordinates.map(u => u.id)];
+
+      // Construct a query builder to find activities related to the user IDs or performed by them
+      const qb = this.activityRepo.createQueryBuilder('activity')
+        .where('activity.organizationId = :organizationId', { organizationId })
+        .andWhere('(activity.performed_by IN (:...teamIds) OR activity.related_to_id IN (:...teamIds))', { teamIds })
+        .orderBy('activity.created_at', 'DESC')
+        .take(limit);
+
+      return await qb.getMany() || [];
+    } catch (error) {
+       console.error('Failed to get team activities:', error);
+       return [];
     }
   }
 

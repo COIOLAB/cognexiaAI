@@ -124,6 +124,19 @@ export class ActivityController {
     );
   }
 
+  @Get('team')
+  @ApiOperation({ summary: 'Get team activity timeline' })
+  async getTeamActivities(
+    @Query('limit') limit: number = 50,
+    @Req() req: any,
+  ) {
+    return this.activityLogger.getTeamActivities(
+      req.user.id,
+      req.user.organizationId,
+      limit,
+    );
+  }
+
   @Get('timeline/:entityType/:entityId')
   @ApiOperation({ summary: 'Get activity timeline for entity' })
   async getTimeline(

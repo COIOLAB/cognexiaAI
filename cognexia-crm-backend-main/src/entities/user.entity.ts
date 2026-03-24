@@ -98,6 +98,23 @@ export class User {
   @OneToMany(() => CustomerInteraction, interaction => interaction.assignedUser)
   interactions: CustomerInteraction[];
 
+<<<<<<< Updated upstream
+=======
+  @Column({ nullable: true })
+  @IsOptional()
+  managerId?: string;
+
+  @ManyToOne(() => User, user => user.subordinates, { nullable: true })
+  @JoinColumn({ name: 'managerId' })
+  manager?: User;
+
+  @OneToMany(() => User, user => user.manager)
+  subordinates: User[];
+
+  @DeleteDateColumn()
+  deletedAt: Date;
+
+>>>>>>> Stashed changes
   @CreateDateColumn()
   createdAt: Date;
 

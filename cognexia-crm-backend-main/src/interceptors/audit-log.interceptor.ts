@@ -42,7 +42,7 @@ export class AuditLogInterceptor implements NestInterceptor {
         if (user && user.id && user.organizationId) {
           try {
             // Extract entity ID from response or request
-            const entityId = data?.id || request.params?.id || request.query?.id || 'N/A';
+            const entityId = data?.id || data?.data?.id || request.params?.id || request.query?.id || undefined;
 
             await this.auditLogService.log(
               user.organizationId,

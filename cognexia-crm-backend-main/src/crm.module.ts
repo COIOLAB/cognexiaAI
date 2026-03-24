@@ -204,6 +204,8 @@ import { EmailController } from './controllers/email.controller';
 import { TaskService } from './services/task.service';
 import { ActivityLoggerService } from './services/activity-logger.service';
 import { ActivityController } from './controllers/activity.controller';
+import { CalendarController } from './controllers/calendar.controller';
+import { CalendarService } from './services/calendar.service';
 
 // Phase 12: Audit Logging
 import { AuditLogService } from './services/audit-log.service';
@@ -804,6 +806,7 @@ import { Deployment } from './entities/deployment.entity';
     ImportExportController,
     EmailController,
     ActivityController,
+    CalendarController,
     AuditLogController,
     
     // Phase 2 Controllers
@@ -980,7 +983,12 @@ import { Deployment } from './entities/deployment.entity';
     // Phase 1: Activity & Task Services
     TaskService,
     ActivityLoggerService,
+<<<<<<< Updated upstream
     
+=======
+    CalendarService,
+
+>>>>>>> Stashed changes
     // Phase 12: Audit Logging
     AuditLogService,
     AuditLogInterceptor,

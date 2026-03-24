@@ -16,6 +16,9 @@ const QUERY_KEYS = {
   salesFunnel: ['dashboards', 'user', 'sales-funnel'] as const,
   recentActivities: (limit: number) =>
     ['dashboards', 'user', 'recent-activities', limit] as const,
+  teamActivities: (limit: number) =>
+    ['dashboards', 'user', 'team-activities', limit] as const,
+  teamMembers: ['dashboards', 'user', 'team-members'] as const,
   performanceMetrics: (period: 'day' | 'week' | 'month') =>
     ['dashboards', 'user', 'performance-metrics', period] as const,
   revenueMetrics: ['dashboards', 'user', 'revenue-metrics'] as const,
@@ -125,6 +128,22 @@ export const useRecentActivities = (limit: number = 6) => {
   return useQuery({
     queryKey: QUERY_KEYS.recentActivities(limit),
     queryFn: () => dashboardApi.getRecentActivities(limit),
+  });
+};
+
+// Team activities
+export const useTeamActivities = (limit: number = 10) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.teamActivities(limit),
+    queryFn: () => dashboardApi.getTeamActivities(limit),
+  });
+};
+
+// Team members (direct reports)
+export const useTeamMembers = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.teamMembers,
+    queryFn: () => dashboardApi.getTeamMembers(),
   });
 };
 

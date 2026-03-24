@@ -10,6 +10,7 @@ export interface User {
   permissions?: string[];
   organizationId: string;
   organizationName?: string;
+  managerId?: string;
   avatar?: string;
   isActive: boolean;
   createdAt: string;

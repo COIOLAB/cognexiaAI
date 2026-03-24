@@ -18,6 +18,7 @@ import { Report } from '../entities/report.entity';
 import { IVRMenu } from '../entities/ivr-menu.entity';
 import { GeneratedContent } from '../entities/generated-content.entity';
 import { Workflow } from '../entities/workflow.entity';
+import { User } from '../entities/user.entity';
 
 export interface UserDashboardMetrics {
   // Organization metrics
@@ -138,12 +139,14 @@ export class UserDashboardService {
     private generatedContentRepository: Repository<GeneratedContent>,
     @InjectRepository(Workflow)
     private workflowRepository: Repository<Workflow>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) { }
 
   /**
    * Get user dashboard metrics for organization
    */
-  async getUserMetrics(organizationId: string): Promise<UserDashboardMetrics> {
+  async getUserMetrics(organizationId: string, userId?: string): Promise<UserDashboardMetrics> {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     // For demo/realtime dashboard show global counts if org is missing
@@ -158,6 +161,7 @@ export class UserDashboardService {
       openTickets,
       pendingTickets,
       resolvedTicketsThisMonth,
+      teamMembers,
     ] = await Promise.all([
       this.customerRepository.count({
         where: tenantWhere as any,
@@ -199,7 +203,12 @@ export class UserDashboardService {
           resolvedAt: Between(monthStart, now),
         } as any,
       }),
+      userId ? this.userRepository.count({
+        where: { managerId: userId, organizationId, isActive: true }
+      }) : Promise.resolve(0),
     ]);
+
+    const teamMembersCount = teamMembers;
 
     // Calculate pipeline value
     const opportunities = await this.opportunityRepository.find({
@@ -229,8 +238,9 @@ export class UserDashboardService {
       lost_deals_this_month: 0,
       conversion_rate: 0,
 
-      team_members: 0,
-      active_team_members: 0,
+      // team_members variable is the result of the count query
+      team_members: teamMembersCount,
+      active_team_members: teamMembersCount, // For now, same as total since we filtered for isActive: true
 
       activities_today: 0,
       tasks_pending: 0,
@@ -581,7 +591,21 @@ export class UserDashboardService {
       visibility: DashboardVisibility.PRIVATE,
     } as any);
 
+<<<<<<< Updated upstream
     return await this.dashboardRepository.save(dashboard) as unknown as Dashboard;
+=======
+    let saveCall;
+    try {
+      saveCall = await this.dashboardRepository.save(dashboard) as unknown as Dashboard;
+      console.log(saveCall);
+
+    } catch (error) {
+      console.log(error);
+    }
+
+
+    return saveCall;
+>>>>>>> Stashed changes
   }
 
   /**
@@ -677,7 +701,40 @@ export class UserDashboardService {
     };
   }
 
+<<<<<<< Updated upstream
   private getTenantWhere(repo: Repository<any>, organizationId: string): Record<string, any> {
+=======
+  /**
+   * Get team members for a manager
+   */
+  async getTeamMembers(organizationId: string, managerId: string): Promise<User[]> {
+    return await this.userRepository.find({
+      where: {
+        managerId,
+        organizationId,
+      },
+      select: ['id', 'email', 'firstName', 'lastName', 'userType', 'isActive', 'isInvited', 'invitedAt'],
+      order: {
+        firstName: 'ASC',
+      },
+    });
+  }
+
+  private mergeWhere(
+    base: Record<string, any> | Array<Record<string, any>>,
+    extra: Record<string, any>,
+  ): Record<string, any> | Array<Record<string, any>> {
+    if (Array.isArray(base)) {
+      return base.map((condition) => ({ ...condition, ...extra }));
+    }
+    return { ...(base || {}), ...extra };
+  }
+
+  private getTenantWhere(
+    repo: Repository<any>,
+    organizationId?: string,
+  ): Record<string, any> | Array<Record<string, any>> {
+>>>>>>> Stashed changes
     if (!organizationId) {
       // No tenant context supplied; return unscoped for global dashboards/demo
       return {};
@@ -696,7 +753,7 @@ export class UserDashboardService {
   }
 
   private applyTenantFilter(
-    qb: { andWhere: (query: string, params?: Record<string, any>) => any },
+    qb: any,
     alias: string,
     where: Record<string, any>,
   ) {

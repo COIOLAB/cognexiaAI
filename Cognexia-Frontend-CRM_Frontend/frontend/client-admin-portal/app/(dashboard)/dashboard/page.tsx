@@ -146,6 +146,7 @@ export default function DashboardPage() {
   const { data: marketingMetricsData } = useMarketingMetrics();
   const { data: supportSlaData } = useSupportSlaMetrics();
   const { data: tierAnalyticsData } = useTierAnalytics();
+  
   const metrics = (metricsData ?? {}) as UserDashboardMetrics;
   const salesFunnel = Array.isArray(salesFunnelData) ? salesFunnelData : [];
   const revenueMetrics = (revenueMetricsData ?? {}) as {
@@ -178,8 +179,10 @@ export default function DashboardPage() {
     premium?: { kpis?: Array<{ label: string; value: number }>; highlights?: Array<{ label: string; value: number }> };
     advanced?: { kpis?: Array<{ label: string; value: number }>; highlights?: Array<{ label: string; value: number }> };
   };
-  const { data: activitiesData, isLoading: activitiesLoading } = useRecentActivities(6);
   const { user, resetDemo, isDemoResetting } = useAuth();
+
+  const { data: activitiesData, isLoading: activitiesLoading } = useRecentActivities(6);
+  
   const activities = (activitiesData ?? []) as Array<{
     id?: string;
     title?: string;

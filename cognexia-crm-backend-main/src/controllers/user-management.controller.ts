@@ -62,6 +62,7 @@ export class UserManagementController {
       phoneNumber?: string;
       roles?: string[];
       permissions?: string[];
+      managerId?: string;
     },
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -85,6 +86,7 @@ export class UserManagementController {
       phoneNumber: body.phoneNumber,
       roles: body.roles,
       permissions: body.permissions,
+      managerId: body.managerId,
     };
 
     const created = await this.userManagementService.createUser(payload as any, user as any);
@@ -102,6 +104,7 @@ export class UserManagementController {
       roleIds?: string[];
       phoneNumber?: string;
       organizationId?: string;
+      managerId?: string;
     },
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -120,6 +123,7 @@ export class UserManagementController {
       userType: body.userType || UserType.ORG_USER,
       roleIds: body.roleIds,
       phoneNumber: body.phoneNumber,
+      managerId: body.managerId,
     };
 
     const result = await this.userManagementService.inviteUser(organizationId!, payload as any, user as any);
@@ -153,6 +157,7 @@ export class UserManagementController {
       organizationId?: string;
       permissions?: string[];
       preferences?: Record<string, any>;
+      managerId?: string;
     },
     @CurrentUser() user: AuthenticatedUser,
   ) {

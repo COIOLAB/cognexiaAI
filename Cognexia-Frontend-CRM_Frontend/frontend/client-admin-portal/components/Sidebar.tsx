@@ -55,12 +55,23 @@ const navigationSections = [
     title: 'Basic Features',
     tier: 'basic',
     items: [
+<<<<<<< Updated upstream
       { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
       { name: 'Clients', href: '/accounts', icon: Building },
       { name: 'Customers', href: '/customers', icon: Users },
       { name: 'Contacts', href: '/contacts', icon: Contact },
       { name: 'Leads', href: '/leads', icon: UserPlus },
       { name: 'Opportunities', href: '/opportunities', icon: Target },
+=======
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, allowedRoles: ['ORG_ADMIN', 'ORG_USER', 'SALES_REP', 'SALES_MANAGER', 'MARKETING_MANAGER', 'SUPPORT_AGENT'] },
+      { name: 'My Team', href: '/my-team', icon: Users, allowedRoles: ['OWNER', 'ORG_ADMIN', 'ADMIN', 'SALES_MANAGER', 'MARKETING_MANAGER', 'SUPPORT_MANAGER', 'SUPPORT_AGENT'] },
+      { name: 'Accounts', href: '/accounts', icon: Building, allowedRoles: ['ORG_ADMIN', 'SALES_REP', 'SALES_MANAGER'] },
+      { name: 'Customers', href: '/customers', icon: Users, allowedRoles: ['ORG_ADMIN', 'SALES_REP', 'SALES_MANAGER', 'MARKETING_MANAGER', 'SUPPORT_AGENT'] },
+      { name: 'Contacts', href: '/contacts', icon: Contact, allowedRoles: ['ORG_ADMIN', 'SALES_REP', 'SALES_MANAGER'] },
+      { name: 'Leads', href: '/leads', icon: UserPlus, allowedRoles: ['ORG_ADMIN', 'SALES_REP', 'SALES_MANAGER', 'MARKETING_MANAGER'] },
+      { name: 'Opportunities', href: '/opportunities', icon: Target, allowedRoles: ['ORG_ADMIN', 'SALES_REP', 'SALES_MANAGER'] },
+      { name: 'Invite Team', href: '/team', icon: Users, allowedRoles: ['ORG_ADMIN'] },
+>>>>>>> Stashed changes
       {
         name: 'Sales',
         children: [

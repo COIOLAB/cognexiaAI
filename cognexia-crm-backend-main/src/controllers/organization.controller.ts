@@ -12,6 +12,7 @@ import {
   HttpCode,
   HttpStatus,
   Res,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { OrganizationService, CreateOrganizationDto, UpdateOrganizationDto, OrganizationListFilter } from '../services/organization.service';
@@ -130,7 +131,7 @@ export class OrganizationController {
   ) {
     // Verify permission if not super admin
     if (user.userType !== UserType.SUPER_ADMIN && user.organizationId !== id) {
-      throw new Error('Forbidden');
+      throw new ForbiddenException(`Access denied to organization ${id}`);
     }
 
     return this.organizationService.findById(id, user.id);
@@ -261,7 +262,7 @@ export class OrganizationController {
   ) {
     // Verify permission if not super admin
     if (user.userType !== UserType.SUPER_ADMIN && user.organizationId !== id) {
-      throw new Error('Forbidden');
+      throw new ForbiddenException(`Access denied to organization statistics ${id}`);
     }
 
     return this.organizationService.getStatistics(id);
@@ -305,7 +306,7 @@ export class OrganizationController {
   @UserTypes(UserType.SUPER_ADMIN, UserType.ORG_ADMIN)
   async getSeatUsage(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     if (user.userType !== UserType.SUPER_ADMIN && user.organizationId !== id) {
-      throw new Error('Forbidden');
+      throw new ForbiddenException(`Access denied to seat usage for organization ${id}`);
     }
     return this.organizationService.getSeatUsage(id);
   }
