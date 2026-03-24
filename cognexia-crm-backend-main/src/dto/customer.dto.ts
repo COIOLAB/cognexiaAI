@@ -417,9 +417,10 @@ export class CreateCustomerDto {
   @IsEnum(CustomerType)
   customerType: CustomerType;
 
-  @ApiProperty({ description: 'Customer status', enum: CustomerStatus })
+  @ApiPropertyOptional({ description: 'Customer status', enum: CustomerStatus, default: CustomerStatus.ACTIVE })
+  @IsOptional()
   @IsEnum(CustomerStatus)
-  status: CustomerStatus;
+  status?: CustomerStatus = CustomerStatus.ACTIVE;
 
   @ApiProperty({ description: 'Industry sector', minLength: 1, maxLength: 100 })
   @IsString()

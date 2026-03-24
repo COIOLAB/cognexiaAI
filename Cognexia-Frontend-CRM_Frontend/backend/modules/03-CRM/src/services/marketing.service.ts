@@ -17,6 +17,7 @@ import {
   CreateCampaignDto,
   UpdateCampaignDto,
   CreateCustomerSegmentDto,
+  UpdateCustomerSegmentDto,
   EmailTemplateDto,
   SendEmailCampaignDto,
   MarketingAnalyticsRequestDto,
@@ -634,6 +635,67 @@ export class MarketingService {
     await this.recalculateSegment(savedSegment.id);
 
     return savedSegment;
+  }
+
+  async updateCustomerSegment(
+    segmentId: string,
+    segmentDto: UpdateCustomerSegmentDto,
+    updatedBy: string,
+  ): Promise<CustomerSegment> {
+    const segment = await this.segmentRepository.findOne({ where: { id: segmentId } });
+    if (!segment) {
+      throw new NotFoundException('Segment not found');
+    }
+
+    const shouldUpdateCriteria = Array.isArray(segmentDto.conditions);
+    const updatedCriteria = shouldUpdateCriteria
+      ? {
+          rules: (segmentDto.conditions || []).map((condition) => ({
+            field: condition.field,
+            operator: condition.operator as any,
+            value: condition.value,
+          })),
+          conditions: segment.criteria?.conditions || 'AND',
+        }
+      : segment.criteria;
+
+    const updatedSegment = this.segmentRepository.create({
+      ...segment,
+      name: segmentDto.name ?? segment.name,
+      description: segmentDto.description ?? segment.description,
+      type: (segmentDto.criteria as any) ?? segment.type,
+      criteria: updatedCriteria,
+      tags: segmentDto.tags ?? segment.tags,
+      isActive: segmentDto.isActive ?? segment.isActive,
+      updatedBy,
+    });
+
+    return this.segmentRepository.save(updatedSegment);
+  }
+
+  async deleteCustomerSegment(segmentId: string): Promise<void> {
+    const segment = await this.segmentRepository.findOne({ where: { id: segmentId } });
+    if (!segment) {
+      throw new NotFoundException('Segment not found');
+    }
+    await this.segmentRepository.remove(segment);
+  }
+
+  async getSegmentCustomers(segmentId: string): Promise<Customer[]> {
+    const segment = await this.segmentRepository.findOne({ where: { id: segmentId } });
+    if (!segment) {
+      throw new NotFoundException('Segment not found');
+    }
+    return this.getCustomersInSegment(segment);
+  }
+
+  async getSegmentCampaigns(segmentId: string): Promise<MarketingCampaign[]> {
+    return this.campaignRepository
+      .createQueryBuilder('campaign')
+      .leftJoinAndSelect('campaign.targetSegments', 'segments')
+      .where('segments.id = :segmentId', { segmentId })
+      .orderBy('campaign.createdAt', 'DESC')
+      .getMany();
   }
 
   async recalculateSegment(segmentId: string): Promise<void> {

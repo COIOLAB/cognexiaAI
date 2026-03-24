@@ -19,7 +19,7 @@ const campaignSchema = z.object({
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().optional(),
   budget: z.coerce.number().positive().optional(),
-  targetAudience: z.string().optional(),
+  // targetAudience: z.string().optional(),
 });
 
 type CampaignFormData = z.infer<typeof campaignSchema>;
@@ -84,10 +84,10 @@ export function CampaignForm({ initialData, onSubmit, isLoading, submitLabel = '
               <Label htmlFor="endDate">End Date</Label>
               <Input id="endDate" type="date" {...register('endDate')} />
             </div>
-            <div className="space-y-2 md:col-span-2">
+            {/* <div className="space-y-2 md:col-span-2">
               <Label htmlFor="name">Target Audience *</Label>
               <Input id="targetsegment" placeholder="Enterprise Customers, SMBs, etc." {...register('targetAudience')} />
-            </div>
+            </div> */}
           </div>
         </CardContent>
       </Card>

@@ -70,7 +70,7 @@ export const marketingSegmentApi = {
    * Refresh segment (recalculate members)
    */
   refreshSegment: async (id: string) => {
-    const { data } = await api.post(`/crm/marketing/segments/${id}/refresh`);
+    const { data } = await api.post(`/crm/marketing/segments/${id}/recalculate`);
     return data;
   },
 

@@ -73,7 +73,7 @@ export default function TeamManagementPage() {
     email: '',
     firstName: '',
     lastName: '',
-    role: 'USER',
+    role: 'ORG_USER',
   });
 
   // Fetch team members
@@ -102,8 +102,8 @@ export default function TeamManagementPage() {
         email: data.email,
         firstName: data.firstName,
         lastName: data.lastName,
-        userType: data.role === 'ADMIN' ? 'org_admin' : 'org_user',
-        roleIds: data.role ? [data.role.toLowerCase()] : [],
+        userType: data.role === 'ORG_ADMIN' ? 'org_admin' : 'org_user',
+        roleIds: data.role ? [data.role] : [],
       });
       return response.data;
     },
@@ -115,7 +115,7 @@ export default function TeamManagementPage() {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
       queryClient.invalidateQueries({ queryKey: ['seat-usage'] });
       setInviteDialogOpen(false);
-      setInviteForm({ email: '', firstName: '', lastName: '', role: 'USER' });
+      setInviteForm({ email: '', firstName: '', lastName: '', role: 'ORG_USER' });
     },
     onError: (error: any) => {
       toast({
@@ -162,14 +162,24 @@ export default function TeamManagementPage() {
   };
 
   const getRoleBadgeColor = (roles: string[]) => {
+    if (!roles || roles.length === 0) return 'bg-gray-500';
     if (roles.includes('OWNER') || roles.includes('owner')) return 'bg-purple-500';
-    if (roles.includes('ADMIN') || roles.includes('admin') || roles.includes('org_admin')) return 'bg-blue-500';
+    if (roles.includes('ORG_ADMIN') || roles.includes('ADMIN') || roles.includes('admin') || roles.includes('org_admin')) return 'bg-blue-500';
+    if (roles.includes('SALES_MANAGER')) return 'bg-amber-500';
+    if (roles.includes('MARKETING_MANAGER')) return 'bg-pink-500';
+    if (roles.includes('SUPPORT_AGENT') || roles.includes('SUPPORT_MANAGER')) return 'bg-emerald-500';
+    if (roles.includes('SALES_REP')) return 'bg-orange-500';
     return 'bg-gray-500';
   };
 
   const getRoleLabel = (roles: string[]) => {
+    if (!roles || roles.length === 0) return 'User';
     if (roles.includes('OWNER') || roles.includes('owner')) return 'Owner';
-    if (roles.includes('ADMIN') || roles.includes('admin') || roles.includes('org_admin')) return 'Admin';
+    if (roles.includes('ORG_ADMIN') || roles.includes('ADMIN') || roles.includes('admin') || roles.includes('org_admin')) return 'Admin';
+    if (roles.includes('SALES_MANAGER')) return 'Sales Manager';
+    if (roles.includes('MARKETING_MANAGER')) return 'Marketing Manager';
+    if (roles.includes('SUPPORT_AGENT')) return 'Support Agent';
+    if (roles.includes('SALES_REP')) return 'Sales Rep';
     return 'User';
   };
 
@@ -252,8 +262,12 @@ export default function TeamManagementPage() {
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ADMIN">Admin</SelectItem>
-                    <SelectItem value="USER">User</SelectItem>
+                    <SelectItem value="ORG_ADMIN">Admin</SelectItem>
+                    <SelectItem value="ORG_USER">General User / Employee</SelectItem>
+                    <SelectItem value="SALES_REP">Sales Representative</SelectItem>
+                    <SelectItem value="SALES_MANAGER">Sales Manager</SelectItem>
+                    <SelectItem value="MARKETING_MANAGER">Marketing Manager</SelectItem>
+                    <SelectItem value="SUPPORT_AGENT">Support Agent</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

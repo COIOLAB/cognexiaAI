@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository, Between, IsNull , Not} from 'typeorm';
 import { Lead } from '../entities/lead.entity';
 import { SequenceEnrollment } from '../entities/sequence-enrollment.entity';
 import { CreateLeadDto } from '../dto/lead.dto';
@@ -40,6 +40,7 @@ export class LeadService {
     assignedTo?: string;
     minScore?: number;
     search?: string;
+    organizationId?: string;
   }): Promise<{
     data: Lead[];
     total: number;
@@ -47,8 +48,12 @@ export class LeadService {
     limit: number;
   }> {
     try {
-      const { page = 1, limit = 10, status, source, assignedTo, minScore, search } = paginationDto;
-      const qb = this.leadRepository.createQueryBuilder('lead');
+      const { page = 1, limit = 10, status, source, assignedTo, minScore, search, organizationId } = paginationDto;
+      const qb = this.leadRepository.createQueryBuilder('lead')
+        .leftJoinAndSelect('lead.customer', 'customer')
+        .leftJoinAndSelect('lead.organization', 'organization');
+
+      if (organizationId) qb.andWhere('lead.organizationId = :organizationId', { organizationId });
 
       if (status) qb.andWhere('lead.status = :status', { status });
       if (source) qb.andWhere('lead.source = :source', { source });
@@ -82,13 +87,53 @@ export class LeadService {
     }
   }
 
+  async exportLeads(filters: {
+    status?: string;
+    source?: string;
+    assignedTo?: string;
+    minScore?: number;
+    search?: string;
+    organizationId?: string;
+    demoFallback?: boolean;
+  }): Promise<Lead[]> {
+    const qb = this.leadRepository.createQueryBuilder('lead');
+
+    if (filters.organizationId) {
+      if (filters.demoFallback) {
+        qb.andWhere(
+          '(lead.organizationId = :orgId OR lead.organizationId IS NULL)',
+          { orgId: filters.organizationId },
+        );
+      } else {
+        qb.andWhere('lead.organizationId = :orgId', { orgId: filters.organizationId });
+      }
+    }
+
+    if (filters.status) qb.andWhere('lead.status = :status', { status: filters.status });
+    if (filters.source) qb.andWhere('lead.source = :source', { source: filters.source });
+    if (filters.assignedTo) qb.andWhere('lead.assignedTo = :assignedTo', { assignedTo: filters.assignedTo });
+    const minScoreNumber = Number(filters.minScore);
+    if (Number.isFinite(minScoreNumber)) {
+      qb.andWhere('lead.score >= :minScore', { minScore: minScoreNumber });
+    }
+    if (filters.search) {
+      qb.andWhere(
+        `(lead.contact->>'firstName' ILIKE :q OR lead.contact->>'lastName' ILIKE :q OR lead.contact->>'email' ILIKE :q OR lead.contact->>'company' ILIKE :q OR lead.company ILIKE :q)`,
+        { q: `%${filters.search}%` },
+      );
+    }
+
+    qb.orderBy('lead.createdAt', 'DESC');
+    return qb.getMany();
+  }
+
   async findOne(id: string): Promise<Lead> {
     try {
       this.logger.log(`Retrieving lead: ${id}`);
       
       const lead = await this.leadRepository.findOne({
         where: { id },
-        relations: ['customer'],
+        relations: ['customer', 'organization'],
       });
 
       if (!lead) {
@@ -148,7 +193,7 @@ export class LeadService {
     try {
       return await this.leadRepository.findOne({
         where: { contact: { path: ['email'], equals: email } } as any,
-        relations: ['customer'],
+        relations: ['customer', 'organization'],
       });
     } catch (error) {
       this.logger.error(`Error finding lead by email ${email}:`, error);
@@ -160,7 +205,7 @@ export class LeadService {
     try {
       return await this.leadRepository.find({
         where: { status: status as any },
-        relations: ['customer'],
+        relations: ['customer', 'organization'],
         order: { createdAt: 'DESC' },
       });
     } catch (error) {
@@ -231,7 +276,7 @@ export class LeadService {
 
   async getStats() {
     try {
-      const total = await this.leadRepository.count();
+      const total = await this.leadRepository.count({ where: {  organizationId: Not(IsNull()),} });
       const open = await this.leadRepository.count({ where: { status: LeadStatus.NEW as any } });
       const qualified = await this.leadRepository.count({ where: { status: LeadStatus.QUALIFIED as any } });
       const converted = await this.leadRepository.count({ where: { status: LeadStatus.CONVERTED as any } });

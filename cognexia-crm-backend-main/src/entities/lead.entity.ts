@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Customer } from './customer.entity';
+import { Organization } from './organization.entity';
 
 export enum LeadStatus {
   NEW = 'new',
@@ -70,6 +71,7 @@ export enum QualificationStatus {
 @Index(['source'])
 @Index(['score'])
 @Index(['assignedTo'])
+@Index(['organizationId'])
 export class Lead {
   @ApiProperty({ description: 'Lead UUID' })
   @PrimaryGeneratedColumn('uuid')
@@ -78,6 +80,10 @@ export class Lead {
   @ApiProperty({ description: 'Organization ID' })
   @Column({ name: 'organization_id', type: 'uuid', nullable: true })
   organizationId: string;
+
+  @ManyToOne(() => Organization, { nullable: false })
+  @JoinColumn({ name: 'organization_id' })
+  organization?: Organization;
 
   @ApiProperty({ description: 'Unique lead number' })
   @Column({ unique: true, length: 50 })

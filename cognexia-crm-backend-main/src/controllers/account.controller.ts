@@ -8,11 +8,12 @@ import {
   Put,
   Query,
   Req,
+  Header as SetHeader,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository } from 'typeorm';
+import { FindOptionsWhere, IsNull, Repository } from 'typeorm';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../guards/roles.guard';
 import { Account, AccountType } from '../entities/account.entity';
@@ -27,11 +28,214 @@ export class AccountController {
     private readonly accountRepository: Repository<Account>,
   ) {}
 
+  private normalizeAccountPayload(
+    body: Partial<Account> & {
+      description?: string;
+      phone?: string;
+      parentAccountId?: string;
+    },
+  ): Partial<Account> {
+    const {
+      description,
+      phone,
+      parentAccountId,
+      parentAccount,
+      details,
+      ...rest
+    } = body;
+
+    const normalizedDescription =
+      typeof description === 'string' ? description.trim() : details?.description;
+    const normalizedPhone = typeof phone === 'string' ? phone.trim() : details?.phone;
+    const normalizedParentAccount =
+      typeof parentAccountId === 'string' && parentAccountId.trim()
+        ? parentAccountId.trim()
+        : typeof parentAccount === 'string' && parentAccount.trim()
+        ? parentAccount.trim()
+        : undefined;
+
+    const hasDescriptionInput = description !== undefined || details?.description !== undefined;
+    const hasPhoneInput = phone !== undefined || details?.phone !== undefined;
+    const normalizedDetails = details ? { ...details } : {};
+
+    if (hasDescriptionInput) {
+      if (normalizedDescription) {
+        normalizedDetails.description = normalizedDescription;
+      } else {
+        delete normalizedDetails.description;
+      }
+    }
+
+    if (hasPhoneInput) {
+      if (normalizedPhone) {
+        normalizedDetails.phone = normalizedPhone;
+      } else {
+        delete normalizedDetails.phone;
+      }
+    }
+
+    return {
+      ...rest,
+      ...(normalizedParentAccount ? { parentAccount: normalizedParentAccount } : {}),
+      ...(details || hasDescriptionInput || hasPhoneInput
+        ? { details: normalizedDetails }
+        : {}),
+    };
+  }
+
+  private formatCsv(rows: Array<Array<string | number | null | undefined>>): string {
+    const escape = (value: string | number | null | undefined) => {
+      if (value === null || value === undefined) return '';
+      const text = String(value);
+      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    };
+    return rows.map((row) => row.map(escape).join(',')).join('\n');
+  }
+
+  private resolveOrganizationId(req: any): string | undefined {
+    const tenantHeader = req.headers?.['x-tenant-id'];
+    const headerOrganizationId = Array.isArray(tenantHeader) ? tenantHeader[0] : tenantHeader;
+
+    return req.user?.organizationId || req.user?.tenantId || headerOrganizationId;
+  }
+
+  private getTenantWhere(organizationId?: string): FindOptionsWhere<Account> {
+    if (!organizationId) {
+      return {};
+    }
+
+    const columns = this.accountRepository.metadata.columns.map((column) => column.propertyName);
+    if (columns.includes('organizationId')) {
+      return { organizationId } as FindOptionsWhere<Account>;
+    }
+
+    return {};
+  }
+
+  private async getVisibleAccounts(req: any): Promise<Account[]> {
+    const organizationId = this.resolveOrganizationId(req);
+    const tenantWhere = this.getTenantWhere(organizationId);
+    let accounts = await this.accountRepository.find({ where: tenantWhere });
+
+    if (
+      !accounts.length &&
+      organizationId &&
+      tenantWhere.organizationId &&
+      process.env.DEMO_ENABLED === 'true'
+    ) {
+      accounts = await this.accountRepository.find({
+        where: [
+          { organizationId } as FindOptionsWhere<Account>,
+          { organizationId: IsNull() } as FindOptionsWhere<Account>,
+        ],
+      });
+    }
+
+    return accounts;
+  }
+
+  private filterAccounts(
+    accounts: Account[],
+    filters: {
+      type?: string;
+      status?: string;
+      industry?: string;
+      owner?: string;
+      parentAccount?: string;
+      minRevenue?: number;
+      maxRevenue?: number;
+      search?: string;
+    },
+  ): Account[] {
+    const searchValue = filters.search?.trim().toLowerCase();
+    const industryValue = filters.industry?.trim().toLowerCase();
+    const ownerValue = filters.owner?.trim().toLowerCase();
+    const parentAccountValue = filters.parentAccount?.trim().toLowerCase();
+    const minRevenueValue =
+      filters.minRevenue !== undefined ? Number(filters.minRevenue) : undefined;
+    const maxRevenueValue =
+      filters.maxRevenue !== undefined ? Number(filters.maxRevenue) : undefined;
+
+    return accounts.filter((account) => {
+      const revenue = Number(account.revenue || 0);
+      const accountFields = [
+        account.name,
+        account.accountNumber,
+        account.industry,
+        account.owner,
+      ]
+        .filter(Boolean)
+        .map((value) => value.toLowerCase());
+
+      if (filters.type && account.type !== filters.type) {
+        return false;
+      }
+      if (filters.status && account.status !== filters.status) {
+        return false;
+      }
+      if (industryValue && !account.industry?.toLowerCase().includes(industryValue)) {
+        return false;
+      }
+      if (ownerValue && !account.owner?.toLowerCase().includes(ownerValue)) {
+        return false;
+      }
+      if (
+        parentAccountValue &&
+        !account.parentAccount?.toLowerCase().includes(parentAccountValue)
+      ) {
+        return false;
+      }
+      if (minRevenueValue !== undefined && revenue < minRevenueValue) {
+        return false;
+      }
+      if (maxRevenueValue !== undefined && revenue > maxRevenueValue) {
+        return false;
+      }
+      if (searchValue && !accountFields.some((value) => value.includes(searchValue))) {
+        return false;
+      }
+
+      return true;
+    });
+  }
+
+  private sortAccounts(
+    accounts: Account[],
+    sortBy?: string,
+    sortOrder?: 'asc' | 'desc',
+  ): Account[] {
+    const direction = (sortOrder || 'desc').toLowerCase() === 'asc' ? 1 : -1;
+    const sortField = ['name', 'createdAt', 'revenue', 'priorityScore'].includes(sortBy || '')
+      ? sortBy
+      : 'createdAt';
+
+    return [...accounts].sort((left, right) => {
+      if (sortField === 'name') {
+        return left.name.localeCompare(right.name) * direction;
+      }
+
+      if (sortField === 'revenue') {
+        return (Number(left.revenue || 0) - Number(right.revenue || 0)) * direction;
+      }
+
+      if (sortField === 'priorityScore') {
+        return (
+          (Number(left.priorityScore || 0) - Number(right.priorityScore || 0)) * direction
+        );
+      }
+
+      const leftCreatedAt = left.createdAt ? new Date(left.createdAt).getTime() : 0;
+      const rightCreatedAt = right.createdAt ? new Date(right.createdAt).getTime() : 0;
+      return (leftCreatedAt - rightCreatedAt) * direction;
+    });
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get accounts' })
   @ApiResponse({ status: 200, description: 'Accounts retrieved successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'viewer', 'org_admin')
   async listAccounts(
+    @Req() req: any,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 20,
     @Query('type') type?: string,
@@ -48,54 +252,20 @@ export class AccountController {
     const pageNumber = Number(page) || 1;
     const pageSize = Math.min(Number(limit) || 20, 100);
     const skip = (pageNumber - 1) * pageSize;
-
-    const queryBuilder = this.accountRepository.createQueryBuilder('account');
-
-    if (type) {
-      queryBuilder.andWhere('account.type = :type', { type });
-    }
-    if (status) {
-      queryBuilder.andWhere('account.status = :status', { status });
-    }
-    if (industry) {
-      queryBuilder.andWhere('account.industry ILIKE :industry', {
-        industry: `%${industry}%`,
-      });
-    }
-    if (owner) {
-      queryBuilder.andWhere('account.owner ILIKE :owner', { owner: `%${owner}%` });
-    }
-    if (parentAccount) {
-      queryBuilder.andWhere('account.parentAccount ILIKE :parentAccount', {
-        parentAccount: `%${parentAccount}%`,
-      });
-    }
-    if (minRevenue !== undefined) {
-      queryBuilder.andWhere('account.revenue >= :minRevenue', { minRevenue });
-    }
-    if (maxRevenue !== undefined) {
-      queryBuilder.andWhere('account.revenue <= :maxRevenue', { maxRevenue });
-    }
-    if (search) {
-      queryBuilder.andWhere(
-        new Brackets((qb) => {
-          qb.where('account.name ILIKE :search', { search: `%${search}%` })
-            .orWhere('account.accountNumber ILIKE :search', { search: `%${search}%` })
-            .orWhere('account.industry ILIKE :search', { search: `%${search}%` })
-            .orWhere('account.owner ILIKE :search', { search: `%${search}%` });
-        }),
-      );
-    }
-
-    const orderField = ['name', 'createdAt', 'revenue', 'priorityScore'].includes(sortBy || '')
-      ? `account.${sortBy}`
-      : 'account.createdAt';
-    const orderDirection = (sortOrder || 'desc').toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
-
-    queryBuilder.orderBy(orderField, orderDirection as 'ASC' | 'DESC');
-    queryBuilder.skip(skip).take(pageSize);
-
-    const [accounts, total] = await queryBuilder.getManyAndCount();
+    const visibleAccounts = await this.getVisibleAccounts(req);
+    const filteredAccounts = this.filterAccounts(visibleAccounts, {
+      type,
+      status,
+      industry,
+      owner,
+      parentAccount,
+      minRevenue,
+      maxRevenue,
+      search,
+    });
+    const sortedAccounts = this.sortAccounts(filteredAccounts, sortBy, sortOrder);
+    const accounts = sortedAccounts.slice(skip, skip + pageSize);
+    const total = filteredAccounts.length;
 
     return {
       success: true,
@@ -113,8 +283,8 @@ export class AccountController {
   @ApiOperation({ summary: 'Get account statistics' })
   @ApiResponse({ status: 200, description: 'Account statistics retrieved successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'viewer', 'org_admin')
-  async getStats() {
-    const accounts = await this.accountRepository.find();
+  async getStats(@Req() req: any) {
+    const accounts = await this.getVisibleAccounts(req);
 
     const total = accounts.length;
     const byType: Record<string, number> = {};
@@ -150,23 +320,35 @@ export class AccountController {
   @ApiOperation({ summary: 'Create account' })
   @ApiResponse({ status: 201, description: 'Account created successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
-  async createAccount(@Body() body: Partial<Account>, @Req() req: any) {
+  async createAccount(
+    @Body()
+    body: Partial<Account> & {
+      description?: string;
+      phone?: string;
+      parentAccountId?: string;
+    },
+    @Req() req: any,
+  ) {
     const actor = req.user?.id || req.user?.userId || 'system';
-    const accountNumber = body.accountNumber || `ACC-${Date.now()}`;
-    const fallbackName = body.name || `Account ${Date.now()}`;
-    const fallbackType = body.type || AccountType.PROSPECT;
-    const fallbackIndustry = body.industry || 'General';
-    const fallbackOwner = body.owner || req.user?.email || 'system';
+    const organizationId = this.resolveOrganizationId(req);
+    const normalizedBody = this.normalizeAccountPayload(body);
+    const accountNumber = normalizedBody.accountNumber || `ACC-${Date.now()}`;
+    const fallbackName = normalizedBody.name || `Account ${Date.now()}`;
+    const fallbackType = normalizedBody.type || AccountType.PROSPECT;
+    const fallbackIndustry = normalizedBody.industry || 'General';
+    const fallbackOwner = normalizedBody.owner || req.user?.email || 'system';
 
     const account = this.accountRepository.create({
-      ...body,
+      ...normalizedBody,
+      organizationId: normalizedBody.organizationId || organizationId,
       accountNumber,
-      name: body.name || fallbackName,
-      type: body.type || fallbackType,
-      industry: body.industry || fallbackIndustry,
-      owner: body.owner || fallbackOwner,
-      details: body.details || {},
-      tags: body.tags || [],
+      name: normalizedBody.name || fallbackName,
+      type: normalizedBody.type || fallbackType,
+      industry: normalizedBody.industry || fallbackIndustry,
+      owner: normalizedBody.owner || fallbackOwner,
+      team: normalizedBody.team || [],
+      details: normalizedBody.details || {},
+      tags: normalizedBody.tags || [],
       createdBy: actor,
       updatedBy: actor,
     });
@@ -176,14 +358,61 @@ export class AccountController {
   }
 
   @Get('export')
+  @SetHeader('Content-Type', 'text/csv')
+  @SetHeader('Content-Disposition', 'attachment; filename=\"accounts.csv\"')
   @ApiOperation({ summary: 'Export accounts' })
   @ApiResponse({ status: 200, description: 'Accounts exported successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'viewer', 'org_admin')
-  async exportAccounts() {
-    return {
-      success: true,
-      data: 'id,accountNumber,name\n',
-    };
+  async exportAccounts(
+    @Req() req: any,
+    @Query('type') type?: string,
+    @Query('status') status?: string,
+    @Query('industry') industry?: string,
+    @Query('owner') owner?: string,
+    @Query('parentAccount') parentAccount?: string,
+    @Query('minRevenue') minRevenue?: number,
+    @Query('maxRevenue') maxRevenue?: number,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder: 'asc' | 'desc' = 'asc',
+  ) {
+    const accounts = await this.getVisibleAccounts(req);
+    const filtered = this.filterAccounts(accounts, {
+      type,
+      status,
+      industry,
+      owner,
+      parentAccount,
+      minRevenue: minRevenue !== undefined ? Number(minRevenue) : undefined,
+      maxRevenue: maxRevenue !== undefined ? Number(maxRevenue) : undefined,
+      search,
+    });
+    const sorted = this.sortAccounts(filtered, sortBy, sortOrder);
+
+    const headers = [
+      'id',
+      'accountNumber',
+      'name',
+      'type',
+      'status',
+      'industry',
+      'owner',
+      'revenue',
+      'createdAt',
+    ];
+    const rows = sorted.map((account) => [
+      account.id,
+      account.accountNumber,
+      account.name,
+      account.type,
+      account.status,
+      account.industry,
+      account.owner,
+      account.revenue,
+      account.createdAt instanceof Date ? account.createdAt.toISOString() : account.createdAt,
+    ]);
+
+    return this.formatCsv([headers, ...rows]);
   }
 
   @Get(':id')
@@ -203,14 +432,24 @@ export class AccountController {
   @ApiOperation({ summary: 'Update account' })
   @ApiResponse({ status: 200, description: 'Account updated successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
-  async updateAccount(@Param('id') id: string, @Body() body: Partial<Account>, @Req() req: any) {
+  async updateAccount(
+    @Param('id') id: string,
+    @Body()
+    body: Partial<Account> & {
+      description?: string;
+      phone?: string;
+      parentAccountId?: string;
+    },
+    @Req() req: any,
+  ) {
     const account = await this.accountRepository.findOne({ where: { id } });
     if (!account) {
       return { success: false, data: null, message: 'Account not found' };
     }
 
     const actor = req.user?.id || req.user?.userId || 'system';
-    Object.assign(account, body, { updatedBy: actor });
+    const normalizedBody = this.normalizeAccountPayload(body);
+    Object.assign(account, normalizedBody, { updatedBy: actor });
 
     const saved = await this.accountRepository.save(account);
     return { success: true, data: saved };

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Organization, OrganizationStatus, SubscriptionStatus } from '../entities/organization.entity';
+import { User, UserType } from '../entities/user.entity';
 import { OrganizationService } from './organization.service';
 
 @Injectable()
@@ -9,6 +10,8 @@ export class OnboardingService {
   constructor(
     @InjectRepository(Organization)
     private organizationRepository: Repository<Organization>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
     private organizationService: OrganizationService,
   ) {}
 
@@ -26,6 +29,45 @@ export class OnboardingService {
       notStarted: Math.max(0, total - activeCount - trialCount),
       avgTimeToComplete: 7.5,
     };
+  }
+
+  async getOrganizationsExport() {
+    const organizations = await this.organizationRepository.find({
+      where: { isActive: true },
+      order: { name: 'ASC' },
+    });
+
+    // Fetch admin users for each org in one query
+    const orgIds = organizations.map(o => o.id);
+    let adminUsers: any[] = [];
+    if (orgIds.length > 0) {
+      adminUsers = await this.userRepository
+        .createQueryBuilder('u')
+        .select(['u.organizationId', 'u.firstName', 'u.lastName'])
+        .where('u.organizationId IN (:...ids)', { ids: orgIds })
+        .andWhere('u.userType = :type', { type: UserType.ORG_ADMIN })
+        .getMany();
+    }
+
+    const adminMap = new Map<string, { firstName: string; lastName: string }>();
+    for (const u of adminUsers) {
+      if (!adminMap.has(u.organizationId)) {
+        adminMap.set(u.organizationId, { firstName: u.firstName, lastName: u.lastName });
+      }
+    }
+
+    return organizations.map(org => {
+      const admin = adminMap.get(org.id);
+      return {
+        name: org.name || '',
+        email: org.email || '',
+        adminFirstName: admin?.firstName || '',
+        adminLastName: admin?.lastName || '',
+        phone: org.phone || '',
+        address: org.address || '',
+        website: org.website || '',
+      };
+    });
   }
 
   async bulkImportOrganizations(data: any[]) {

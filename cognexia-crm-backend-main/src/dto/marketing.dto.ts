@@ -188,6 +188,11 @@ export class EmailTemplateDto {
   @IsOptional()
   @IsArray()
   tags?: string[];
+
+  @ApiPropertyOptional({ description: 'Whether the template is active' })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
 
 export class SendEmailCampaignDto {

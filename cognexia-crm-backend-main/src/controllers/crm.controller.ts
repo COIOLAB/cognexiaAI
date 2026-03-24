@@ -8,10 +8,14 @@ import {
   Param,
   Query,
   UseGuards,
+  Req,
   Logger,
   HttpException,
   HttpStatus,
   NotFoundException,
+  Header as SetHeader,
+  Request,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -27,10 +31,14 @@ import { CustomerService } from '../services/customer.service';
 import { LeadService } from '../services/lead.service';
 import { LeadSource, LeadStatus } from '../entities/lead.entity';
 import { v4 as uuidv4, validate as isUuid } from 'uuid';
+import { AuditLogInterceptor, AuditLog } from '../interceptors/audit-log.interceptor';
+import { AuditEntityType, AuditAction } from '../entities/audit-log.entity';
 
 @ApiTags('CRM - Customer Relationship Management')
 @Controller('crm')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@UseInterceptors(AuditLogInterceptor)
+@AuditLog(AuditEntityType.LEAD, AuditAction.READ)
 @ApiBearerAuth()
 export class CRMController {
   private readonly logger = new Logger(CRMController.name);
@@ -39,6 +47,21 @@ export class CRMController {
     private readonly customerService: CustomerService,
     private readonly leadService: LeadService,
   ) { }
+
+  private resolveOrganizationId(req: any): string | undefined {
+    const tenantHeader = req.headers?.['x-tenant-id'];
+    const headerOrg = Array.isArray(tenantHeader) ? tenantHeader[0] : tenantHeader;
+    return req.user?.organizationId || req.user?.tenantId || req.user?.orgId || headerOrg;
+  }
+
+  private formatCsv(rows: Array<Array<string | number | null | undefined>>): string {
+    const escape = (value: string | number | null | undefined) => {
+      if (value === null || value === undefined) return '';
+      const text = String(value);
+      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    };
+    return rows.map((row) => row.map(escape).join(',')).join('\n');
+  }
 
   // =================== CUSTOMER MANAGEMENT ===================
 
@@ -56,6 +79,7 @@ export class CRMController {
   @ApiResponse({ status: 200, description: 'Customers retrieved successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing', 'viewer')
   async getAllCustomers(
+    @Request() req,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('segment') segment?: string,
@@ -67,10 +91,12 @@ export class CRMController {
     try {
       const currentPage = Number(page) || 1;
       const itemsPerPage = Number(limit) || 20;
+      const organizationId = req?.user?.organizationId || req?.user?.tenantId;
       const { data, total } = await this.customerService.findAll({
         page: currentPage,
         limit: itemsPerPage,
         search,
+        organizationId,
       });
 
       return {
@@ -108,6 +134,7 @@ export class CRMController {
   @ApiResponse({ status: 200, description: 'Leads retrieved successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing')
   async getAllLeads(
+    @Request() req,
     @Query('status') status?: string,
     @Query('source') source?: string,
     @Query('score') score?: number,
@@ -119,6 +146,7 @@ export class CRMController {
     try {
       const currentPage = Number(page) || 1;
       const itemsPerPage = Number(limit) || 10;
+      const organizationId = req?.user?.organizationId || req?.user?.tenantId;
       const result = await this.leadService.findAll({
         page: currentPage,
         limit: itemsPerPage,
@@ -127,6 +155,7 @@ export class CRMController {
         minScore: score,
         assignedTo,
         search,
+        organizationId,
       } as any);
 
       const mapped = result.data.map((lead) => this.mapLeadToDto(lead));
@@ -157,6 +186,64 @@ export class CRMController {
     } catch (error) {
       this.logger.error('Error getting lead stats:', error);
       throw new HttpException('Failed to retrieve lead stats', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get('leads/export')
+  @SetHeader('Content-Type', 'text/csv')
+  @SetHeader('Content-Disposition', 'attachment; filename=\"leads.csv\"')
+  @ApiOperation({ summary: 'Export leads', description: 'Export leads to CSV' })
+  @ApiResponse({ status: 200, description: 'Leads exported successfully' })
+  @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing')
+  async exportLeads(
+    @Req() req,
+    @Query('status') status?: string,
+    @Query('source') source?: string,
+    @Query('assignedTo') assignedTo?: string,
+    @Query('score') score?: number,
+    @Query('search') search?: string,
+  ) {
+    try {
+      const organizationId = this.resolveOrganizationId(req);
+      const leads = await this.leadService.exportLeads({
+        status,
+        source,
+        assignedTo,
+        minScore: score,
+        search,
+        organizationId,
+        demoFallback: process.env.DEMO_ENABLED === 'true',
+      });
+
+      const headers = [
+        'id',
+        'leadNumber',
+        'status',
+        'source',
+        'score',
+        'firstName',
+        'lastName',
+        'email',
+        'company',
+        'createdAt',
+      ];
+      const rows = leads.map((lead) => [
+        lead.id,
+        (lead as any).leadNumber,
+        lead.status,
+        lead.source,
+        lead.score,
+        (lead as any)?.contact?.firstName,
+        (lead as any)?.contact?.lastName,
+        (lead as any)?.contact?.email,
+        (lead as any)?.contact?.company,
+        lead.createdAt instanceof Date ? lead.createdAt.toISOString() : lead.createdAt,
+      ]);
+
+      return this.formatCsv([headers, ...rows]);
+    } catch (error) {
+      this.logger.error('Error exporting leads:', error);
+      throw new HttpException('Failed to export leads', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -217,7 +304,7 @@ export class CRMController {
   @ApiParam({ name: 'id', description: 'Lead UUID' })
   @ApiResponse({ status: 200, description: 'Lead updated successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing')
-  async updateLead(@Param('id') id: string, @Body() updateLeadDto: any) {
+  async updateLead(@Param('id') id: string, @Body() updateLeadDto: any, @Request() req) {
     try {
       const existing = await this.leadService.findOne(id);
 
@@ -260,6 +347,7 @@ export class CRMController {
         behaviorData,
         source,
         updatedBy: updateLeadDto.updatedBy || 'system_user',
+        organizationId: updateLeadDto.organizationId || existing.organizationId || req?.user?.organizationId || req?.user?.tenantId,
       };
 
       const lead = await this.leadService.update(id, payload);
@@ -298,6 +386,8 @@ export class CRMController {
     return {
       id: lead.id,
       leadCode: lead.leadNumber,
+      customerId: lead.customerId || lead.customer?.id || null,
+      organizationId: lead.organizationId || lead.organization?.id || null,
       fullName: fullName || contact.email || '',
       email: contact.email || '',
       company: lead.company || contact.company || '',
@@ -316,7 +406,7 @@ export class CRMController {
   })
   @ApiResponse({ status: 201, description: 'Lead created successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing')
-  async createLead(@Body() createLeadDto: any) {
+  async createLead(@Body() createLeadDto: any, @Request() req) {
     try {
       if (!createLeadDto.contact?.email && !createLeadDto.email) {
         throw new HttpException('Contact email is required', HttpStatus.BAD_REQUEST);
@@ -365,6 +455,7 @@ export class CRMController {
         status: createLeadDto.status || LeadStatus.NEW,
         createdBy: createLeadDto.createdBy || 'system_user',
         updatedBy: createLeadDto.updatedBy || 'system_user',
+        organizationId: createLeadDto.organizationId || req?.user?.organizationId || req?.user?.tenantId,
         score: leadScore,
         leadScoring: {
           demographicScore: leadScore,

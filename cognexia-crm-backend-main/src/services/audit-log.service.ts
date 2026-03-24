@@ -69,9 +69,7 @@ export class AuditLogService {
     const safeLimit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 20;
 
     const queryBuilder = this.auditLogRepository
-      .createQueryBuilder('audit_log')
-      .leftJoinAndSelect('audit_log.user', 'user')
-      .leftJoinAndSelect('audit_log.organization', 'organization');
+      .createQueryBuilder('audit_log');
 
     // Apply filters
     if (organizationId) {
@@ -141,7 +139,6 @@ export class AuditLogService {
   async findOne(id: string): Promise<AuditLog> {
     return await this.auditLogRepository.findOne({
       where: { id },
-      relations: ['user', 'organization'],
     });
   }
 

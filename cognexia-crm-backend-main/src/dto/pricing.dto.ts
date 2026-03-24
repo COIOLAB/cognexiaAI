@@ -42,6 +42,10 @@ export class CreatePriceListDto {
   @IsOptional()
   priority?: number;
 
+  @IsBoolean()
+  @IsOptional()
+  active?: boolean;
+
   @IsDate()
   @Type(() => Date)
   @IsOptional()
@@ -89,6 +93,10 @@ export class CreateDiscountDto {
   @IsEnum(DiscountApplicability)
   @IsOptional()
   applicability?: DiscountApplicability;
+
+  @IsBoolean()
+  @IsOptional()
+  active?: boolean;
 
   @IsDate()
   @Type(() => Date)

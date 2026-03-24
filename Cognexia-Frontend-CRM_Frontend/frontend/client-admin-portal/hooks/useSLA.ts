@@ -40,6 +40,7 @@ export const useCreateSLA = () => {
     mutationFn: (data: CreateSLADto) => slaApi.createSLA(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.policies });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.metrics });
       toast.success('SLA policy created successfully');
     },
     onError: (error: any) => {
@@ -58,6 +59,7 @@ export const useUpdateSLA = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.policy(variables.id) });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.policies });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.metrics });
       toast.success('SLA policy updated successfully');
     },
     onError: (error: any) => {
@@ -74,6 +76,7 @@ export const useDeleteSLA = () => {
     mutationFn: (id: string) => slaApi.deleteSLA(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.policies });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.metrics });
       toast.success('SLA policy deleted successfully');
     },
     onError: (error: any) => {

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, In, Not, LessThan } from 'typeorm';
+import { Repository, Between, In, Not, LessThan, IsNull } from 'typeorm';
 import { Customer, CustomerStatus } from '../entities/customer.entity';
 import { Lead } from '../entities/lead.entity';
 import { Opportunity, OpportunityStage } from '../entities/opportunity.entity';
@@ -163,10 +163,7 @@ export class UserDashboardService {
         where: tenantWhere as any,
       }),
       this.customerRepository.count({
-        where: {
-          ...tenantWhere,
-          status: CustomerStatus.ACTIVE,
-        } as any,
+        where: this.mergeWhere(tenantWhere as any, { status: CustomerStatus.ACTIVE } as any) as any,
       }),
       this.leadRepository.count({
         where: organizationId ? this.getTenantWhere(this.leadRepository, organizationId) as any : {},
@@ -175,29 +172,34 @@ export class UserDashboardService {
         where: organizationId ? this.getTenantWhere(this.opportunityRepository, organizationId) as any : {},
       }),
       this.opportunityRepository.count({
-        where: {
-          ...(organizationId ? this.getTenantWhere(this.opportunityRepository, organizationId) : {}),
-          stage: Not(In([OpportunityStage.WON, OpportunityStage.LOST])) as any,
-        } as any,
+        where: this.mergeWhere(
+          organizationId ? this.getTenantWhere(this.opportunityRepository, organizationId) : {},
+          { stage: Not(In([OpportunityStage.WON, OpportunityStage.LOST])) as any },
+        ) as any,
       }),
       this.ticketRepository.count({
-        where: {
-          ...(organizationId ? this.getTenantWhere(this.ticketRepository, organizationId) : {}),
-          status: TicketStatus.OPEN,
-        } as any,
+        where: this.mergeWhere(
+          organizationId ? this.getTenantWhere(this.ticketRepository, organizationId) : {},
+          { status: TicketStatus.OPEN } as any,
+        ) as any,
       }),
       this.ticketRepository.count({
-        where: {
-          ...(organizationId ? this.getTenantWhere(this.ticketRepository, organizationId) : {}),
-          status: TicketStatus.OPEN,
-        } as any,
+        where: this.mergeWhere(
+          organizationId ? this.getTenantWhere(this.ticketRepository, organizationId) : {},
+          {
+            status: In([
+              TicketStatus.IN_PROGRESS,
+              TicketStatus.WAITING_ON_CUSTOMER,
+              TicketStatus.ESCALATED,
+            ]) as any,
+          } as any,
+        ) as any,
       }),
       this.ticketRepository.count({
-        where: {
-          ...(organizationId ? this.getTenantWhere(this.ticketRepository, organizationId) : {}),
-          status: TicketStatus.RESOLVED,
-          resolvedAt: Between(monthStart, now),
-        } as any,
+        where: this.mergeWhere(
+          organizationId ? this.getTenantWhere(this.ticketRepository, organizationId) : {},
+          { status: TicketStatus.RESOLVED, resolvedAt: Between(monthStart, now) } as any,
+        ) as any,
       }),
     ]);
 
@@ -245,16 +247,27 @@ export class UserDashboardService {
       where: this.getTenantWhere(this.opportunityRepository, organizationId) as any,
     });
 
-    const stages = ['LEAD', 'QUALIFIED', 'PROPOSAL', 'NEGOTIATION', 'CLOSED_WON'];
+    const stages = [
+      OpportunityStage.PROSPECTING,
+      OpportunityStage.DISCOVERY,
+      OpportunityStage.QUALIFICATION,
+      OpportunityStage.PROPOSAL,
+      OpportunityStage.NEGOTIATION,
+      OpportunityStage.CLOSING,
+      OpportunityStage.WON,
+    ];
     const funnel: SalesFunnel[] = [];
 
     stages.forEach((stage, index) => {
       const stageOpps = opportunities.filter(opp => opp.stage === stage);
       const count = stageOpps.length;
       const value = stageOpps.reduce((sum, opp) => sum + (opp.value || 0), 0);
-      const conversion_rate = index > 0
-        ? (count / opportunities.length) * 100
-        : 100;
+      const conversion_rate =
+        index > 0 && opportunities.length > 0
+          ? (count / opportunities.length) * 100
+          : opportunities.length > 0
+            ? 100
+            : 0;
 
       funnel.push({ stage, count, value, conversion_rate });
     });
@@ -489,10 +502,10 @@ export class UserDashboardService {
       this.leadRepository.count({ where: this.getTenantWhere(this.leadRepository, organizationId) as any }),
       this.opportunityRepository.count({ where: this.getTenantWhere(this.opportunityRepository, organizationId) as any }),
       this.opportunityRepository.count({
-        where: {
-          ...this.getTenantWhere(this.opportunityRepository, organizationId),
-          stage: Not(In([OpportunityStage.WON, OpportunityStage.LOST])) as any,
-        } as any,
+        where: this.mergeWhere(
+          this.getTenantWhere(this.opportunityRepository, organizationId),
+          { stage: Not(In([OpportunityStage.WON, OpportunityStage.LOST])) as any },
+        ) as any,
       }),
       pipelineValueQuery.getRawOne().then((res) => Number(res?.sum || 0)),
       this.productRepository.count({ where: this.getTenantWhere(this.productRepository, organizationId) as any }),
@@ -500,13 +513,19 @@ export class UserDashboardService {
       this.segmentRepository.count({ where: this.getTenantWhere(this.segmentRepository, organizationId) as any }),
       this.campaignRepository.count({ where: this.getTenantWhere(this.campaignRepository, organizationId) as any }),
       this.ticketRepository.count({
-        where: { ...this.getTenantWhere(this.ticketRepository, organizationId), status: TicketStatus.OPEN } as any,
+        where: this.mergeWhere(
+          this.getTenantWhere(this.ticketRepository, organizationId),
+          { status: TicketStatus.OPEN } as any,
+        ) as any,
       }),
       this.ticketRepository.count({ where: this.getTenantWhere(this.ticketRepository, organizationId) as any }),
       this.documentRepository.count({ where: this.getTenantWhere(this.documentRepository, organizationId) as any }),
       this.contractRepository.count({ where: this.getTenantWhere(this.contractRepository, organizationId) as any }),
       this.taskRepository.count({
-        where: { ...this.getTenantWhere(this.taskRepository, organizationId), status: TaskStatus.TODO } as any,
+        where: this.mergeWhere(
+          this.getTenantWhere(this.taskRepository, organizationId),
+          { status: TaskStatus.TODO } as any,
+        ) as any,
       }),
       this.ivrMenuRepository.count({ where: this.getTenantWhere(this.ivrMenuRepository, organizationId) as any }),
       this.generatedContentRepository.count({
@@ -581,7 +600,17 @@ export class UserDashboardService {
       visibility: DashboardVisibility.PRIVATE,
     } as any);
 
-    return await this.dashboardRepository.save(dashboard) as unknown as Dashboard;
+    let saveCall;
+    try {
+       saveCall =  await this.dashboardRepository.save(dashboard) as unknown as Dashboard;
+      console.log(saveCall);
+       
+    } catch (error) {
+      console.log(error);
+    }
+
+
+    return saveCall;
   }
 
   /**
@@ -649,48 +678,69 @@ export class UserDashboardService {
 
     return {
       new_customers: await this.customerRepository.count({
-        where: {
-          ...this.getTenantWhere(this.customerRepository, organizationId),
-          createdAt: Between(startDate, now),
-        } as any,
+        where: this.mergeWhere(
+          this.getTenantWhere(this.customerRepository, organizationId),
+          { createdAt: Between(startDate, now) } as any,
+        ) as any,
       }),
       new_leads: await this.leadRepository.count({
-        where: {
-          ...this.getTenantWhere(this.leadRepository, organizationId),
-          createdAt: Between(startDate, now),
-        } as any,
+        where: this.mergeWhere(
+          this.getTenantWhere(this.leadRepository, organizationId),
+          { createdAt: Between(startDate, now) } as any,
+        ) as any,
       }),
       closed_deals: await this.opportunityRepository.count({
-        where: {
-          ...this.getTenantWhere(this.opportunityRepository, organizationId),
-          stage: OpportunityStage.WON as any,
-          updatedAt: Between(startDate, now),
-        } as any,
+        where: this.mergeWhere(
+          this.getTenantWhere(this.opportunityRepository, organizationId),
+          { stage: OpportunityStage.WON as any, updatedAt: Between(startDate, now) } as any,
+        ) as any,
       }),
       resolved_tickets: await this.ticketRepository.count({
-        where: {
-          ...this.getTenantWhere(this.ticketRepository, organizationId),
-          status: TicketStatus.RESOLVED,
-          resolvedAt: Between(startDate, now),
-        } as any,
+        where: this.mergeWhere(
+          this.getTenantWhere(this.ticketRepository, organizationId),
+          { status: TicketStatus.RESOLVED, resolvedAt: Between(startDate, now) } as any,
+        ) as any,
       }),
     };
   }
 
-  private getTenantWhere(repo: Repository<any>, organizationId: string): Record<string, any> {
+  private mergeWhere(
+    base: Record<string, any> | Array<Record<string, any>>,
+    extra: Record<string, any>,
+  ): Record<string, any> | Array<Record<string, any>> {
+    if (Array.isArray(base)) {
+      return base.map((condition) => ({ ...condition, ...extra }));
+    }
+    return { ...(base || {}), ...extra };
+  }
+
+  private getTenantWhere(
+    repo: Repository<any>,
+    organizationId?: string,
+  ): Record<string, any> | Array<Record<string, any>> {
     if (!organizationId) {
       // No tenant context supplied; return unscoped for global dashboards/demo
       return {};
     }
+
     const columns = repo.metadata.columns.map((column) => column.propertyName);
+    const demoFallback = process.env.DEMO_ENABLED === 'true';
+
+    const buildWhere = (key: string) => {
+      if (demoFallback) {
+        return [{ [key]: organizationId } as Record<string, any>, { [key]: IsNull() } as Record<string, any>];
+      }
+      return { [key]: organizationId } as Record<string, any>;
+    };
+
     if (columns.includes('organizationId')) {
-      return { organizationId };
+      return buildWhere('organizationId');
     }
     if (columns.includes('tenantId')) {
-      return { tenantId: organizationId };
+      return buildWhere('tenantId');
     }
     if (columns.includes('tenant_id')) {
-      return { tenant_id: organizationId };
+      return buildWhere('tenant_id');
     }
     return {};
   }

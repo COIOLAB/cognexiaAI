@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,9 @@ import { TemplateCategory } from '@/types/api.types';
 import Link from 'next/link';
 
 export default function TemplatesPage() {
-  const { data: templatesData, isLoading } = useGetTemplates();
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const { data: templatesData, isLoading } = useGetTemplates({ page, limit });
   const { data: statsData } = useTemplateStats();
   const createTemplate = useCreateTemplate();
   const [open, setOpen] = useState(false);
@@ -33,6 +35,21 @@ export default function TemplatesPage() {
   };
 
   const templates = templatesData?.data?.templates || templatesData?.data || [];
+  const pagination =
+    templatesData?.pagination ||
+    templatesData?.meta?.pagination ||
+    {
+      currentPage: page,
+      totalPages: templates?.length > 0 ? page : 0,
+      totalItems: templates?.length || 0,
+      itemsPerPage: limit,
+    };
+
+  useMemo(() => {
+    if (pagination?.currentPage && page !== pagination.currentPage) {
+      setPage(pagination.currentPage);
+    }
+  }, [pagination?.currentPage]);
 
   const isFormValid = Boolean(name.trim() && subject.trim() && bodyHtml.trim());
 
@@ -83,6 +100,41 @@ export default function TemplatesPage() {
           ) : (
             <p className="text-sm text-muted-foreground">No templates found.</p>
           )}
+          <div className="flex items-center justify-between pt-2">
+            <div className="text-sm text-muted-foreground">
+              Page {pagination.currentPage || 1} of {pagination.totalPages || 1}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(Math.max(1, page - 1))}
+                disabled={page <= 1}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((page || 1) + 1)}
+                disabled={pagination.totalPages ? page >= pagination.totalPages : false}
+              >
+                Next
+              </Button>
+              <Select value={String(limit)} onValueChange={(v) => setLimit(Number(v))}>
+                <SelectTrigger className="w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[5, 10, 20, 50].map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n} / page
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

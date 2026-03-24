@@ -51,6 +51,11 @@ export const authApi = {
     await apiClient.post('/auth/verify-email', { token });
   },
 
+  acceptInvitation: async (token: string, password: string): Promise<any> => {
+    const response = await apiClient.post('/auth/accept-invitation', { token, password });
+    return response.data;
+  },
+
   me: async () => {
     const response = await apiClient.get('/auth/me');
     return response.data;

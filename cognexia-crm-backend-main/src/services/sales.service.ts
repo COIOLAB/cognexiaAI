@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import { Opportunity, OpportunityStage } from '../entities/opportunity.entity';
 import { SalesQuote, QuoteStatus } from '../entities/sales-quote.entity';
 import { Lead } from '../entities/lead.entity';
@@ -22,7 +22,12 @@ export class SalesService {
   async findAllOpportunities(filters: any = {}) {
     try {
       const queryBuilder = this.opportunityRepository.createQueryBuilder('opportunity')
-        .leftJoinAndSelect('opportunity.customer', 'customer');
+        .leftJoinAndSelect('opportunity.customer', 'customer')
+        .leftJoinAndSelect('opportunity.lead', 'lead');
+
+      if (filters.organizationId) {
+        queryBuilder.andWhere('opportunity.organizationId = :organizationId', { organizationId: filters.organizationId });
+      }
 
       if (filters.stage) {
         queryBuilder.andWhere('opportunity.stage = :stage', { stage: filters.stage });
@@ -48,7 +53,12 @@ export class SalesService {
     const page = Number(filters.page) || 1;
     const limit = Number(filters.limit) || 20;
     const queryBuilder = this.opportunityRepository.createQueryBuilder('opportunity')
-      .leftJoinAndSelect('opportunity.customer', 'customer');
+      .leftJoinAndSelect('opportunity.customer', 'customer')
+      .leftJoinAndSelect('opportunity.lead', 'lead');
+
+    if (filters.organizationId) {
+      queryBuilder.andWhere('opportunity.organizationId = :organizationId', { organizationId: filters.organizationId });
+    }
 
     if (filters.stage) {
       queryBuilder.andWhere('opportunity.stage = :stage', { stage: filters.stage });
@@ -82,7 +92,7 @@ export class SalesService {
     };
   }
 
-  async createOpportunity(opportunityData: any, createdBy: string) {
+  async createOpportunity(opportunityData: any, createdBy: string, organizationId?: string) {
     try {
       const opportunityNumber = await this.generateOpportunityNumber();
       const value = Number(opportunityData.value || opportunityData.amount) || 0;
@@ -90,7 +100,7 @@ export class SalesService {
       const weightedValue = (value * probability) / 100;
 
       let customerId = opportunityData.customerId;
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       
       if (customerId && !uuidRegex.test(customerId)) {
         // If not a UUID, try to find customer by customerCode
@@ -125,6 +135,7 @@ export class SalesService {
 
       const opportunity = this.opportunityRepository.create({
         ...opportunityData,
+        organizationId: opportunityData.organizationId || organizationId,
         customerId,
         opportunityNumber,
         name: opportunityData.name || 'New Opportunity',
@@ -384,7 +395,7 @@ export class SalesService {
 
   async getSalesMetrics(filters: any = {}) {
     try {
-      const opportunities = await this.findAllOpportunities(filters);
+      const opportunities = await this.findAllOpportunities({ where: { organizationId: Not(IsNull()),} });
 
       const totalValue = opportunities.reduce((sum, opp) => sum + Number(opp.value || 0), 0);
       const totalWeightedValue = opportunities.reduce((sum, opp) => {
@@ -465,7 +476,7 @@ export class SalesService {
     try {
       const opportunity = await this.opportunityRepository.findOne({ 
         where: { id },
-        relations: ['customer'] 
+        relations: ['customer', 'lead'] 
       });
       if (!opportunity) {
         return null;

@@ -7,7 +7,7 @@ import { useCreateSLA, useDeleteSLA, useGetSLAPolicies, useSLAMetrics } from '@/
 import { Plus, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
 import { KpiCard } from '@/components/KpiCard';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -105,6 +105,7 @@ export default function SLAManagementPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create SLA Policy</DialogTitle>
+            <DialogDescription>Define response targets, priority, and business hours rules.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>

@@ -12,8 +12,8 @@ export class AuditLogFilterDto {
   userId?: string;
 
   @IsOptional()
-  @IsEnum(AuditAction)
-  action?: AuditAction;
+  @IsString()
+  action?: string;
 
   @IsOptional()
   @IsString()

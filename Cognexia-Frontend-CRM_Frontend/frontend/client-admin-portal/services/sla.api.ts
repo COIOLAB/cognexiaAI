@@ -9,10 +9,87 @@ import type {
 } from '@/types/api.types';
 
 const SLA_BASE = '/crm/support/sla';
+const LOCAL_STORAGE_KEY = 'crm-sla-policies';
+const MIGRATION_FLAG_KEY = 'crm-sla-migrated';
+const MIGRATION_IDS_KEY = 'crm-sla-migrated-ids';
+
+const isBrowser = () => typeof window !== 'undefined';
+
+const readLocalPolicies = (): SLAPolicy[] => {
+  if (!isBrowser()) return [];
+  try {
+    const raw = window.localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const markMigrated = () => {
+  if (!isBrowser()) return;
+  window.localStorage.setItem(MIGRATION_FLAG_KEY, 'true');
+};
+
+const readMigratedIds = (): string[] => {
+  if (!isBrowser()) return [];
+  try {
+    const raw = window.localStorage.getItem(MIGRATION_IDS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeMigratedIds = (ids: string[]) => {
+  if (!isBrowser()) return;
+  window.localStorage.setItem(MIGRATION_IDS_KEY, JSON.stringify(ids));
+};
+
+const shouldMigrate = () =>
+  isBrowser() && window.localStorage.getItem(MIGRATION_FLAG_KEY) !== 'true';
+
+const migrateLocalPolicies = async () => {
+  if (!shouldMigrate()) return;
+  const localPolicies = readLocalPolicies();
+  if (!localPolicies.length) {
+    markMigrated();
+    return;
+  }
+
+  const migratedIds = readMigratedIds();
+
+  for (const policy of localPolicies) {
+    if (policy.id && migratedIds.includes(policy.id)) continue;
+    await api.post<SLAPolicy>(SLA_BASE, {
+      name: policy.name,
+      description: policy.description,
+      priority: policy.priority,
+      firstResponseTime: policy.firstResponseTime,
+      resolutionTime: policy.resolutionTime,
+      businessHoursOnly: policy.businessHoursOnly,
+      isActive: policy.isActive,
+    });
+    if (policy.id) {
+      migratedIds.push(policy.id);
+      writeMigratedIds(migratedIds);
+    }
+  }
+
+  if (isBrowser()) {
+    window.localStorage.removeItem(LOCAL_STORAGE_KEY);
+    window.localStorage.removeItem(MIGRATION_IDS_KEY);
+  }
+  markMigrated();
+};
 
 export const slaApi = {
   // Get all SLA policies
   getSLAPolicies: async () => {
+    await migrateLocalPolicies();
     const { data } = await api.get<{ data: SLAPolicy[] }>(SLA_BASE);
     return data;
   },

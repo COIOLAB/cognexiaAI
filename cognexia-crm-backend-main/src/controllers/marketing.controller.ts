@@ -14,6 +14,8 @@ import {
   HttpStatus,
   ParseUUIDPipe,
   Request,
+  DefaultValuePipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -308,18 +310,104 @@ export class MarketingController {
   @ApiQuery({ name: 'category', required: false })
   @ApiResponse({ status: 200, description: 'Templates retrieved successfully' })
   @Roles('admin', 'manager', 'marketing_manager', 'marketing_specialist', 'viewer')
-  async getAllEmailTemplates(@Query('category') category?: string) {
+  async getAllEmailTemplates(
+    @Query('category') category?: string,
+    @Query('search') search?: string,
+    @Query('isActive') isActive?: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit = 20,
+  ) {
     try {
-      const templates = await this.marketingService.getAllEmailTemplates(category);
+      const result = await this.marketingService.getAllEmailTemplates({
+        category,
+        search,
+        isActive: isActive === undefined ? undefined : isActive === 'true',
+        page,
+        limit,
+      });
 
       return {
         success: true,
-        data: templates,
+        data: result.templates,
+        pagination: result.pagination,
         message: 'Email templates retrieved successfully',
       };
     } catch (error) {
       this.logger.error('Error retrieving templates:', error);
       throw new HttpException('Failed to retrieve templates', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Put('templates/:id')
+  @ApiOperation({ summary: 'Update email template', description: 'Update template content and metadata' })
+  @ApiParam({ name: 'id', description: 'Template UUID' })
+  @ApiBody({ type: EmailTemplateDto })
+  @ApiResponse({ status: 200, description: 'Template updated successfully' })
+  @Roles('admin', 'manager', 'marketing_manager', 'marketing_specialist')
+  async updateEmailTemplate(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() templateDto: EmailTemplateDto,
+    @Request() req,
+  ) {
+    try {
+      const template = await this.marketingService.updateEmailTemplate(
+        id,
+        templateDto,
+        req.user?.id || req.user?.userId || 'system',
+      );
+
+      return { success: true, data: template, message: 'Template updated successfully' };
+    } catch (error) {
+      this.logger.error(`Error updating template ${id}:`, error);
+      throw new HttpException(error.message || 'Failed to update template', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Delete('templates/:id')
+  @ApiOperation({ summary: 'Delete email template', description: 'Delete template permanently' })
+  @ApiParam({ name: 'id', description: 'Template UUID' })
+  @ApiResponse({ status: 200, description: 'Template deleted successfully' })
+  @Roles('admin', 'manager', 'marketing_manager')
+  async deleteEmailTemplate(@Param('id', ParseUUIDPipe) id: string) {
+    try {
+      await this.marketingService.deleteEmailTemplate(id);
+      return { success: true, message: 'Template deleted successfully' };
+    } catch (error) {
+      this.logger.error(`Error deleting template ${id}:`, error);
+      throw new HttpException(error.message || 'Failed to delete template', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Post('templates/:id/duplicate')
+  @ApiOperation({ summary: 'Duplicate email template', description: 'Create a copy of an existing template' })
+  @ApiParam({ name: 'id', description: 'Template UUID' })
+  @ApiResponse({ status: 201, description: 'Template duplicated successfully' })
+  @Roles('admin', 'manager', 'marketing_manager', 'marketing_specialist')
+  async duplicateEmailTemplate(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
+    try {
+      const template = await this.marketingService.duplicateEmailTemplate(
+        id,
+        req.user?.id || req.user?.userId || 'system',
+      );
+
+      return { success: true, data: template, message: 'Template duplicated successfully' };
+    } catch (error) {
+      this.logger.error(`Error duplicating template ${id}:`, error);
+      throw new HttpException(error.message || 'Failed to duplicate template', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get('templates/stats')
+  @ApiOperation({ summary: 'Get email template stats', description: 'Retrieve counts for total, active, draft templates' })
+  @ApiResponse({ status: 200, description: 'Template stats retrieved successfully' })
+  @Roles('admin', 'manager', 'marketing_manager', 'marketing_specialist', 'viewer')
+  async getTemplateStats() {
+    try {
+      const stats = await this.marketingService.getTemplateStats();
+      return { success: true, data: stats, message: 'Template stats retrieved successfully' };
+    } catch (error) {
+      this.logger.error('Error retrieving template stats:', error);
+      throw new HttpException('Failed to retrieve template stats', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -343,6 +431,21 @@ export class MarketingController {
     } catch (error) {
       this.logger.error(`Error retrieving template ${id}:`, error);
       throw new HttpException(error.message || 'Failed to retrieve template', HttpStatus.NOT_FOUND);
+    }
+  }
+
+  @Get('templates/:id/usage')
+  @ApiOperation({ summary: 'Get template usage', description: 'Retrieve usage history for an email template' })
+  @ApiParam({ name: 'id', description: 'Template UUID' })
+  @ApiResponse({ status: 200, description: 'Usage retrieved successfully' })
+  @Roles('admin', 'manager', 'marketing_manager', 'marketing_specialist', 'viewer')
+  async getTemplateUsage(@Param('id', ParseUUIDPipe) id: string) {
+    try {
+      // Placeholder: no tracking implemented yet
+      return { success: true, data: [], message: 'No usage history available' };
+    } catch (error) {
+      this.logger.error(`Error retrieving template usage ${id}:`, error);
+      throw new HttpException('Failed to retrieve usage', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 

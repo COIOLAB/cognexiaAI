@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useUIStore } from '@/stores/ui-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -45,15 +46,38 @@ import {
   Smartphone,
   Sparkles,
   Search,
+  History,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 
-const navigationSections = [
+type NavigationChild = {
+  name: string;
+  href: string;
+  icon: any;
+};
+
+type NavigationItem = {
+  name: string;
+  href?: string;
+  icon?: any;
+  allowedRoles?: string[];
+  children?: NavigationChild[];
+};
+
+type NavigationSection = {
+  title: string;
+  tier: string;
+  allowedRoles?: string[];
+  items: NavigationItem[];
+};
+
+const navigationSections: NavigationSection[] = [
   {
     title: 'Basic Features',
     tier: 'basic',
+    allowedRoles: ['ORG_ADMIN', 'ORG_USER', 'SALES_REP', 'SALES_MANAGER', 'MARKETING_MANAGER', 'SUPPORT_AGENT'],
     items: [
       { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
       { name: 'Clients', href: '/accounts', icon: Building },
@@ -61,8 +85,10 @@ const navigationSections = [
       { name: 'Contacts', href: '/contacts', icon: Contact },
       { name: 'Leads', href: '/leads', icon: UserPlus },
       { name: 'Opportunities', href: '/opportunities', icon: Target },
+      { name: 'Invite Team', href: '/team', icon: Users, allowedRoles: ['ORG_ADMIN'] },
       {
         name: 'Sales',
+        allowedRoles: ['ORG_ADMIN', 'SALES_MANAGER'],
         children: [
           { name: 'Quotes', href: '/sales/quotes', icon: FileText },
           { name: 'Orders', href: '/sales/orders', icon: Package },
@@ -73,6 +99,7 @@ const navigationSections = [
       },
       {
         name: 'Marketing',
+        allowedRoles: ['ORG_ADMIN', 'MARKETING_MANAGER'],
         children: [
           { name: 'Campaigns', href: '/marketing/campaigns', icon: Megaphone },
           { name: 'Emails', href: '/marketing/emails', icon: Mail },
@@ -82,32 +109,20 @@ const navigationSections = [
           { name: 'Content', href: '/marketing/content', icon: FolderOpen },
         ],
       },
-      // {
-      //   name: 'Support',
-      //   children: [
-      //     { name: 'Support Home', href: '/support', icon: Headphones },
-      //     { name: 'Tickets', href: '/support/tickets', icon: Ticket },
-      //     { name: 'Live Chat', href: '/support/live-chat', icon: MessageSquare },
-      //     { name: 'Knowledge Base', href: '/support/knowledge-base', icon: BookOpen },
-      //     { name: 'SLA', href: '/support/sla', icon: Shield },
-      //     { name: 'Support Analytics', href: '/support/analytics', icon: BarChart3 },
-      //   ],
-      // },
-      { name: 'Products', href: '/products', icon: Package },
-      { name: 'Categories', href: '/products/categories', icon: Tags },
-      { name: 'Pricing', href: '/pricing', icon: DollarSign },
-      { name: 'Inventory', href: '/inventory', icon: Warehouse },
-      { name: 'Reports', href: '/reports', icon: FileText },
-      { name: 'Dashboards', href: '/dashboards', icon: LayoutDashboard },
-      { name: 'Settings', href: '/settings', icon: Settings },
+      { name: 'Products', href: '/products', icon: Package, allowedRoles: ['ORG_ADMIN', 'SALES_REP', 'SALES_MANAGER'] },
+      { name: 'Categories', href: '/products/categories', icon: Tags, allowedRoles: ['ORG_ADMIN', 'SALES_REP', 'SALES_MANAGER'] },
+      { name: 'Pricing', href: '/pricing', icon: DollarSign, allowedRoles: ['ORG_ADMIN', 'SALES_REP', 'SALES_MANAGER'] },
+      { name: 'Settings', href: '/settings', icon: Settings, allowedRoles: ['ORG_ADMIN'] },
     ],
   },
   {
     title: 'Premium Features',
     tier: 'premium',
+    allowedRoles: ['ORG_ADMIN', 'SUPPORT_AGENT', 'SALES_REP', 'SALES_MANAGER', 'ORG_USER'],
     items: [
       {
         name: 'Support',
+        allowedRoles: ['ORG_ADMIN', 'SUPPORT_AGENT'],
         children: [
           { name: 'Support Home', href: '/support', icon: Headphones },
           { name: 'Tickets', href: '/support/tickets', icon: Ticket },
@@ -115,21 +130,12 @@ const navigationSections = [
           { name: 'Knowledge Base', href: '/support/knowledge-base', icon: BookOpen },
           { name: 'SLA', href: '/support/sla', icon: Shield },
           { name: 'Support Analytics', href: '/support/analytics', icon: BarChart3 },
+          { name: 'Inventory', href: '/inventory', icon: Warehouse },
         ],
       },
-      // {
-      //   name: 'Marketing',
-      //   children: [
-      //     { name: 'Campaigns', href: '/marketing/campaigns', icon: Megaphone },
-      //     { name: 'Emails', href: '/marketing/emails', icon: Mail },
-      //     { name: 'Templates', href: '/marketing/templates', icon: FileText },
-      //     { name: 'Segments', href: '/marketing/segments', icon: Users },
-      //     { name: 'ROI', href: '/marketing/roi', icon: DollarSign },
-      //     { name: 'Content', href: '/marketing/content', icon: FolderOpen },
-      //   ],
-      // },
       {
         name: 'Operations',
+        allowedRoles: ['ORG_ADMIN', 'ORG_USER', 'SALES_REP', 'SALES_MANAGER'],
         children: [
           { name: 'Tasks', href: '/tasks', icon: CheckSquare },
           { name: 'Activities', href: '/activities', icon: CheckSquare },
@@ -139,10 +145,11 @@ const navigationSections = [
           { name: 'Signatures', href: '/signatures', icon: PenTool },
         ],
       },
-      { name: 'Integration Hub', href: '/integration', icon: Plug },
-      { name: 'Mobile Service', href: '/mobile', icon: Smartphone },
+      { name: 'Integration Hub', href: '/integration', icon: Plug, allowedRoles: ['ORG_ADMIN'] },
+      { name: 'Mobile Service', href: '/mobile', icon: Smartphone, allowedRoles: ['ORG_ADMIN', 'SALES_REP', 'SALES_MANAGER'] },
       {
         name: 'Calls',
+        allowedRoles: ['ORG_ADMIN', 'SUPPORT_AGENT', 'SALES_REP', 'SALES_MANAGER'],
         children: [
           { name: 'Call Center', href: '/calls', icon: Phone },
           { name: 'Active Calls', href: '/calls/active', icon: PhoneIncoming },
@@ -156,15 +163,17 @@ const navigationSections = [
   {
     title: 'Advanced Features',
     tier: 'advanced',
+    allowedRoles: ['ORG_ADMIN', 'MARKETING_MANAGER'],
     items: [
-      { name: 'AI Lab', href: '/ai', icon: Brain },
-      { name: 'Workflow', href: '/workflow', icon: Workflow },
-      { name: 'Recommendations', href: '/recommendations', icon: Sparkles },
-      { name: 'Analytics', href: '/analytics', icon: TrendingUp },
-      { name: 'Monitoring', href: '/monitoring', icon: BarChart3 },
-      { name: 'Performance', href: '/performance', icon: BarChart2 },
-      { name: 'Usage', href: '/usage', icon: TrendingUp },
-      { name: 'Throttling', href: '/throttling', icon: Shield },
+      { name: 'AI Lab', href: '/ai', icon: Brain, allowedRoles: ['ORG_ADMIN', 'MARKETING_MANAGER'] },
+      { name: 'Workflow', href: '/workflow', icon: Workflow, allowedRoles: ['ORG_ADMIN'] },
+      { name: 'Recommendations', href: '/recommendations', icon: Sparkles, allowedRoles: ['ORG_ADMIN', 'MARKETING_MANAGER'] },
+      { name: 'Analytics', href: '/analytics', icon: TrendingUp, allowedRoles: ['ORG_ADMIN', 'MARKETING_MANAGER'] },
+      { name: 'Monitoring', href: '/monitoring', icon: BarChart3, allowedRoles: ['ORG_ADMIN'] },
+      { name: 'Audit Logs', href: '/audit-logs', icon: History, allowedRoles: ['ORG_ADMIN'] },
+      { name: 'Performance', href: '/performance', icon: BarChart2, allowedRoles: ['ORG_ADMIN'] },
+      { name: 'Usage', href: '/usage', icon: TrendingUp, allowedRoles: ['ORG_ADMIN'] },
+      { name: 'Throttling', href: '/throttling', icon: Shield, allowedRoles: ['ORG_ADMIN'] },
     ],
   },
 ];
@@ -184,29 +193,48 @@ export function Sidebar() {
     return 'bg-slate-100 text-slate-700 border-slate-200';
   };
 
+  const user = useAuthStore((state) => state.user);
+
+  const hasAccess = (allowedRoles?: string[]) => {
+    if (!allowedRoles) return true;
+    
+    // Safely extract roles and convert everything to uppercase to avoid casing bugs (org_user vs ORG_USER)
+    const rawRoles = (user as any)?.roles || (user?.role ? [user.role] : ['ORG_USER']);
+    const userRolesArray = Array.isArray(rawRoles) 
+      ? rawRoles.map(r => typeof r === 'string' ? r.toUpperCase() : '') 
+      : [];
+    
+    // Admins have access to everything
+    if (userRolesArray.includes('ORG_ADMIN') || userRolesArray.includes('OWNER') || userRolesArray.includes('ADMIN')) return true;
+    
+    // Check against allowedRoles which are already defined in ALL_CAPS
+    return allowedRoles.some(r => userRolesArray.includes(r.toUpperCase()));
+  };
+
   const filteredSections = useMemo(() => {
-    if (!query) return navigationSections;
     const lower = query.toLowerCase();
     return navigationSections
+      .filter((section) => hasAccess(section.allowedRoles))
       .map((section) => {
         const items = section.items
+          .filter((item) => hasAccess(item.allowedRoles))
           .map((item) => {
             if (item.children) {
               const matchedChildren = item.children.filter((child) =>
-                child.name.toLowerCase().includes(lower),
+                (!query || child.name.toLowerCase().includes(lower))
               );
-              if (item.name.toLowerCase().includes(lower) || matchedChildren.length > 0) {
+              if (!query || item.name.toLowerCase().includes(lower) || matchedChildren.length > 0) {
                 return { ...item, children: matchedChildren.length ? matchedChildren : item.children };
               }
               return null;
             }
-            return item.name.toLowerCase().includes(lower) ? item : null;
+            return (!query || item.name.toLowerCase().includes(lower)) ? item : null;
           })
           .filter(Boolean);
         return items.length ? { ...section, items } : null;
       })
       .filter(Boolean) as typeof navigationSections;
-  }, [query]);
+  }, [query, user]);
 
   return (
     <aside
@@ -321,7 +349,7 @@ export function Sidebar() {
                 return (
                   <Link
                     key={item.href}
-                    href={item.href}
+                    href={item.href || '#'}
                     className={cn(
                       'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                       isActive

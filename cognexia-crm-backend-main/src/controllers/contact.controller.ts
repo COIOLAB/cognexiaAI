@@ -10,6 +10,7 @@ import {
   Put,
   Query,
   Req,
+  Header as SetHeader,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -20,6 +21,7 @@ import { ILike, Repository } from 'typeorm';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../guards/roles.guard';
 import { Contact, ContactType } from '../entities/contact.entity';
+import { Customer } from '../entities/customer.entity';
 
 @ApiTags('CRM - Contacts')
 @Controller('crm/contacts')
@@ -31,11 +33,27 @@ export class ContactController {
     private readonly contactRepository: Repository<Contact>,
   ) {}
 
+  private resolveOrganizationId(req: any): string | undefined {
+    const tenantHeader = req.headers?.['x-tenant-id'];
+    const headerOrg = Array.isArray(tenantHeader) ? tenantHeader[0] : tenantHeader;
+    return req.user?.organizationId || req.user?.tenantId || req.user?.orgId || headerOrg;
+  }
+
+  private formatCsv(rows: Array<Array<string | number | null | undefined>>): string {
+    const escape = (value: string | number | null | undefined) => {
+      if (value === null || value === undefined) return '';
+      const text = String(value);
+      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    };
+    return rows.map((row) => row.map(escape).join(',')).join('\n');
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get all contacts' })
   @ApiResponse({ status: 200, description: 'Contacts retrieved successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing', 'viewer', 'org_admin')
   async getAllContacts(
+    @Req() req: any,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 20,
     @Query('customerId') customerId?: string,
@@ -43,15 +61,16 @@ export class ContactController {
   ) {
     const take = Math.min(Number(limit) || 20, 100);
     const skip = (Math.max(Number(page) || 1, 1) - 1) * take;
+    const organizationId = req?.user?.organizationId || req?.user?.tenantId;
 
     if (search) {
       const [contacts, total] = await this.contactRepository.findAndCount({
         where: [
-          { fullName: ILike(`%${search}%`) },
-          { email: ILike(`%${search}%`) },
-          { workPhone: ILike(`%${search}%`) },
-          { mobilePhone: ILike(`%${search}%`) },
-          { homePhone: ILike(`%${search}%`) },
+          { fullName: ILike(`%${search}%`), organizationId },
+          { email: ILike(`%${search}%`), organizationId },
+          { workPhone: ILike(`%${search}%`), organizationId },
+          { mobilePhone: ILike(`%${search}%`), organizationId },
+          { homePhone: ILike(`%${search}%`), organizationId },
         ],
         take,
         skip,
@@ -73,8 +92,12 @@ export class ContactController {
       };
     }
 
+    const where: any = {};
+    if (customerId) where.customerId = customerId;
+    if (organizationId) where.organizationId = organizationId;
+
     const [contacts, total] = await this.contactRepository.findAndCount({
-      where: customerId ? { customerId } : {},
+      where,
       take,
       skip,
       order: { createdAt: 'DESC' },
@@ -110,15 +133,32 @@ export class ContactController {
       doNotCall: false,
       emailOptOut: false,
     };
-    const fallbackCustomerId = createDto.customerId || '00000000-0000-0000-0000-000000000456';
+    const organizationId = req?.user?.organizationId || req?.user?.tenantId;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    let resolvedCustomerId = createDto.customerId || '00000000-0000-0000-0000-000000000456';
+    if (createDto.customerId && !uuidRegex.test(createDto.customerId)) {
+      const customerByCode = await this.contactRepository.manager.findOne(Customer, {
+        where: { customerCode: createDto.customerId },
+      });
+      if (!customerByCode) {
+        throw new HttpException('Customer not found', HttpStatus.BAD_REQUEST);
+      }
+      resolvedCustomerId = customerByCode.id;
+    }
+    let resolvedOrganizationId = createDto.organizationId || organizationId;
+    if (!resolvedOrganizationId && resolvedCustomerId) {
+      const customer = await this.contactRepository.manager.findOne(Customer, { where: { id: resolvedCustomerId } });
+      resolvedOrganizationId = customer?.organizationId;
+    }
     const contact = this.contactRepository.create({
       ...createDto,
+      organizationId: resolvedOrganizationId,
       type: createDto.type || ContactType.PRIMARY,
       firstName: createDto.firstName || 'Fixture',
       lastName: createDto.lastName || 'Contact',
       title: createDto.title || 'Contact',
       email: createDto.email || `contact+${stamp}@cognexiaai.com`,
-      customerId: fallbackCustomerId,
+      customerId: resolvedCustomerId,
       communicationPrefs: createDto.communicationPrefs || defaultPrefs,
       createdBy: req.user?.id || 'system',
       updatedBy: req.user?.id || 'system',
@@ -147,11 +187,66 @@ export class ContactController {
   }
 
   @Get('export')
+  @SetHeader('Content-Type', 'text/csv')
+  @SetHeader('Content-Disposition', 'attachment; filename=\"contacts.csv\"')
   @ApiOperation({ summary: 'Export contacts' })
   @ApiResponse({ status: 200, description: 'Contacts exported successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'marketing', 'viewer', 'org_admin')
-  async exportContacts() {
-    return { success: true, data: 'id,fullName,email,phone\n' };
+  async exportContacts(
+    @Req() req: any,
+    @Query('type') type?: string,
+    @Query('status') status?: string,
+    @Query('role') role?: string,
+    @Query('customerId') customerId?: string,
+    @Query('search') search?: string,
+  ) {
+    const organizationId = this.resolveOrganizationId(req);
+    const qb = this.contactRepository.createQueryBuilder('contact');
+
+    if (organizationId) {
+      if (process.env.DEMO_ENABLED === 'true') {
+        qb.andWhere('(contact.organizationId = :orgId OR contact.organizationId IS NULL)', {
+          orgId: organizationId,
+        });
+      } else {
+        qb.andWhere('contact.organizationId = :orgId', { orgId: organizationId });
+      }
+    }
+    if (type) qb.andWhere('contact.type = :type', { type });
+    if (status) qb.andWhere('contact.status = :status', { status });
+    if (role) qb.andWhere('contact.role = :role', { role });
+    if (customerId) qb.andWhere('contact.customerId = :customerId', { customerId });
+    if (search) {
+      qb.andWhere('(contact.fullName ILIKE :q OR contact.email ILIKE :q)', { q: `%${search}%` });
+    }
+
+    const contacts = await qb.getMany();
+    const headers = [
+      'id',
+      'fullName',
+      'email',
+      'phone',
+      'company',
+      'role',
+      'status',
+      'type',
+      'customerId',
+      'createdAt',
+    ];
+    const rows = contacts.map((contact) => [
+      contact.id,
+      contact.fullName,
+      contact.email,
+      contact.phone,
+      contact.company,
+      (contact as any).role,
+      contact.status,
+      contact.type,
+      contact.customerId,
+      contact.createdAt instanceof Date ? contact.createdAt.toISOString() : contact.createdAt,
+    ]);
+
+    return this.formatCsv([headers, ...rows]);
   }
 
   @Get(':id')
@@ -185,7 +280,13 @@ export class ContactController {
       return { success: false, data: null, message: 'Contact not found' };
     }
 
-    Object.assign(contact, updateDto, { updatedBy: req.user?.id || 'system' });
+    const organizationId = req?.user?.organizationId || req?.user?.tenantId;
+    const merged = {
+      ...updateDto,
+      organizationId: updateDto.organizationId || contact.organizationId || organizationId,
+      updatedBy: req.user?.id || 'system',
+    };
+    Object.assign(contact, merged);
     contact.updateFullName();
     const saved = await this.contactRepository.save(contact);
 

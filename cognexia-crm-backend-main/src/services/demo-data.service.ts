@@ -197,6 +197,7 @@ export class DemoDataService {
     const now = new Date();
     const demoAccounts = [
       this.accountRepository.create({
+        organizationId: DEMO_ORG_ID,
         accountNumber: 'DEMO-ACC-1001',
         name: 'Atlas Manufacturing Co.',
         type: AccountType.CUSTOMER,
@@ -219,6 +220,7 @@ export class DemoDataService {
         updatedBy: DEMO_SEED_USER,
       }),
       this.accountRepository.create({
+        organizationId: DEMO_ORG_ID,
         accountNumber: 'DEMO-ACC-1002',
         name: 'Nova Retail Group',
         type: AccountType.CUSTOMER,
@@ -241,6 +243,7 @@ export class DemoDataService {
         updatedBy: DEMO_SEED_USER,
       }),
       this.accountRepository.create({
+        organizationId: DEMO_ORG_ID,
         accountNumber: 'DEMO-ACC-1003',
         name: 'Lumen Health Systems',
         type: AccountType.PROSPECT,

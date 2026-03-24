@@ -36,8 +36,15 @@ export default function SegmentDetailPage() {
     }
   }, [segment]);
 
-  const criteria = Array.isArray(segment?.criteria) ? segment.criteria : [];
-  const segmentSize = sizeData?.data?.size ?? sizeData?.size ?? segment?.size ?? 0;
+  const criteria = Array.isArray(segment?.criteria)
+    ? segment.criteria
+    : segment?.criteria?.rules || [];
+  const segmentSize =
+    sizeData?.data?.size ??
+    sizeData?.size ??
+    segment?.customerCount ??
+    segment?.size ??
+    0;
   const isFormValid = Boolean(name.trim());
 
   if (!segment) {
@@ -118,7 +125,7 @@ export default function SegmentDetailPage() {
           </CardHeader>
           <CardContent>
             <Badge variant="outline" className="capitalize">
-              {(segment?.type || SegmentType.STATIC).toString().replace('_', ' ')}
+              {(segment?.type || SegmentType.DEMOGRAPHIC).toString().replace('_', ' ')}
             </Badge>
           </CardContent>
         </Card>

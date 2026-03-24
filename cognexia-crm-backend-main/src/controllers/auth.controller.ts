@@ -1,5 +1,7 @@
 import { Controller, Post, Body, UseGuards, Req, Get, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService, LoginDto, RegisterDto, PasswordResetRequestDto, PasswordResetDto, EmailVerificationDto } from '../services/auth.service';
+import { UserManagementService } from '../services/user-management.service';
+import { AcceptInvitationDto } from '../dto/portal.dto';
 import { JwtAuthGuard, Public } from '../guards/jwt-auth.guard';
 import { CurrentUser, OrganizationId } from '../guards/organization.guard';
 import { AuthenticatedUser } from '../guards/jwt.strategy';
@@ -10,7 +12,10 @@ import { AuthenticatedUser } from '../guards/jwt.strategy';
  */
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly userManagementService: UserManagementService,
+  ) {}
 
   /**
    * User Registration
@@ -131,6 +136,17 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async sendEmailVerification(@CurrentUser() user: AuthenticatedUser) {
     return this.authService.sendEmailVerification(user.id);
+  }
+
+  /**
+   * Accept Invitation
+   * POST /auth/accept-invitation
+   */
+  @Public()
+  @Post('accept-invitation')
+  @HttpCode(HttpStatus.OK)
+  async acceptInvitation(@Body() dto: AcceptInvitationDto) {
+    return this.userManagementService.acceptInvitation(dto);
   }
 
   /**

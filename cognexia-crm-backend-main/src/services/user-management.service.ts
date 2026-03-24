@@ -1,12 +1,18 @@
-import { Injectable, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, ForbiddenException, NotFoundException, ConflictException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { User, UserType } from '../entities/user.entity';
 import { Organization } from '../entities/organization.entity';
 import { Role } from '../entities/role.entity';
 import { AuditLog, AuditAction, AuditEntityType } from '../entities/audit-log.entity';
+import { EmailNotificationService } from './email-notification.service';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
+
+export interface UserDeleteResult {
+  success: boolean;
+  message: string;
+}
 
 export interface InviteUserDto {
   email: string;
@@ -64,6 +70,8 @@ export interface UserListFilter {
  */
 @Injectable()
 export class UserManagementService {
+  private readonly logger = new Logger(UserManagementService.name);
+
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
@@ -73,6 +81,7 @@ export class UserManagementService {
     private roleRepository: Repository<Role>,
     @InjectRepository(AuditLog)
     private auditLogRepository: Repository<AuditLog>,
+    private emailNotificationService: EmailNotificationService,
   ) { }
 
   // Set user tier service via setter injection to avoid circular dependency
@@ -166,101 +175,159 @@ export class UserManagementService {
     dto: InviteUserDto,
     invitedBy: User,
   ): Promise<{ user: User; invitationUrl: string }> {
-    // Verify inviter permissions
-    if (invitedBy.userType === UserType.ORG_USER) {
-      throw new ForbiddenException('Only admins can invite users');
-    }
+    try {
+      this.logger.log(`Inviting user ${dto.email} to organization ${organizationId}`);
+      
+      // Verify inviter permissions
+      if (invitedBy.userType === UserType.ORG_USER) {
+        throw new ForbiddenException('Only admins can invite users');
+      }
 
-    if (invitedBy.userType !== UserType.SUPER_ADMIN && invitedBy.organizationId !== organizationId) {
-      throw new ForbiddenException('Cannot invite users to other organizations');
-    }
+      if (invitedBy.userType !== UserType.SUPER_ADMIN && invitedBy.organizationId !== organizationId) {
+        throw new ForbiddenException('Cannot invite users to other organizations');
+      }
 
-    // Get organization
-    const organization = await this.organizationRepository.findOne({
-      where: { id: organizationId },
-    });
-
-    if (!organization) {
-      throw new NotFoundException('Organization not found');
-    }
-
-    // Check seat limit using user tier service (super admins excluded)
-    if (dto.userType !== UserType.SUPER_ADMIN) {
-      if (this.userTierService) {
-        await this.userTierService.validateUserAddition(organizationId);
-      } else {
-        // Fallback to basic check
-        const currentUserCount = await this.userRepository.count({
-          where: { organizationId: organizationId, isActive: true },
+      // Get organization - handle potential UUID format error
+      let organization: Organization | null;
+      try {
+        organization = await this.organizationRepository.findOne({
+          where: { id: organizationId },
         });
+      } catch (e: any) {
+        this.logger.error(`Error finding organization ${organizationId}: ${e.message}`);
+        throw new BadRequestException(`Invalid organization format: ${organizationId}`);
+      }
 
-        if (currentUserCount >= organization.maxUsers) {
-          throw new BadRequestException(
-            `User limit reached (${organization.maxUsers} users). Please upgrade your plan.`
-          );
+      if (!organization) {
+        throw new NotFoundException('Organization not found');
+      }
+
+      // Check seat limit using user tier service (super admins excluded)
+      if (dto.userType !== UserType.SUPER_ADMIN) {
+        if (this.userTierService) {
+          await this.userTierService.validateUserAddition(organizationId);
+        } else {
+          // Fallback to basic check
+          const currentUserCount = await this.userRepository.count({
+            where: { organizationId: organizationId, isActive: true },
+          });
+
+          if (currentUserCount >= organization.maxUsers) {
+            throw new BadRequestException(
+              `User limit reached (${organization.maxUsers} users). Please upgrade your plan.`
+            );
+          }
         }
       }
+
+      // Check if email already exists globally (including soft-deleted users)
+      const existingUser = await this.userRepository.findOne({
+        where: { email: dto.email.toLowerCase() },
+        withDeleted: true,
+      });
+
+      if (existingUser) {
+        if (existingUser.organizationId === organizationId) {
+          if (existingUser.deletedAt) {
+            throw new ConflictException('A deleted user with this email already exists in your organization. Please contact support to restore.');
+          }
+          throw new ConflictException('User with this email already exists in your organization');
+        } else {
+          throw new ConflictException('User with this email is already registered with another organization');
+        }
+      }
+
+      // Generate invitation token
+      const invitationToken = crypto.randomBytes(32).toString('hex');
+      const invitationExpiry = new Date();
+      invitationExpiry.setDate(invitationExpiry.getDate() + 7); // 7 days
+
+      let hashedToken: string;
+      try {
+        this.logger.log(`Hashing invitation token...`);
+        hashedToken = await bcrypt.hash(invitationToken, 10);
+        this.logger.log(`Token hashed successfully.`);
+      } catch (hashError: any) {
+        this.logger.error(`Bcrypt error: ${hashError.message}`);
+        throw new BadRequestException(`Failed to hash invitation token: ${hashError.message}`);
+      }
+
+      // Create user with pending invitation
+      const user = this.userRepository.create({
+        email: dto.email.toLowerCase(),
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        phoneNumber: dto.phoneNumber,
+        userType: dto.userType,
+        organizationId: organizationId,
+        isInvited: true,
+        invitedAt: new Date(),
+        invitationToken: hashedToken,
+        isActive: false,
+        isEmailVerified: false,
+        passwordHash: '', // Set on invitation acceptance
+      });
+
+      let savedUser: User;
+      try {
+        savedUser = await this.userRepository.save(user);
+      } catch (saveError: any) {
+        this.logger.error(`Database Error saving invited user: ${saveError.message}`);
+        if (saveError.detail) this.logger.error(`Error details: ${saveError.detail}`);
+        throw new BadRequestException(`Failed to save invited user: ${saveError.message}`);
+      }
+
+      // Assign roles if provided (store as role IDs in roles array)
+      if (dto.roleIds && dto.roleIds.length > 0) {
+        try {
+          savedUser.roles = dto.roleIds;
+          await this.userRepository.save(savedUser);
+        } catch (roleError: any) {
+          this.logger.error(`Error saving roles for user ${savedUser.id}: ${roleError.message}`);
+          // Optionally don't fail here if the user was already saved
+        }
+      }
+
+      // Update organization user count
+      try {
+        organization.currentUserCount = await this.userRepository.count({
+          where: { organizationId: organizationId, isActive: true },
+        });
+        await this.organizationRepository.save(organization);
+      } catch (countError: any) {
+        this.logger.warn(`Failed to update organization user count: ${countError.message}`);
+      }
+
+      // Create audit log
+      try {
+        await this.createAuditLog(
+          organizationId,
+          invitedBy.id,
+          AuditAction.CREATE,
+          AuditEntityType.USER,
+          savedUser.id,
+          `User invited: ${savedUser.email}`,
+        );
+      } catch (auditError) {
+        // @ts-ignore
+        this.logger.warn(`Failed to create audit log: ${auditError.message}`);
+      }
+
+      const frontendUrl = process.env.APP_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
+      const invitationUrl = `${frontendUrl}/invite/accept?token=${invitationToken}&email=${encodeURIComponent(savedUser.email)}`;
+
+      // Send invitation email asynchronously
+      this.emailNotificationService.sendInvitationEmail(savedUser, invitationUrl)
+        .catch(err => {
+          this.logger.error(`Failed to send invitation email to ${savedUser.email}: ${err.message}`);
+        });
+
+      return { user: savedUser, invitationUrl };
+    } catch (globalError: any) {
+      this.logger.error(`GLOBAL ERROR in inviteUser: ${globalError.message}`);
+      this.logger.error(globalError.stack);
+      throw globalError;
     }
-
-    // Check if email already exists in organization
-    const existingUser = await this.userRepository.findOne({
-      where: { email: dto.email.toLowerCase(), organizationId: organizationId },
-    });
-
-    if (existingUser) {
-      throw new BadRequestException('User with this email already exists in organization');
-    }
-
-    // Generate invitation token
-    const invitationToken = crypto.randomBytes(32).toString('hex');
-    const invitationExpiry = new Date();
-    invitationExpiry.setDate(invitationExpiry.getDate() + 7); // 7 days
-
-    // Create user with pending invitation
-    const user = this.userRepository.create({
-      email: dto.email.toLowerCase(),
-      firstName: dto.firstName,
-      lastName: dto.lastName,
-      phoneNumber: dto.phoneNumber,
-      userType: dto.userType,
-      organizationId: organizationId,
-      isInvited: true,
-      invitedAt: new Date(),
-      invitationToken: await bcrypt.hash(invitationToken, 10),
-      isActive: false,
-      isEmailVerified: false,
-      passwordHash: '', // Set on invitation acceptance
-    });
-
-    const savedUser = await this.userRepository.save(user);
-
-    // Assign roles if provided (store as role IDs in roles array)
-    if (dto.roleIds && dto.roleIds.length > 0) {
-      savedUser.roles = dto.roleIds;
-      await this.userRepository.save(savedUser);
-    }
-
-    // Update organization user count
-    organization.currentUserCount = await this.userRepository.count({
-      where: { organizationId: organizationId, isActive: true },
-    });
-    await this.organizationRepository.save(organization);
-
-    // Create audit log
-    await this.createAuditLog(
-      organizationId,
-      invitedBy.id,
-      AuditAction.CREATE,
-      AuditEntityType.USER,
-      savedUser.id,
-      `User invited: ${savedUser.email}`,
-    );
-
-    // Generate invitation URL with environment variable
-    const frontendUrl = process.env.APP_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
-    const invitationUrl = `${frontendUrl}/invite/accept?token=${invitationToken}`;
-
-    return { user: savedUser, invitationUrl };
   }
 
   /**
@@ -823,5 +890,54 @@ export class UserManagementService {
     } as any);
 
     await this.auditLogRepository.save(auditLog);
+  }
+
+  /**
+   * Delete User (Soft Delete)
+   */
+  async deleteUser(user_id: string, deletedBy: User): Promise<UserDeleteResult> {
+    const user = await this.findById(user_id, deletedBy);
+
+    // Verify permissions
+    if (deletedBy.userType === UserType.ORG_USER) {
+      throw new ForbiddenException('Only admins can delete users');
+    }
+
+    if (deletedBy.userType !== UserType.SUPER_ADMIN && deletedBy.organizationId !== user.organizationId) {
+      throw new ForbiddenException('Cannot delete users from other organizations');
+    }
+
+    if (deletedBy.id === user_id) {
+       throw new BadRequestException('You cannot delete yourself');
+    }
+
+    // Perform soft delete
+    await this.userRepository.softDelete(user_id);
+
+    // Update organization user count if user was active
+    if (user.organizationId && user.isActive) {
+      const organization = await this.organizationRepository.findOne({
+        where: { id: user.organizationId },
+      });
+
+      if (organization) {
+        organization.currentUserCount = await this.userRepository.count({
+          where: { organizationId: user.organizationId, isActive: true },
+        });
+        await this.organizationRepository.save(organization);
+      }
+    }
+
+    // Create audit log
+    await this.createAuditLog(
+      user.organizationId || '',
+      deletedBy.id,
+      AuditAction.DELETE,
+      AuditEntityType.USER,
+      user.id,
+      `User soft-deleted: ${user.email}`,
+    );
+
+    return { success: true, message: 'User deleted successfully' };
   }
 }

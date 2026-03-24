@@ -11,6 +11,7 @@ import {
   HttpStatus,
   Header,
   NotFoundException,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -23,10 +24,13 @@ import {
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../guards/roles.guard';
 import { SalesOrderService } from '../services/sales-order.service';
+import { AuditLogInterceptor, AuditLog } from '../interceptors/audit-log.interceptor';
+import { AuditAction } from '../entities/audit-log.entity';
 
 @ApiTags('Sales Orders')
 @Controller('sales/orders')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@UseInterceptors(AuditLogInterceptor)
 @ApiBearerAuth()
 export class SalesOrderController {
   constructor(private readonly salesOrderService: SalesOrderService) {}
@@ -42,7 +46,7 @@ export class SalesOrderController {
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'viewer', 'org_admin')
   async getOrders(@Query() query: any) {
     try {
-      const result = this.salesOrderService.list(query);
+      const result = await this.salesOrderService.list(query);
       return { success: true, ...result };
     } catch (error) {
       throw new HttpException('Failed to retrieve orders', HttpStatus.INTERNAL_SERVER_ERROR);
@@ -55,7 +59,7 @@ export class SalesOrderController {
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'viewer', 'org_admin')
   async getOrderStats() {
     try {
-      const stats = this.salesOrderService.stats();
+      const stats = await this.salesOrderService.stats();
       return { success: true, data: stats };
     } catch (error) {
       throw new HttpException('Failed to retrieve order stats', HttpStatus.INTERNAL_SERVER_ERROR);
@@ -70,7 +74,7 @@ export class SalesOrderController {
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
   async exportOrders(@Query() query: any) {
     try {
-      return this.salesOrderService.export(query);
+      return await this.salesOrderService.export(query);
     } catch (error) {
       throw new HttpException('Failed to export orders', HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -82,7 +86,7 @@ export class SalesOrderController {
   @ApiResponse({ status: 200, description: 'Order retrieved successfully' })
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'viewer', 'org_admin')
   async getOrder(@Param('id') id: string) {
-    const order = this.salesOrderService.getById(id);
+    const order = await this.salesOrderService.getById(id);
     if (!order) {
       return { success: false, data: null, message: 'Order not found' };
     }
@@ -95,7 +99,7 @@ export class SalesOrderController {
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
   async createOrder(@Body() body: any) {
     try {
-      const order = this.salesOrderService.create(body);
+      const order = await this.salesOrderService.create(body);
       return { success: true, data: order };
     } catch (error) {
       throw new HttpException('Failed to create order', HttpStatus.INTERNAL_SERVER_ERROR);
@@ -109,7 +113,7 @@ export class SalesOrderController {
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
   async updateOrder(@Param('id') id: string, @Body() body: any) {
     try {
-      const order = this.salesOrderService.update(id, body);
+      const order = await this.salesOrderService.update(id, body);
       return { success: true, data: order };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -126,7 +130,7 @@ export class SalesOrderController {
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
   async cancelOrder(@Param('id') id: string, @Body() body: { reason?: string }) {
     try {
-      const order = this.salesOrderService.cancel(id, body?.reason);
+      const order = await this.salesOrderService.cancel(id, body?.reason);
       return { success: true, data: order };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -143,7 +147,7 @@ export class SalesOrderController {
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
   async confirmOrder(@Param('id') id: string) {
     try {
-      const order = this.salesOrderService.confirm(id);
+      const order = await this.salesOrderService.confirm(id);
       return { success: true, data: order };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -160,7 +164,7 @@ export class SalesOrderController {
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
   async shipOrder(@Param('id') id: string, @Body() body: { trackingNumber: string }) {
     try {
-      const order = this.salesOrderService.ship(id, body?.trackingNumber);
+      const order = await this.salesOrderService.ship(id, body?.trackingNumber);
       return { success: true, data: order };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -177,7 +181,7 @@ export class SalesOrderController {
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep', 'org_admin')
   async deliverOrder(@Param('id') id: string) {
     try {
-      const order = this.salesOrderService.deliver(id);
+      const order = await this.salesOrderService.deliver(id);
       return { success: true, data: order };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -193,7 +197,7 @@ export class SalesOrderController {
   @Roles('admin', 'manager', 'sales_manager', 'sales_rep')
   async bulkCancel(@Body() body: { ids: string[] }) {
     try {
-      const result = this.salesOrderService.bulkCancel(body?.ids || []);
+      const result = await this.salesOrderService.bulkCancel(body?.ids || []);
       return { success: true, data: result };
     } catch (error) {
       throw new HttpException('Failed to cancel orders', HttpStatus.INTERNAL_SERVER_ERROR);

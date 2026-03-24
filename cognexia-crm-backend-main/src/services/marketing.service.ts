@@ -304,20 +304,51 @@ export class MarketingService {
     return await this.templateRepository.save(template);
   }
 
-  async getAllEmailTemplates(category?: string): Promise<EmailTemplate[]> {
+  async getAllEmailTemplates(filters?: {
+    category?: string;
+    search?: string;
+    isActive?: boolean;
+    page?: number;
+    limit?: number;
+  }): Promise<{ templates: EmailTemplate[]; pagination: { currentPage: number; totalItems: number; totalPages: number; itemsPerPage: number } }> {
     try {
-      const query = this.templateRepository.createQueryBuilder('template')
-        .where('template.isActive = :isActive', { isActive: true });
+      const page = Number(filters?.page) || 1;
+      const limit = Number(filters?.limit) || 20;
+      const qb = this.templateRepository.createQueryBuilder('template');
 
-      if (category) {
-        query.andWhere('template.category = :category', { category });
+      if (filters?.isActive !== undefined) {
+        qb.andWhere('template.isActive = :isActive', { isActive: filters.isActive });
       }
 
-      const templates = await query.orderBy('template.createdAt', 'DESC').getMany();
-      return templates || [];
+      if (filters?.category) {
+        qb.andWhere('template.category = :category', { category: filters.category });
+      }
+
+      if (filters?.search) {
+        qb.andWhere('(template.name ILIKE :q OR template.subject ILIKE :q)', { q: `%${filters.search}%` });
+      }
+
+      const [templates, total] = await qb
+        .orderBy('template.createdAt', 'DESC')
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return {
+        templates: templates || [],
+        pagination: {
+          currentPage: page,
+          totalItems: total,
+          totalPages: Math.ceil(total / limit) || 0,
+          itemsPerPage: limit,
+        },
+      };
     } catch (error) {
       this.logger.error(`Error fetching email templates: ${error.message}`);
-      return [];
+      return {
+        templates: [],
+        pagination: { currentPage: 1, totalItems: 0, totalPages: 0, itemsPerPage: filters?.limit || 20 },
+      };
     }
   }
 
@@ -329,6 +360,56 @@ export class MarketingService {
       this.logger.error(`Error fetching email template ${id}: ${error.message}`);
       return null;
     }
+  }
+
+  async updateEmailTemplate(id: string, templateDto: Partial<EmailTemplate>, updatedBy: string): Promise<EmailTemplate> {
+    const template = await this.getEmailTemplateById(id);
+    if (!template) {
+      throw new NotFoundException('Template not found');
+    }
+
+    Object.assign(template, templateDto, { updatedBy });
+    return this.templateRepository.save(template);
+  }
+
+  async deleteEmailTemplate(id: string): Promise<void> {
+    const template = await this.getEmailTemplateById(id);
+    if (!template) {
+      throw new NotFoundException('Template not found');
+    }
+    await this.templateRepository.remove(template);
+  }
+
+  async duplicateEmailTemplate(id: string, createdBy: string): Promise<EmailTemplate> {
+    const template = await this.getEmailTemplateById(id);
+    if (!template) {
+      throw new NotFoundException('Template not found');
+    }
+
+    const copy = this.templateRepository.create({
+      ...template,
+      id: undefined,
+      name: `${template.name} Copy`,
+      usageCount: 0,
+      createdAt: undefined,
+      updatedAt: undefined,
+      createdBy,
+      updatedBy: createdBy,
+    });
+
+    return this.templateRepository.save(copy);
+  }
+
+  async getTemplateStats(): Promise<{ totalTemplates: number; activeTemplates: number; draftTemplates: number }> {
+    const totalTemplates = await this.templateRepository.count();
+    const activeTemplates = await this.templateRepository.count({ where: { isActive: true } });
+    const draftTemplates = totalTemplates - activeTemplates;
+
+    return {
+      totalTemplates,
+      activeTemplates,
+      draftTemplates,
+    };
   }
 
   // ==================== CAMPAIGN EXECUTION ====================

@@ -18,6 +18,11 @@ export class OnboardingController {
     return this.service.getOnboardingProgress();
   }
 
+  @Get('organizations-export')
+  async getOrganizationsExport() {
+    return this.service.getOrganizationsExport();
+  }
+
   @Post('bulk-import')
   async bulkImport(@Body('data') data: any[]) {
     return this.service.bulkImportOrganizations(Array.isArray(data) ? data : []);

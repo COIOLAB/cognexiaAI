@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Lead } from './lead.entity';
+import { Organization } from './organization.entity';
 import { Opportunity } from './opportunity.entity';
 import { Contact } from './contact.entity';
 import { CustomerInteraction } from './customer-interaction.entity';
@@ -76,6 +77,10 @@ export class Customer {
   @ApiProperty({ description: 'Organization ID' })
   @Column({ name: 'organization_id', type: 'uuid', nullable: true })
   organizationId: string;
+
+  @ManyToOne(() => Organization, { nullable: true })
+  @JoinColumn({ name: 'organization_id' })
+  organization?: Organization;
 
   @ApiProperty({ description: 'Unique customer code' })
   @Column({ unique: true, length: 50 })
