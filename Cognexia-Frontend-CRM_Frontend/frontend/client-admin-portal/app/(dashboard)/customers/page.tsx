@@ -27,13 +27,17 @@ import {
   useBulkDeleteCustomers,
   useExportCustomers,
 } from '@/hooks/useCustomers';
-import type {
-  Customer,
-  CustomerFilters,
+import {
+  GrowthPotential,
+  RiskLevel,
   CustomerSize,
   CustomerStatus,
   CustomerTier,
   CustomerType,
+} from '@/types/api.types';
+import type {
+  Customer,
+  CustomerFilters,
 } from '@/types/api.types';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -49,28 +53,10 @@ type CustomerRow = Customer & {
   isClientImported?: boolean;
 };
 
-const customerTypeValues = new Set<CustomerType>(['b2b', 'b2c', 'b2b2c']);
-const customerSizeValues = new Set<CustomerSize>([
-  'startup',
-  'small_medium',
-  'enterprise',
-  'large_enterprise',
-  'individual',
-]);
-const customerStatusValues = new Set<CustomerStatus>([
-  'active',
-  'inactive',
-  'prospect',
-  'churned',
-  'suspended',
-]);
-const customerTierValues = new Set<CustomerTier>([
-  'bronze',
-  'silver',
-  'gold',
-  'platinum',
-  'diamond',
-]);
+const customerTypeValues = new Set<CustomerType>(Object.values(CustomerType));
+const customerSizeValues = new Set<CustomerSize>(Object.values(CustomerSize));
+const customerStatusValues = new Set<CustomerStatus>(Object.values(CustomerStatus));
+const customerTierValues = new Set<CustomerTier>(Object.values(CustomerTier));
 
 const isImportedCustomer = (customer: CustomerRow) => customer.isClientImported === true;
 
@@ -429,10 +415,10 @@ export default function CustomersPage() {
           id: createImportedId('customer', index),
           customerCode: row.customercode || `CUST-IMP-${Date.now()}-${index + 1}`,
           companyName,
-          customerType: customerTypeValues.has(customerType) ? customerType : 'b2b',
-          status: customerStatusValues.has(customerStatus) ? customerStatus : 'active',
+          customerType: customerTypeValues.has(customerType) ? customerType : CustomerType.B2B,
+          status: customerStatusValues.has(customerStatus) ? customerStatus : CustomerStatus.ACTIVE,
           industry: row.industry || 'general',
-          size: customerSizeValues.has(customerSize) ? customerSize : 'small_medium',
+          size: customerSizeValues.has(customerSize) ? customerSize : CustomerSize.SMB,
           primaryContact: {
             firstName: row.primarycontactfirstname || row.firstname || 'Primary',
             lastName: row.primarycontactlastname || row.lastname || 'Contact',
@@ -486,9 +472,9 @@ export default function CustomersPage() {
           },
           segmentation: {
             segment: row.segment || 'general',
-            tier: customerTierValues.has(customerTier) ? customerTier : 'bronze',
-            riskLevel: 'low',
-            growthPotential: 'medium',
+            tier: customerTierValues.has(customerTier) ? customerTier : CustomerTier.BRONZE,
+            riskLevel: RiskLevel.LOW,
+            growthPotential: GrowthPotential.MEDIUM,
           },
           tags: row.tags
             ? row.tags.split('|').map((tag) => tag.trim()).filter(Boolean)

@@ -27,12 +27,14 @@ import {
   useExportContacts,
   useDeleteContact,
 } from '@/hooks/useContacts';
-import type {
-  Contact,
-  ContactFilters,
+import {
   ContactRole,
   ContactStatus,
   ContactType,
+} from '@/types/api.types';
+import type {
+  Contact,
+  ContactFilters,
 } from '@/types/api.types';
 import { toast } from 'sonner';
 import {
@@ -48,34 +50,9 @@ type ContactRow = Contact & {
   isClientImported?: boolean;
 };
 
-const contactTypeValues = new Set<ContactType>([
-  'primary',
-  'decision_maker',
-  'influencer',
-  'technical',
-  'financial',
-  'legal',
-  'end_user',
-  'champion',
-  'gatekeeper',
-]);
+const contactTypeValues = new Set<ContactType>(Object.values(ContactType));
 
-const contactRoleValues = new Set<ContactRole>([
-  'ceo',
-  'cto',
-  'cfo',
-  'vp_sales',
-  'vp_marketing',
-  'vp_operations',
-  'director',
-  'manager',
-  'supervisor',
-  'analyst',
-  'coordinator',
-  'specialist',
-  'consultant',
-  'other',
-]);
+const contactRoleValues = new Set<ContactRole>(Object.values(ContactRole));
 
 const isImportedContact = (contact: ContactRow) => contact.isClientImported === true;
 
@@ -402,8 +379,8 @@ export default function ContactsPage() {
         existingEmails.add(emailKey);
         newContacts.push({
           id: createImportedId('contact', index),
-          type: contactTypeValues.has(type) ? type : 'primary',
-          status: 'active' as ContactStatus,
+          type: contactTypeValues.has(type) ? type : ContactType.PRIMARY,
+          status: ContactStatus.ACTIVE,
           firstName,
           lastName,
           middleName: row.middlename || undefined,

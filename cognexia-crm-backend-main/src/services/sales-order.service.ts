@@ -1,136 +1,95 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { randomUUID } from 'crypto';
-
-export enum OrderStatus {
-  DRAFT = 'draft',
-  CONFIRMED = 'confirmed',
-  PROCESSING = 'processing',
-  SHIPPED = 'shipped',
-  DELIVERED = 'delivered',
-  CANCELLED = 'cancelled',
-}
-
-export interface OrderLineItem {
-  productId: string;
-  productName: string;
-  quantity: number;
-  unitPrice: number;
-  discount: number;
-  totalPrice: number;
-}
-
-export interface SalesOrder {
-  id: string;
-  orderNumber: string;
-  customerId: string;
-  customerName: string;
-  status: OrderStatus;
-  orderDate: string;
-  totalAmount: number;
-  currency: string;
-  salesRep: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  items: OrderLineItem[];
-  shipping: {
-    address: string;
-    method: string;
-    trackingNumber?: string;
-  };
-  payment: {
-    terms: string;
-    method: string;
-    status: string;
-  };
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Like } from 'typeorm';
+import { SalesOrder, OrderStatus } from '../entities/sales-order.entity';
 
 @Injectable()
-export class SalesOrderService {
-  private orders: SalesOrder[] = [];
+export class SalesOrderService implements OnModuleInit {
+  constructor(
+    @InjectRepository(SalesOrder)
+    private readonly salesOrderRepository: Repository<SalesOrder>,
+  ) {}
 
-  constructor() {
-    this.seedOrders();
+  async onModuleInit() {
+    await this.seedOrders();
   }
 
-  private seedOrders() {
-    if (this.orders.length > 0) {
+  private async seedOrders() {
+    const count = await this.salesOrderRepository.count();
+    if (count > 0) {
       return;
     }
 
-    const now = new Date().toISOString();
-    this.orders = [
-      {
-        id: randomUUID(),
-        orderNumber: 'SO-2026-001',
-        customerId: 'CUST-001',
-        customerName: 'TechCorp Industries',
-        status: OrderStatus.CONFIRMED,
-        orderDate: now,
-        totalAmount: 125000,
-        currency: 'USD',
-        salesRep: {
-          id: 'REP-001',
-          name: 'Sarah Johnson',
-          email: 'sarah.johnson@cognexia.com',
-        },
-        items: [
-          {
-            productId: 'PROD-001',
-            productName: 'Enterprise CRM Suite',
-            quantity: 25,
-            unitPrice: 5000,
-            discount: 0,
-            totalPrice: 125000,
-          },
-        ],
-        shipping: {
-          address: '123 Tech Avenue, San Francisco, CA',
-          method: 'Digital Delivery',
-        },
-        payment: {
-          terms: 'NET30',
-          method: 'Invoice',
-          status: 'pending',
-        },
-        notes: 'Initial rollout',
-        createdAt: now,
-        updatedAt: now,
+    const now = new Date();
+    const order = this.salesOrderRepository.create({
+      orderNumber: 'SO-2026-001',
+      customerId: 'CUST-001',
+      customerName: 'TechCorp Industries',
+      status: OrderStatus.CONFIRMED,
+      orderDate: now,
+      totalAmount: 125000,
+      currency: 'USD',
+      salesRep: {
+        id: 'REP-001',
+        name: 'Sarah Johnson',
+        email: 'sarah.johnson@cognexia.com',
       },
-    ];
+      items: [
+        {
+          productId: 'PROD-001',
+          productName: 'Enterprise CRM Suite',
+          quantity: 25,
+          unitPrice: 5000,
+          discount: 0,
+          totalPrice: 125000,
+        },
+      ],
+      shipping: {
+        address: '123 Tech Avenue, San Francisco, CA',
+        method: 'Digital Delivery',
+      },
+      payment: {
+        terms: 'NET30',
+        method: 'Invoice',
+        status: 'pending',
+      },
+      notes: 'Initial rollout',
+    });
+
+    await this.salesOrderRepository.save(order);
   }
 
-  list(filters: any = {}) {
+  async list(filters: any = {}) {
     const page = Number(filters.page) || 1;
     const limit = Number(filters.limit) || 20;
-    let results = [...this.orders];
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = this.salesOrderRepository.createQueryBuilder('order');
 
     if (filters.status) {
-      results = results.filter((order) => order.status === filters.status);
+      queryBuilder.andWhere('order.status = :status', { status: filters.status });
     }
 
     if (filters.customerId) {
-      results = results.filter((order) => order.customerId === filters.customerId);
+      queryBuilder.andWhere('order.customerId = :customerId', { customerId: filters.customerId });
     }
 
     if (filters.salesRepId) {
-      results = results.filter((order) => order.salesRep.id === filters.salesRepId);
+      queryBuilder.andWhere("order.salesRep->>'id' = :salesRepId", { salesRepId: filters.salesRepId });
     }
 
     if (filters.search) {
-      const search = String(filters.search).toLowerCase();
-      results = results.filter((order) =>
-        [order.orderNumber, order.customerName].some((value) => value.toLowerCase().includes(search))
+      const search = `%${filters.search.toLowerCase()}%`;
+      queryBuilder.andWhere(
+        '(LOWER(order.orderNumber) LIKE :search OR LOWER(order.customerName) LIKE :search)',
+        { search },
       );
     }
 
-    const total = results.length;
-    const start = (page - 1) * limit;
-    const data = results.slice(start, start + limit);
+    queryBuilder.orderBy('order.createdAt', 'DESC');
+    queryBuilder.skip(skip).take(limit);
+
+    const [data, total] = await queryBuilder.getManyAndCount();
 
     return {
       data,
@@ -141,44 +100,46 @@ export class SalesOrderService {
     };
   }
 
-  getById(id: string) {
-    return this.orders.find((order) => order.id === id);
+  async getById(id: string) {
+    return await this.salesOrderRepository.findOne({ where: { id } });
   }
 
-  create(data: any) {
-    const now = new Date().toISOString();
-    const totals = this.calculateOrderTotals(data.items || []);
-    const order: SalesOrder = {
-      id: randomUUID(),
-      orderNumber: `SO-${new Date().getFullYear()}-${String(this.orders.length + 1).padStart(3, '0')}`,
+  async create(data: any) {
+    const now = new Date();
+    const count = await this.salesOrderRepository.count();
+    const orderNumber = `SO-${now.getFullYear()}-${String(count + 1).padStart(3, '0')}`;
+    
+    const items = (data.items || []).map((item: any) => ({
+      ...item,
+      totalPrice: Number(item.quantity || 0) * Number(item.unitPrice || 0) - Number(item.discount || 0),
+    }));
+
+    const totalAmount = this.calculateOrderTotals(items);
+
+    const order = this.salesOrderRepository.create({
+      orderNumber,
       customerId: data.customerId,
       customerName: data.customerName || 'Unknown Customer',
       status: OrderStatus.DRAFT,
-      orderDate: now,
-      totalAmount: totals,
+      orderDate: data.orderDate ? new Date(data.orderDate) : now,
+      totalAmount,
       currency: data.currency || 'USD',
       salesRep: {
         id: data.salesRepId,
         name: data.salesRepName || 'Sales Rep',
         email: data.salesRepEmail || 'sales@cognexia.com',
       },
-      items: (data.items || []).map((item: any) => ({
-        ...item,
-        totalPrice: Number(item.quantity || 0) * Number(item.unitPrice || 0) - Number(item.discount || 0),
-      })),
+      items,
       shipping: data.shipping || { address: '', method: '' },
       payment: data.payment || { terms: '', method: '', status: 'pending' },
       notes: data.notes,
-      createdAt: now,
-      updatedAt: now,
-    };
+    });
 
-    this.orders.unshift(order);
-    return order;
+    return await this.salesOrderRepository.save(order);
   }
 
-  update(id: string, data: any) {
-    const order = this.getById(id);
+  async update(id: string, data: any) {
+    const order = await this.getById(id);
     if (!order) {
       throw new NotFoundException(`Order with ID ${id} not found`);
     }
@@ -191,54 +152,61 @@ export class SalesOrderService {
       order.totalAmount = this.calculateOrderTotals(order.items);
     }
 
-    Object.assign(order, {
-      ...data,
-      updatedAt: new Date().toISOString(),
-    });
+    Object.assign(order, data);
 
-    return order;
+    return await this.salesOrderRepository.save(order);
   }
 
-  cancel(id: string, reason?: string) {
-    const order = this.update(id, { status: OrderStatus.CANCELLED });
+  async cancel(id: string, reason?: string) {
+    const updateData: any = { status: OrderStatus.CANCELLED };
     if (reason) {
-      order.notes = reason;
+      updateData.notes = reason;
     }
-    return order;
+    return await this.update(id, updateData);
   }
 
-  confirm(id: string) {
-    return this.update(id, { status: OrderStatus.CONFIRMED });
+  async confirm(id: string) {
+    return await this.update(id, { status: OrderStatus.CONFIRMED });
   }
 
-  ship(id: string, trackingNumber: string) {
-    return this.update(id, {
+  async ship(id: string, trackingNumber: string) {
+    const order = await this.getById(id);
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${id} not found`);
+    }
+
+    return await this.update(id, {
       status: OrderStatus.SHIPPED,
       shipping: {
-        ...this.getById(id)?.shipping,
+        ...order.shipping,
         trackingNumber,
       },
     });
   }
 
-  deliver(id: string) {
-    return this.update(id, { status: OrderStatus.DELIVERED });
+  async deliver(id: string) {
+    return await this.update(id, { status: OrderStatus.DELIVERED });
   }
 
-  bulkCancel(ids: string[]) {
-    ids.forEach((id) => {
-      if (this.getById(id)) {
-        this.cancel(id);
+  async bulkCancel(ids: string[]) {
+    let cancelled = 0;
+    for (const id of ids) {
+      try {
+        await this.cancel(id);
+        cancelled++;
+      } catch (e) {
+        // Skip if not found
       }
-    });
-    return { cancelled: ids.length };
+    }
+    return { cancelled };
   }
 
-  stats() {
-    const totalOrders = this.orders.length;
-    const totalValue = this.orders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
+  async stats() {
+    const orders = await this.salesOrderRepository.find();
+    const totalOrders = orders.length;
+    const totalValue = orders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
     const avgOrderValue = totalOrders ? totalValue / totalOrders : 0;
-    const statusBreakdown = this.orders.reduce((acc, order) => {
+    const statusBreakdown = orders.reduce((acc, order) => {
       acc[order.status] = (acc[order.status] || 0) + 1;
       return acc;
     }, {} as Record<OrderStatus, number>);
@@ -251,8 +219,8 @@ export class SalesOrderService {
     };
   }
 
-  export(filters: any = {}) {
-    const { data } = this.list(filters);
+  async export(filters: any = {}) {
+    const { data } = await this.list(filters);
     const headers = ['orderNumber', 'customerName', 'status', 'orderDate', 'totalAmount'];
     const rows = data.map((order) =>
       [order.orderNumber, order.customerName, order.status, order.orderDate, order.totalAmount].join(',')
@@ -267,3 +235,4 @@ export class SalesOrderService {
     }, 0);
   }
 }
+

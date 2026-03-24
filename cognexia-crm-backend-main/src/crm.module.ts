@@ -303,6 +303,7 @@ import { SalesPipeline } from './entities/sales-pipeline.entity';
 import { PipelineStage } from './entities/pipeline-stage.entity';
 import { CustomerInteraction } from './entities/customer-interaction.entity';
 import { SalesQuote } from './entities/sales-quote.entity';
+import { SalesOrder } from './entities/sales-order.entity';
 import { CustomerSegment } from './entities/customer-segment.entity';
 import { MarketingCampaign } from './entities/marketing-campaign.entity';
 import { EmailTemplate } from './entities/email-template.entity';
@@ -534,6 +535,7 @@ import { Deployment } from './entities/deployment.entity';
       PipelineStage,
       CustomerInteraction,
       SalesQuote,
+      SalesOrder,
       CustomerSegment,
       MarketingCampaign,
       EmailTemplate,

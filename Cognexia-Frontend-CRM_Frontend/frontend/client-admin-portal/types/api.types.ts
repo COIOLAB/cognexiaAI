@@ -658,9 +658,9 @@ export interface Account {
 
 export interface CreateAccountDto {
   name: string;
-  type: AccountType;
-  industry: string;
-  owner: string;
+  type?: AccountType;
+  industry?: string;
+  owner?: string;
   website?: string;
   parentAccount?: string;
   parentAccountId?: string;
@@ -3327,4 +3327,42 @@ export interface CallAnalytics {
   callsByDay: Array<{ day: string; count: number }>;
   topAgents: Array<{ agentId: string; agentName: string; callCount: number; avgDuration: number }>;
   dispositionBreakdown: Record<string, number>;
+}
+
+// =================== AUDIT LOG TYPES ===================
+
+export enum AuditAction {
+  CREATE = 'create',
+  READ = 'read',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LOGIN = 'login',
+  LOGOUT = 'logout',
+  EXPORT = 'export',
+  IMPORT = 'import',
+  APPROVE = 'approve',
+  REJECT = 'reject',
+}
+
+export interface AuditLog {
+  id: string;
+  organizationId?: string;
+  user_id?: string;
+  user_email?: string;
+  action: AuditAction | string;
+  entity_type?: string;
+  entity_id?: string;
+  metadata?: Record<string, any>;
+  ip_address?: string;
+  user_agent?: string;
+  status: 'success' | 'failed' | 'partial';
+  created_at: string;
+}
+
+export interface AuditLogFilters extends PaginationParams {
+  userId?: string;
+  entityType?: string;
+  action?: string;
+  startDate?: string;
+  endDate?: string;
 }

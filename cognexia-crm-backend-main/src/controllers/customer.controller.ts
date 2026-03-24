@@ -13,6 +13,7 @@ import {
   HttpStatus,
   Request,
   Header as SetHeader,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -25,10 +26,14 @@ import {
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../guards/roles.guard';
 import { CustomerService } from '../services/customer.service';
+import { AuditLogInterceptor, AuditLog } from '../interceptors/audit-log.interceptor';
+import { AuditLog as AuditLogEntity, AuditEntityType, AuditAction } from '../entities/audit-log.entity';
 
 @ApiTags('CRM - Customer Management')
 @Controller('crm/customers')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@UseInterceptors(AuditLogInterceptor)
+@AuditLog(AuditEntityType.CUSTOMER, AuditAction.READ)
 @ApiBearerAuth()
 export class CustomerController {
   private readonly logger = new Logger(CustomerController.name);

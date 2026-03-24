@@ -15,6 +15,7 @@ import {
   NotFoundException,
   Header as SetHeader,
   Request,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -30,10 +31,14 @@ import { CustomerService } from '../services/customer.service';
 import { LeadService } from '../services/lead.service';
 import { LeadSource, LeadStatus } from '../entities/lead.entity';
 import { v4 as uuidv4, validate as isUuid } from 'uuid';
+import { AuditLogInterceptor, AuditLog } from '../interceptors/audit-log.interceptor';
+import { AuditEntityType, AuditAction } from '../entities/audit-log.entity';
 
 @ApiTags('CRM - Customer Relationship Management')
 @Controller('crm')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@UseInterceptors(AuditLogInterceptor)
+@AuditLog(AuditEntityType.LEAD, AuditAction.READ)
 @ApiBearerAuth()
 export class CRMController {
   private readonly logger = new Logger(CRMController.name);

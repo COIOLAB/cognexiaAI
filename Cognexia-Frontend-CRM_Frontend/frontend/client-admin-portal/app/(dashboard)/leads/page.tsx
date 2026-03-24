@@ -7,7 +7,6 @@ import { MoreHorizontal, Plus, Download, Trash2, CheckCircle, RefreshCw, Upload 
 import { Lead, LeadStatus, LeadSource } from '@/types/api.types';
 import { useLeads, useLeadStats, useDeleteLead, useBulkDeleteLeads, useExportLeads } from '@/hooks/useLeads';
 import { DataTable } from '@/components/DataTable';
-import { EmptyStateLeads } from '@/components/EmptyStates';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,25 +53,24 @@ type LeadRow = Lead & {
   isClientImported?: boolean;
 };
 
-const leadStatusValues = new Set<LeadStatus>([
-  'new',
-  'contacted',
-  'qualified',
-  'unqualified',
-  'converted',
-  'lost',
-]);
+const extractLeadRows = (payload: unknown): LeadRow[] => {
+  if (Array.isArray(payload)) {
+    return payload as LeadRow[];
+  }
 
-const leadSourceValues = new Set<LeadSource>([
-  'website',
-  'referral',
-  'social_media',
-  'email_campaign',
-  'cold_call',
-  'trade_show',
-  'partner',
-  'other',
-]);
+  if (payload && typeof payload === 'object') {
+    const nestedRows = (payload as { leads?: unknown }).leads;
+    if (Array.isArray(nestedRows)) {
+      return nestedRows as LeadRow[];
+    }
+  }
+
+  return [];
+};
+
+const leadStatusValues = new Set<LeadStatus>(Object.values(LeadStatus));
+
+const leadSourceValues = new Set<LeadSource>(Object.values(LeadSource));
 
 const isImportedLead = (lead: LeadRow) => lead.isClientImported === true;
 
@@ -131,6 +129,9 @@ export default function LeadsPage() {
   const deleteMutation = useDeleteLead();
   const bulkDeleteMutation = useBulkDeleteLeads();
   const exportMutation = useExportLeads();
+  const serverLeads = useMemo(() => extractLeadRows(data?.data), [data?.data]);
+  const serverLeadTotal = Number(data?.total ?? serverLeads.length);
+  const hasServerLeads = serverLeadTotal > 0 || serverLeads.length > 0;
   const importedLeadIds = useMemo(
     () => new Set(importedLeads.map((lead) => lead.id)),
     [importedLeads]
@@ -165,23 +166,41 @@ export default function LeadsPage() {
     acc[lead.status] = (acc[lead.status] || 0) + 1;
     return acc;
   }, {});
+  const importedQualifiedLeads = Number(importedStatusCounts.qualified ?? 0);
+  const importedConvertedLeads = Number(importedStatusCounts.converted ?? 0);
   const importedScoreTotal = importedLeads.reduce(
     (sum, lead) => sum + Number(lead.score ?? 0),
     0
   );
-  const combinedTotalLeads = Number(stats?.data?.total ?? 0) + importedLeads.length;
-  const combinedQualifiedLeads =
-    Number(stats?.data?.byStatus?.qualified ?? 0) + Number(importedStatusCounts.qualified ?? 0);
+  const leadStats = stats?.data as
+    | {
+        qualified?: number;
+        converted?: number;
+        avgScore?: number;
+        averageScore?: number;
+        byStatus?: Record<string, number>;
+      }
+    | undefined;
+  const baseLeadTotal = hasServerLeads ? serverLeadTotal : 0;
+  const baseQualifiedLeads = hasServerLeads
+    ? Number(leadStats?.qualified ?? leadStats?.byStatus?.qualified ?? 0)
+    : 0;
+  const baseAverageScore = hasServerLeads
+    ? Number(leadStats?.avgScore ?? leadStats?.averageScore ?? 0)
+    : 0;
+  const baseConvertedLeads = hasServerLeads
+    ? Number(leadStats?.converted ?? leadStats?.byStatus?.converted ?? 0)
+    : 0;
+  const combinedTotalLeads = baseLeadTotal + importedLeads.length;
+  const combinedQualifiedLeads = baseQualifiedLeads + importedQualifiedLeads;
   const combinedAverageScore =
     combinedTotalLeads > 0
-      ? (Number(stats?.data?.averageScore ?? 0) * Number(stats?.data?.total ?? 0) +
-          importedScoreTotal) /
+      ? (baseAverageScore * baseLeadTotal + importedScoreTotal) /
         combinedTotalLeads
       : 0;
   const combinedConversionRate =
     combinedTotalLeads > 0
-      ? ((Number(stats?.data?.byStatus?.converted ?? 0) + Number(importedStatusCounts.converted ?? 0)) /
-          combinedTotalLeads) *
+      ? ((baseConvertedLeads + importedConvertedLeads) / combinedTotalLeads) *
         100
       : 0;
 
@@ -348,8 +367,7 @@ export default function LeadsPage() {
 
       const parsedRows = parseCsvText(await file.text());
       const existingEmails = new Set(importedLeads.map((lead) => normalizeCsvValue(lead.email)));
-      const fetchedLeads = (data?.data || []) as LeadRow[];
-      fetchedLeads.forEach((lead) => existingEmails.add(normalizeCsvValue(lead.email)));
+      serverLeads.forEach((lead) => existingEmails.add(normalizeCsvValue(lead.email)));
 
       const duplicateRows: number[] = [];
       const newLeads: LeadRow[] = [];
@@ -385,8 +403,8 @@ export default function LeadsPage() {
           phone: row.phone || undefined,
           company: row.company || undefined,
           title: row.title || undefined,
-          status: leadStatusValues.has(status) ? status : 'new',
-          source: leadSourceValues.has(source) ? source : 'other',
+          status: leadStatusValues.has(status) ? status : LeadStatus.NEW,
+          source: leadSourceValues.has(source) ? source : LeadSource.OTHER,
           score: parseCsvNumber(row.score) ?? 0,
           qualificationStatus: row.qualificationstatus as LeadRow['qualificationStatus'],
           assignedTo: row.assignedto || undefined,
@@ -422,10 +440,9 @@ export default function LeadsPage() {
   };
 
   const leads = useMemo<LeadRow[]>(
-    () => [...filteredImportedLeads, ...((data?.data || []) as LeadRow[])],
-    [data?.data, filteredImportedLeads]
+    () => [...filteredImportedLeads, ...serverLeads],
+    [filteredImportedLeads, serverLeads]
   );
-  const isEmpty = !isLoading && leads.length === 0 && !search && !statusFilter && !sourceFilter;
 
   if (error) {
     return (
@@ -515,86 +532,83 @@ export default function LeadsPage() {
         </div>
       )}
 
-      {isEmpty ? (
-        <EmptyStateLeads />
-      ) : (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between space-x-4">
-              <div className="flex items-center space-x-2 flex-1">
-                <Input
-                  placeholder="Search leads..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="max-w-sm"
-                />
-                <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as LeadStatus)}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    {Object.values(LeadStatus).map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={sourceFilter} onValueChange={(val) => setSourceFilter(val as LeadSource)}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by source" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Sources</SelectItem>
-                    {Object.values(LeadSource).map((source) => (
-                      <SelectItem key={source} value={source}>
-                        {source.replace(/_/g, ' ')}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {(statusFilter || sourceFilter) && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setStatusFilter(undefined);
-                      setSourceFilter(undefined);
-                    }}
-                  >
-                    Clear Filters
-                  </Button>
-                )}
-              </div>
-              <div className="flex items-center space-x-2">
-                {selectedRows.length > 0 && (
-                  <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete ({selectedRows.length})
-                  </Button>
-                )}
-                <Button variant="outline" size="sm" onClick={handleExport}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between space-x-4">
+            <div className="flex items-center space-x-2 flex-1">
+              <Input
+                placeholder="Search leads..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="max-w-sm"
+              />
+              <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as LeadStatus)}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  {Object.values(LeadStatus).map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={sourceFilter} onValueChange={(val) => setSourceFilter(val as LeadSource)}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by source" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sources</SelectItem>
+                  {Object.values(LeadSource).map((source) => (
+                    <SelectItem key={source} value={source}>
+                      {source.replace(/_/g, ' ')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {(statusFilter || sourceFilter) && (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setStatusFilter(undefined);
+                    setSourceFilter(undefined);
+                  }}
+                >
+                  Clear Filters
                 </Button>
-              </div>
+              )}
             </div>
-          </CardHeader>
-          <CardContent>
-            <DataTable
-              columns={columns}
-              data={leads}
-              onRowClick={(row) => {
-                if (!isImportedLead(row)) {
-                  router.push(`/leads/${row.id}`);
-                }
-              }}
-              enableRowSelection
-              onRowSelectionChange={(rows) => setSelectedRows(rows.map((row) => row.id))}
-            />
-          </CardContent>
-        </Card>
-      )}
+            <div className="flex items-center space-x-2">
+              {selectedRows.length > 0 && (
+                <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete ({selectedRows.length})
+                </Button>
+              )}
+              <Button variant="outline" size="sm" onClick={handleExport}>
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <DataTable
+            columns={columns}
+            data={leads}
+            isLoading={isLoading}
+            onRowClick={(row) => {
+              if (!isImportedLead(row)) {
+                router.push(`/leads/${row.id}`);
+              }
+            }}
+            enableRowSelection
+            onRowSelectionChange={(rows) => setSelectedRows(rows.map((row) => row.id))}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

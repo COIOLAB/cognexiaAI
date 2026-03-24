@@ -8,6 +8,7 @@ import {
   Put,
   Delete,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
@@ -16,9 +17,13 @@ import { UserType } from '../entities/user.entity';
 import { UserManagementService } from '../services/user-management.service';
 import { CurrentUser } from '../guards/organization.guard';
 import { AuthenticatedUser } from '../guards/jwt.strategy';
+import { AuditLogInterceptor, AuditLog } from '../interceptors/audit-log.interceptor';
+import { AuditEntityType, AuditAction } from '../entities/audit-log.entity';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@UseInterceptors(AuditLogInterceptor)
+@AuditLog(AuditEntityType.USER, AuditAction.READ)
 export class UserManagementController {
   constructor(private readonly userManagementService: UserManagementService) {}
 

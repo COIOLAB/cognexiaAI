@@ -5,6 +5,8 @@ import { Activity, ActivityType } from '../entities/activity.entity';
 import { Note } from '../entities/note.entity';
 import { CreateActivityDto, CreateNoteDto } from '../dto/activity.dto';
 import { throwNotFound } from '../utils/error-handler.util';
+import { AuditLogService } from './audit-log.service';
+import { AuditAction } from '../entities/audit-log.entity';
 
 @Injectable()
 export class ActivityLoggerService {
@@ -13,6 +15,7 @@ export class ActivityLoggerService {
     private activityRepo: Repository<Activity>,
     @InjectRepository(Note)
     private noteRepo: Repository<Note>,
+    private auditLogService: AuditLogService,
   ) { }
 
   /**
@@ -37,7 +40,24 @@ export class ActivityLoggerService {
       is_system_generated: false,
     });
 
-    return this.activityRepo.save(activity);
+    const saved = await this.activityRepo.save(activity);
+
+    // Also log to Audit Log
+    try {
+      await this.auditLogService.log(
+        organizationId,
+        userId,
+        AuditAction.UPDATE, // Consider business activities as updates to state
+        dto.relatedToType || 'activity',
+        dto.relatedToId || saved.id,
+        `${dto.title}: ${dto.description || ''}`,
+        { activityType: dto.activityType, ...dto.metadata }
+      );
+    } catch (e) {
+      console.error('Failed to log activity to audit log:', e);
+    }
+
+    return saved;
   }
 
   /**
@@ -60,6 +80,21 @@ export class ActivityLoggerService {
     });
 
     await this.activityRepo.save(activity);
+
+    // Also log to Audit Log
+    try {
+      await this.auditLogService.log(
+        organizationId,
+        userId,
+        AuditAction.CREATE,
+        'task',
+        taskId,
+        `Created task: ${taskTitle}`,
+        { taskTitle }
+      );
+    } catch (e) {
+      console.error('Failed to log task creation to audit log:', e);
+    }
   }
 
   /**
@@ -82,6 +117,21 @@ export class ActivityLoggerService {
     });
 
     await this.activityRepo.save(activity);
+
+    // Also log to Audit Log
+    try {
+      await this.auditLogService.log(
+        organizationId,
+        userId,
+        AuditAction.APPROVE,
+        'task',
+        taskId,
+        `Completed task: ${taskTitle}`,
+        { taskTitle }
+      );
+    } catch (e) {
+      console.error('Failed to log task completion to audit log:', e);
+    }
   }
 
   /**
@@ -107,6 +157,21 @@ export class ActivityLoggerService {
     });
 
     await this.activityRepo.save(activity);
+
+    // Also log to Audit Log
+    try {
+      await this.auditLogService.log(
+        organizationId,
+        userId,
+        AuditAction.UPDATE,
+        entityType,
+        entityId,
+        `Status changed from ${oldStatus} to ${newStatus}`,
+        { oldStatus, newStatus }
+      );
+    } catch (e) {
+      console.error('Failed to log status change to audit log:', e);
+    }
   }
 
   /**
@@ -134,6 +199,21 @@ export class ActivityLoggerService {
     });
 
     await this.activityRepo.save(activity);
+
+    // Also log to Audit Log
+    try {
+      await this.auditLogService.log(
+        organizationId,
+        userId,
+        AuditAction.UPDATE,
+        entityType,
+        entityId,
+        `Updated ${fieldName}: ${oldValue} -> ${newValue}`,
+        { fieldName, oldValue, newValue }
+      );
+    } catch (e) {
+      console.error('Failed to log field update to audit log:', e);
+    }
   }
 
   /**
