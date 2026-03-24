@@ -39,13 +39,13 @@ export function AccountForm({ initialData, onSubmit, isLoading, submitLabel = 'C
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Account Information</CardTitle>
-          <CardDescription>Organizational account details</CardDescription>
+          <CardTitle>Client Information</CardTitle>
+          <CardDescription>Organizational Client details</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="name">Account Name *</Label>
+              <Label htmlFor="name">Client Name *</Label>
               <Input id="name" placeholder="Acme Corporation" {...register('name')} />
               {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
             </div>
@@ -67,7 +67,7 @@ export function AccountForm({ initialData, onSubmit, isLoading, submitLabel = 'C
               {errors.website && <p className="text-sm text-destructive">{errors.website.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="parentAccountId">Parent Account ID</Label>
+              <Label htmlFor="parentAccountId">Parent Client ID</Label>
               <Input id="parentAccountId" placeholder="For hierarchy management" {...register('parentAccountId')} />
             </div>
           </div>

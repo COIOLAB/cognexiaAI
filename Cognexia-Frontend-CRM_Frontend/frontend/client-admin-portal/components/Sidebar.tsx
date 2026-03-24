@@ -56,7 +56,7 @@ const navigationSections = [
     tier: 'basic',
     items: [
       { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-      { name: 'Accounts', href: '/accounts', icon: Building },
+      { name: 'Clients', href: '/accounts', icon: Building },
       { name: 'Customers', href: '/customers', icon: Users },
       { name: 'Contacts', href: '/contacts', icon: Contact },
       { name: 'Leads', href: '/leads', icon: UserPlus },
@@ -338,7 +338,7 @@ export function Sidebar() {
             </div>
           </div>
         ))}
-        
+
         {/* CMMI Level 5 Badge at bottom */}
         {!sidebarCollapsed && (
           <div className="sticky bottom-0 mt-auto p-4 border-t-2 border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-gray-900 dark:to-gray-800">

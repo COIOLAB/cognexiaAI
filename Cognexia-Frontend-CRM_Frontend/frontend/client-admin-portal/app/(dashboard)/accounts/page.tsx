@@ -80,7 +80,7 @@ export default function AccountsPage() {
   const columns: ColumnDef<Account>[] = [
     {
       accessorKey: 'accountNumber',
-      header: 'Account #',
+      header: 'Client #',
       cell: ({ row }) => (
         <span className="font-medium text-blue-600 dark:text-blue-400">
           {row.original.accountNumber}
@@ -89,7 +89,7 @@ export default function AccountsPage() {
     },
     {
       accessorKey: 'name',
-      header: 'Account Name',
+      header: 'Client Name',
       cell: ({ row }) => (
         <div>
           <div className="font-medium">{row.original.name}</div>
@@ -136,13 +136,12 @@ export default function AccountsPage() {
         <div className="flex items-center">
           <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
-              className={`h-full ${
-                Number(row.original.priorityScore ?? 0) >= 75
-                  ? 'bg-green-500'
-                  : Number(row.original.priorityScore ?? 0) >= 50
+              className={`h-full ${Number(row.original.priorityScore ?? 0) >= 75
+                ? 'bg-green-500'
+                : Number(row.original.priorityScore ?? 0) >= 50
                   ? 'bg-yellow-500'
                   : 'bg-red-500'
-              }`}
+                }`}
               style={{ width: `${Number(row.original.priorityScore ?? 0)}%` }}
             />
           </div>
@@ -198,7 +197,7 @@ export default function AccountsPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-96">
-        <p className="text-red-600">Error loading accounts: {(error as Error)?.message}</p>
+        <p className="text-red-600">Error loading Clients: {(error as Error)?.message}</p>
       </div>
     );
   }
@@ -209,14 +208,14 @@ export default function AccountsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Accounts</h1>
+          <h1 className="text-3xl font-bold">Clients</h1>
           <p className="text-muted-foreground mt-1">
-            Manage and track your business accounts
+            Manage and track your business Clients
           </p>
         </div>
         <Button onClick={() => router.push('/accounts/new')}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Account
+          Add Clients
         </Button>
       </div>
 
@@ -225,7 +224,7 @@ export default function AccountsPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Accounts</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
               <Building className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>

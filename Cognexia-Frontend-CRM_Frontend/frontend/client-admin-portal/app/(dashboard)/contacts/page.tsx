@@ -45,6 +45,15 @@ export default function ContactsPage() {
   const exportMutation = useExportContacts();
 
   const contacts = contactsData?.data?.contacts || [];
+  const contactStats = React.useMemo(() => {
+    const total = contacts.length;
+    const active = contacts.filter((c) => c.status === 'active').length;
+    const reachable = contacts.filter((c) => c.email || c.workPhone || c.mobilePhone).length;
+    const optOuts = contacts.filter((c) =>
+      ['do_not_contact', 'unsubscribed', 'bounced'].includes(c.status)
+    ).length;
+    return { total, active, reachable, optOuts };
+  }, [contacts]);
 
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
@@ -216,6 +225,59 @@ export default function ContactsPage() {
             Add Contact
           </Button>
         </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Contacts</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {isLoading ? '...' : contactStats.total.toLocaleString()}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active</CardTitle>
+            <User className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {isLoading ? '...' : contactStats.active.toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">Currently engaged</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">With Phone/Email</CardTitle>
+            <Phone className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {isLoading ? '...' : contactStats.reachable.toLocaleString()}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Opt-outs</CardTitle>
+            <Trash2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {isLoading ? '...' : contactStats.optOuts.toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">Do-not-contact or bounced</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Bulk Actions Bar */}
