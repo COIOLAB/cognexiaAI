@@ -1,4 +1,5 @@
-﻿import { useAuthStore } from '@/stores/auth-store';
+import { useAuthStore } from '@/stores/auth-store';
+import { hasAnyRoleAccess, hasPermissionAccess } from '@/lib/rbac';
 
 export function usePermissions() {
   const { user } = useAuthStore();
@@ -6,16 +7,16 @@ export function usePermissions() {
 }
 
 export function useHasPermission(permission: string) {
-  const permissions = usePermissions();
-  return permissions.includes(permission);
+  const { user } = useAuthStore();
+  return hasPermissionAccess(user, permission);
 }
 
 export function useHasRole(role: string) {
   const { user } = useAuthStore();
-  return user?.role === role;
+  return hasAnyRoleAccess(user, [role]);
 }
 
 export function useHasAnyRole(roles: string[]) {
   const { user } = useAuthStore();
-  return roles.includes(user?.role || '');
+  return hasAnyRoleAccess(user, roles);
 }

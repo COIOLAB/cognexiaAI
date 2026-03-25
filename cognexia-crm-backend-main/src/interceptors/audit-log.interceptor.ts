@@ -15,7 +15,7 @@ import { AuditAction } from '../entities/audit-log.entity';
  */
 @Injectable()
 export class AuditLogInterceptor implements NestInterceptor {
-  constructor(private readonly auditLogService: AuditLogService) {}
+  constructor(private readonly auditLogService: AuditLogService) { }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();

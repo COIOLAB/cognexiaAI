@@ -7,6 +7,8 @@ export interface User {
   firstName: string;
   lastName: string;
   role: string;
+  roles?: string[];
+  userType?: string;
   permissions: string[];
   organizationId: string;
   organizationName: string;

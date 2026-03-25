@@ -2561,7 +2561,7 @@ export interface CreateProductDto {
   saleEndDate?: string;
 }
 
-export interface UpdateProductDto extends Partial<CreateProductDto> {}
+export interface UpdateProductDto extends Partial<CreateProductDto> { }
 
 export interface ProductQueryDto {
   categoryId?: string;
@@ -2608,7 +2608,7 @@ export interface CreateCategoryDto {
   metadata?: Record<string, any>;
 }
 
-export interface UpdateCategoryDto extends Partial<CreateCategoryDto> {}
+export interface UpdateCategoryDto extends Partial<CreateCategoryDto> { }
 
 export interface BundleItem {
   productId: string;
@@ -2671,7 +2671,7 @@ export interface CreateBundleDto {
   imageUrls?: string[];
 }
 
-export interface UpdateBundleDto extends Partial<CreateBundleDto> {}
+export interface UpdateBundleDto extends Partial<CreateBundleDto> { }
 
 export interface PriceListItem {
   productId: string;
@@ -2726,7 +2726,7 @@ export interface CreatePriceListDto {
   };
 }
 
-export interface UpdatePriceListDto extends Partial<CreatePriceListDto> {}
+export interface UpdatePriceListDto extends Partial<CreatePriceListDto> { }
 
 export interface BuyXGetYConfig {
   buyQuantity: number;
@@ -2788,7 +2788,7 @@ export interface CreateDiscountDto {
   excludedCustomerIds?: string[];
 }
 
-export interface UpdateDiscountDto extends Partial<CreateDiscountDto> {}
+export interface UpdateDiscountDto extends Partial<CreateDiscountDto> { }
 
 export interface CalculatePriceDto {
   productId: string;

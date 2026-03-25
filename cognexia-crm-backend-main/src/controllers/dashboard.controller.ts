@@ -247,14 +247,9 @@ export class DashboardController {
   @UserTypes(UserType.ORG_ADMIN, UserType.ORG_USER)
   async getUserMetrics(@Request() req) {
     try {
-<<<<<<< Updated upstream
-      const organizationId = req.user.organizationId;
-      const metrics = await this.userDashboardService.getUserMetrics(organizationId);
-=======
       const organizationId = this.resolveOrganizationId(req);
-      const userId = req.user?.userId;
+      const userId = this.resolveUserId(req);
       const metrics = await this.userDashboardService.getUserMetrics(organizationId, userId);
->>>>>>> Stashed changes
       return {
         success: true,
         data: metrics,
@@ -275,8 +270,8 @@ export class DashboardController {
   async getTeamMembers(@Request() req) {
     try {
       const organizationId = this.resolveOrganizationId(req);
-      const userId = req.user?.userId;
-      
+      const userId = this.resolveUserId(req);
+
       if (!userId) {
         throw new Error('User ID not found in request');
       }
@@ -664,5 +659,23 @@ export class DashboardController {
         HttpStatus.BAD_REQUEST,
       );
     }
+  }
+
+  private resolveUserId(req: any): string | undefined {
+    return req?.user?.id || req?.user?.userId || req?.user?.sub;
+  }
+
+  private resolveOrganizationId(req: any): string {
+    const organizationId =
+      req?.organizationId ||
+      req?.user?.organizationId ||
+      req?.user?.tenantId ||
+      req?.headers?.['x-tenant-id'];
+
+    if (!organizationId) {
+      throw new Error('Organization ID not found in request');
+    }
+
+    return organizationId;
   }
 }

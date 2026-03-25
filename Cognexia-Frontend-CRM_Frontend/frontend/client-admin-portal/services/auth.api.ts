@@ -43,6 +43,10 @@ export const authApi = {
     await apiClient.post('/auth/forgot-password', { email });
   },
 
+  acceptInvitation: async (token: string, password: string): Promise<void> => {
+    await apiClient.post('/users/accept-invitation', { token, password });
+  },
+
   resetPassword: async (token: string, newPassword: string): Promise<void> => {
     await apiClient.post('/auth/reset-password', { token, newPassword });
   },

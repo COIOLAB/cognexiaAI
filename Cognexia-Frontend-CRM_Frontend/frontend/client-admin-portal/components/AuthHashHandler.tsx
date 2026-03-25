@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useTenantStore } from '@/stores/tenant-store';
+import { normalizeAccessValue, normalizeRoles } from '@/lib/rbac';
 
 /**
  * When user is redirected from auth-portal after login/register, tokens are in URL hash (#auth=...).
@@ -29,12 +30,17 @@ export function AuthHashHandler() {
       };
 
       const u = authData.user;
+      const normalizedRoles = normalizeRoles(u.roles);
+      const normalizedUserType = normalizeAccessValue(u.userType);
+      const primaryRole = normalizeAccessValue(u.role) || normalizedRoles[0] || normalizedUserType || 'org_user';
       const user = {
         id: String(u.id),
         email: String(u.email),
         firstName: String(u.firstName ?? u.first_name ?? ''),
         lastName: String(u.lastName ?? u.last_name ?? ''),
-        role: String(u.role ?? u.userType ?? 'org_user'),
+        role: primaryRole,
+        roles: normalizedRoles.length ? normalizedRoles : [primaryRole],
+        userType: normalizedUserType || String(u.userType ?? ''),
         permissions: Array.isArray(u.permissions) ? u.permissions as string[] : [],
         organizationId: String(u.organizationId ?? u.organization_id ?? ''),
         organizationName: String(u.organizationName ?? u.organization_name ?? ''),

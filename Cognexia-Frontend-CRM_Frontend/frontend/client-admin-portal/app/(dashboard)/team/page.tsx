@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,6 +48,12 @@ interface TeamMember {
   createdAt: string;
 }
 
+interface RoleOption {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 interface SeatUsage {
   currentUsers: number;
   maxUsers: number;
@@ -74,12 +80,8 @@ export default function TeamManagementPage() {
     email: '',
     firstName: '',
     lastName: '',
-<<<<<<< Updated upstream
-    role: 'USER',
-=======
-    role: 'ORG_USER',
+    role: '',
     managerId: 'none',
->>>>>>> Stashed changes
   });
 
   // Fetch team members
@@ -101,21 +103,55 @@ export default function TeamManagementPage() {
     },
   });
 
+  // Fetch available roles from database
+  const { data: availableRoles, isLoading: loadingRoles } = useQuery<RoleOption[]>({
+    queryKey: ['team-roles'],
+    queryFn: async () => {
+      const response = await apiClient.get('/users/roles');
+      return response.data?.data || response.data || [];
+    },
+  });
+
+  useEffect(() => {
+    if (!availableRoles?.length) return;
+
+    setInviteForm((prev) => {
+      if (
+        prev.role &&
+        availableRoles.some((role) => role.name.toLowerCase() === prev.role.toLowerCase())
+      ) {
+        const matched = availableRoles.find(
+          (role) => role.name.toLowerCase() === prev.role.toLowerCase(),
+        )!;
+        return { ...prev, role: matched.name };
+      }
+
+      const defaultRole = availableRoles.find((role) => role.name.toLowerCase() === 'org_user')?.name;
+      if (defaultRole) {
+        return { ...prev, role: defaultRole };
+      }
+
+      if (availableRoles[0]?.name) {
+        return { ...prev, role: availableRoles[0].name };
+      }
+
+        return prev;
+    });
+  }, [availableRoles]);
+
   // Invite user mutation
   const inviteUserMutation = useMutation({
     mutationFn: async (data: InviteUserForm) => {
+      const roleSlug = data.role?.trim().toLowerCase();
+      const isOrgAdminRole = roleSlug === 'org_admin' || roleSlug === 'admin';
+
       const response = await apiClient.post('/users/invite', {
         email: data.email,
         firstName: data.firstName,
         lastName: data.lastName,
-<<<<<<< Updated upstream
-        userType: data.role === 'ADMIN' ? 'org_admin' : 'org_user',
-        roleIds: data.role ? [data.role.toLowerCase()] : [],
-=======
-        userType: data.role === 'ORG_ADMIN' ? 'org_admin' : 'org_user',
-        roleIds: data.role ? [data.role] : [],
+        userType: isOrgAdminRole ? 'org_admin' : 'org_user',
+        roleIds: roleSlug ? [roleSlug] : [],
         ...(data.managerId && data.managerId !== 'none' ? { managerId: data.managerId } : {}),
->>>>>>> Stashed changes
       });
       return response.data;
     },
@@ -127,11 +163,7 @@ export default function TeamManagementPage() {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
       queryClient.invalidateQueries({ queryKey: ['seat-usage'] });
       setInviteDialogOpen(false);
-<<<<<<< Updated upstream
-      setInviteForm({ email: '', firstName: '', lastName: '', role: 'USER' });
-=======
-      setInviteForm({ email: '', firstName: '', lastName: '', role: 'ORG_USER', managerId: 'none' });
->>>>>>> Stashed changes
+      setInviteForm({ email: '', firstName: '', lastName: '', role: '', managerId: 'none' });
     },
     onError: (error: any) => {
       toast({
@@ -177,19 +209,30 @@ export default function TeamManagementPage() {
     }
   };
 
+  const formatRoleName = (role?: string) => {
+    if (!role) return 'User';
+    return role
+      .toLowerCase()
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
   const getRoleBadgeColor = (roles: string[]) => {
-    if (roles.includes('OWNER') || roles.includes('owner')) return 'bg-purple-500';
-    if (roles.includes('ADMIN') || roles.includes('admin') || roles.includes('org_admin')) return 'bg-blue-500';
+    const normalized = roles.map((role) => role.toUpperCase());
+    if (normalized.includes('OWNER')) return 'bg-purple-500';
+    if (normalized.includes('ORG_ADMIN') || normalized.includes('ADMIN')) return 'bg-blue-500';
+    if (normalized.some((role) => role.includes('MANAGER'))) return 'bg-indigo-500';
     return 'bg-gray-500';
   };
 
   const getRoleLabel = (roles: string[]) => {
-    if (roles.includes('OWNER') || roles.includes('owner')) return 'Owner';
-    if (roles.includes('ADMIN') || roles.includes('admin') || roles.includes('org_admin')) return 'Admin';
-    return 'User';
+    const normalized = roles.map((role) => role.toUpperCase());
+    if (normalized.includes('OWNER')) return 'Owner';
+    if (normalized.includes('ORG_ADMIN') || normalized.includes('ADMIN')) return 'Admin';
+    return formatRoleName(roles[0]);
   };
 
-  if (loadingTeam || loadingSeats) {
+  if (loadingTeam || loadingSeats || loadingRoles) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -268,8 +311,11 @@ export default function TeamManagementPage() {
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ADMIN">Admin</SelectItem>
-                    <SelectItem value="USER">User</SelectItem>
+                    {(availableRoles || []).map((role) => (
+                      <SelectItem key={role.id} value={role.name}>
+                        {formatRoleName(role.name)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -282,7 +328,16 @@ export default function TeamManagementPage() {
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
                     {teamMembers
-                      ?.filter(m => m.roles?.some(r => ['OWNER', 'ORG_ADMIN', 'ADMIN', 'SALES_MANAGER', 'MARKETING_MANAGER', 'SUPPORT_MANAGER', 'SUPPORT_AGENT'].includes(r.toUpperCase())))
+                      ?.filter((member) =>
+                        member.roles?.some((role) => {
+                          const normalizedRole = role.toUpperCase();
+                          return (
+                            normalizedRole.includes('OWNER') ||
+                            normalizedRole.includes('ADMIN') ||
+                            normalizedRole.includes('MANAGER')
+                          );
+                        }),
+                      )
                       .map(manager => (
                         <SelectItem key={manager.id} value={manager.id}>
                           {manager.firstName} {manager.lastName} - ({getRoleLabel(manager.roles)})
@@ -295,7 +350,7 @@ export default function TeamManagementPage() {
                 <Button type="button" variant="outline" onClick={() => setInviteDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={inviteUserMutation.isPending}>
+                <Button type="submit" disabled={inviteUserMutation.isPending || !inviteForm.role}>
                   {inviteUserMutation.isPending ? 'Sending...' : 'Send Invitation'}
                 </Button>
               </DialogFooter>
@@ -318,9 +373,8 @@ export default function TeamManagementPage() {
           <CardContent className="space-y-4">
             <div className="w-full bg-gray-200 rounded-full h-3">
               <div
-                className={`h-3 rounded-full transition-all ${
-                  isAtLimit ? 'bg-red-500' : isNearLimit ? 'bg-yellow-500' : 'bg-green-500'
-                }`}
+                className={`h-3 rounded-full transition-all ${isAtLimit ? 'bg-red-500' : isNearLimit ? 'bg-yellow-500' : 'bg-green-500'
+                  }`}
                 style={{ width: `${Math.min(seatUsage.usagePercentage, 100)}%` }}
               />
             </div>
@@ -400,7 +454,7 @@ export default function TeamManagementPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {member.lastLoginAt 
+                    {member.lastLoginAt
                       ? new Date(member.lastLoginAt).toLocaleDateString()
                       : 'Never'}
                   </TableCell>

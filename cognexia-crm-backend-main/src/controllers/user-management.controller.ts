@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
   Param,
   Query,
@@ -9,7 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { JwtAuthGuard, Public } from '../guards/jwt-auth.guard';
 import { RolesGuard, UserTypes } from '../guards/roles.guard';
 import { UserType } from '../entities/user.entity';
 import { UserManagementService } from '../services/user-management.service';
@@ -19,7 +20,7 @@ import { AuthenticatedUser } from '../guards/jwt.strategy';
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UserManagementController {
-  constructor(private readonly userManagementService: UserManagementService) {}
+  constructor(private readonly userManagementService: UserManagementService) { }
 
   @Get()
   @UserTypes(UserType.SUPER_ADMIN, UserType.ORG_ADMIN)
@@ -130,6 +131,28 @@ export class UserManagementController {
     return { success: true, data: result };
   }
 
+  @Public()
+  @Post('accept-invitation')
+  async acceptInvitation(@Body() body: { token: string; password: string }) {
+    if (!body?.token || !body?.password) {
+      throw new BadRequestException('Token and password are required');
+    }
+
+    const result = await this.userManagementService.acceptInvitation({
+      token: body.token,
+      password: body.password,
+    });
+
+    return { success: true, data: result };
+  }
+
+  @Get('roles')
+  @UserTypes(UserType.SUPER_ADMIN, UserType.ORG_ADMIN)
+  async getAvailableRoles() {
+    const roles = await this.userManagementService.getAvailableRoles();
+    return { success: true, data: roles };
+  }
+
   @Get(':id')
   @UserTypes(UserType.SUPER_ADMIN, UserType.ORG_ADMIN)
   async getUserById(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
@@ -166,6 +189,20 @@ export class UserManagementController {
       return { success: true, data: updated };
     } catch (error) {
       if (error instanceof NotFoundException) {
+        return { success: false, data: null, message: error.message };
+      }
+      throw error;
+    }
+  }
+
+  @Delete(':id')
+  @UserTypes(UserType.SUPER_ADMIN, UserType.ORG_ADMIN)
+  async deleteUser(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    try {
+      const deleted = await this.userManagementService.deleteUser(id, user as any);
+      return { success: true, data: deleted };
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
         return { success: false, data: null, message: error.message };
       }
       throw error;

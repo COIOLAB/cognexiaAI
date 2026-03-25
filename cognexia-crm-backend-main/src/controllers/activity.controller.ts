@@ -33,7 +33,7 @@ export class ActivityController {
   constructor(
     private readonly taskService: TaskService,
     private readonly activityLogger: ActivityLoggerService,
-  ) {}
+  ) { }
 
   // ========== TASKS ==========
 
@@ -130,10 +130,21 @@ export class ActivityController {
     @Query('limit') limit: number = 50,
     @Req() req: any,
   ) {
+    const userId = req.user?.id || req.user?.userId || req.user?.sub;
+    const organizationId =
+      req.user?.organizationId || req.organizationId || req.user?.tenantId;
+
+    if (!userId || !organizationId) {
+      return [];
+    }
+
+    const parsedLimit = Number(limit);
+    const safeLimit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 50;
+
     return this.activityLogger.getTeamActivities(
-      req.user.id,
-      req.user.organizationId,
-      limit,
+      userId,
+      organizationId,
+      safeLimit,
     );
   }
 

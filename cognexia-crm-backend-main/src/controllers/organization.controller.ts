@@ -34,7 +34,7 @@ export class OrganizationController {
   constructor(
     private readonly organizationService: OrganizationService,
     private readonly userManagementService: UserManagementService,
-  ) {}
+  ) { }
 
   /**
    * Create New Organization

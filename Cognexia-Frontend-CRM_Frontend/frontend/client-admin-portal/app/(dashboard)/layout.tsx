@@ -1,6 +1,7 @@
 'use client';
 
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { RoleRouteGuard } from '@/components/RoleRouteGuard';
 import { Sidebar } from '@/components/Sidebar';
 import { TopNav } from '@/components/TopNav';
 import { useUIStore } from '@/stores/ui-store';
@@ -25,7 +26,9 @@ export default function DashboardLayout({
               sidebarCollapsed ? 'ml-20' : 'ml-64'
             )}
           >
-            <div className="container mx-auto p-6">{children}</div>
+            <div className="container mx-auto p-6">
+              <RoleRouteGuard>{children}</RoleRouteGuard>
+            </div>
           </main>
         </div>
       </div>

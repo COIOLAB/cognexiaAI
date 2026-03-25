@@ -4,7 +4,13 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useUIStore } from '@/stores/ui-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { cn } from '@/lib/utils';
+import {
+  DEFAULT_FALLBACK_ROLES,
+  getAllowedRolesForPath,
+  hasAnyRoleAccess,
+} from '@/lib/rbac';
 import {
   LayoutDashboard,
   Users,
@@ -55,25 +61,17 @@ const navigationSections = [
     title: 'Basic Features',
     tier: 'basic',
     items: [
-<<<<<<< Updated upstream
-      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-      { name: 'Clients', href: '/accounts', icon: Building },
-      { name: 'Customers', href: '/customers', icon: Users },
-      { name: 'Contacts', href: '/contacts', icon: Contact },
-      { name: 'Leads', href: '/leads', icon: UserPlus },
-      { name: 'Opportunities', href: '/opportunities', icon: Target },
-=======
       { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, allowedRoles: ['ORG_ADMIN', 'ORG_USER', 'SALES_REP', 'SALES_MANAGER', 'MARKETING_MANAGER', 'SUPPORT_AGENT'] },
-      { name: 'My Team', href: '/my-team', icon: Users, allowedRoles: ['OWNER', 'ORG_ADMIN', 'ADMIN', 'SALES_MANAGER', 'MARKETING_MANAGER', 'SUPPORT_MANAGER', 'SUPPORT_AGENT'] },
-      { name: 'Accounts', href: '/accounts', icon: Building, allowedRoles: ['ORG_ADMIN', 'SALES_REP', 'SALES_MANAGER'] },
-      { name: 'Customers', href: '/customers', icon: Users, allowedRoles: ['ORG_ADMIN', 'SALES_REP', 'SALES_MANAGER', 'MARKETING_MANAGER', 'SUPPORT_AGENT'] },
+      { name: 'My Team', href: '/my-team', icon: Users, allowedRoles: ['ORG_ADMIN', 'SALES_MANAGER', 'MARKETING_MANAGER'] },
+      { name: 'Clients', href: '/accounts', icon: Building, allowedRoles: ['ORG_ADMIN', 'SALES_REP', 'SALES_MANAGER'] },
+      { name: 'Customers', href: '/customers', icon: Users, allowedRoles: ['ORG_ADMIN', 'ORG_USER', 'SALES_REP', 'SALES_MANAGER', 'MARKETING_MANAGER', 'SUPPORT_AGENT'] },
       { name: 'Contacts', href: '/contacts', icon: Contact, allowedRoles: ['ORG_ADMIN', 'SALES_REP', 'SALES_MANAGER'] },
       { name: 'Leads', href: '/leads', icon: UserPlus, allowedRoles: ['ORG_ADMIN', 'SALES_REP', 'SALES_MANAGER', 'MARKETING_MANAGER'] },
       { name: 'Opportunities', href: '/opportunities', icon: Target, allowedRoles: ['ORG_ADMIN', 'SALES_REP', 'SALES_MANAGER'] },
       { name: 'Invite Team', href: '/team', icon: Users, allowedRoles: ['ORG_ADMIN'] },
->>>>>>> Stashed changes
       {
         name: 'Sales',
+        allowedRoles: ['ORG_ADMIN', 'SALES_MANAGER', 'SALES_REP'],
         children: [
           { name: 'Quotes', href: '/sales/quotes', icon: FileText },
           { name: 'Orders', href: '/sales/orders', icon: Package },
@@ -84,6 +82,7 @@ const navigationSections = [
       },
       {
         name: 'Marketing',
+        allowedRoles: ['ORG_ADMIN', 'MARKETING_MANAGER'],
         children: [
           { name: 'Campaigns', href: '/marketing/campaigns', icon: Megaphone },
           { name: 'Emails', href: '/marketing/emails', icon: Mail },
@@ -95,6 +94,7 @@ const navigationSections = [
       },
       {
         name: 'Support',
+        allowedRoles: ['ORG_ADMIN', 'SUPPORT_AGENT'],
         children: [
           { name: 'Support Home', href: '/support', icon: Headphones },
           { name: 'Tickets', href: '/support/tickets', icon: Ticket },
@@ -119,6 +119,7 @@ const navigationSections = [
     items: [
       {
         name: 'Support',
+        allowedRoles: ['ORG_ADMIN', 'SUPPORT_AGENT'],
         children: [
           { name: 'Support Home', href: '/support', icon: Headphones },
           { name: 'Tickets', href: '/support/tickets', icon: Ticket },
@@ -130,6 +131,7 @@ const navigationSections = [
       },
       {
         name: 'Marketing',
+        allowedRoles: ['ORG_ADMIN', 'MARKETING_MANAGER'],
         children: [
           { name: 'Campaigns', href: '/marketing/campaigns', icon: Megaphone },
           { name: 'Emails', href: '/marketing/emails', icon: Mail },
@@ -141,6 +143,7 @@ const navigationSections = [
       },
       {
         name: 'Operations',
+        allowedRoles: ['ORG_ADMIN', 'ORG_USER', 'SALES_REP', 'SALES_MANAGER', 'MARKETING_MANAGER', 'SUPPORT_AGENT'],
         children: [
           { name: 'Tasks', href: '/tasks', icon: CheckSquare },
           { name: 'Activities', href: '/activities', icon: CheckSquare },
@@ -154,6 +157,7 @@ const navigationSections = [
       { name: 'Mobile Service', href: '/mobile', icon: Smartphone },
       {
         name: 'Calls',
+        allowedRoles: ['ORG_ADMIN', 'SALES_MANAGER', 'SUPPORT_AGENT'],
         children: [
           { name: 'Call Center', href: '/calls', icon: Phone },
           { name: 'Active Calls', href: '/calls/active', icon: PhoneIncoming },
@@ -164,26 +168,41 @@ const navigationSections = [
       },
     ],
   },
-  {
-    title: 'Advanced Features',
-    tier: 'advanced',
-    items: [
-      { name: 'AI Lab', href: '/ai', icon: Brain },
-      { name: 'Workflow', href: '/workflow', icon: Workflow },
-      { name: 'Recommendations', href: '/recommendations', icon: Sparkles },
-      { name: 'Analytics', href: '/analytics', icon: TrendingUp },
-      { name: 'Monitoring', href: '/monitoring', icon: BarChart3 },
-      { name: 'Performance', href: '/performance', icon: BarChart2 },
-      { name: 'Usage', href: '/usage', icon: TrendingUp },
-      { name: 'Throttling', href: '/throttling', icon: Shield },
-    ],
-  },
+  // {
+  //   title: 'Advanced Features',
+  //   tier: 'advanced',
+  //   items: [
+  //     { name: 'AI Lab', href: '/ai', icon: Brain },
+  //     { name: 'Workflow', href: '/workflow', icon: Workflow },
+  //     { name: 'Recommendations', href: '/recommendations', icon: Sparkles },
+  //     { name: 'Analytics', href: '/analytics', icon: TrendingUp },
+  //     { name: 'Monitoring', href: '/monitoring', icon: BarChart3 },
+  //     { name: 'Performance', href: '/performance', icon: BarChart2 },
+  //     { name: 'Usage', href: '/usage', icon: TrendingUp },
+  //     { name: 'Throttling', href: '/throttling', icon: Shield },
+  //   ],
+  // },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
+  const user = useAuthStore((state) => state.user);
   const [query, setQuery] = useState('');
+
+  const resolveAllowedRoles = (item: any): string[] => {
+    if (Array.isArray(item?.allowedRoles) && item.allowedRoles.length > 0) {
+      return item.allowedRoles;
+    }
+
+    if (item?.href) {
+      return getAllowedRolesForPath(item.href) || DEFAULT_FALLBACK_ROLES;
+    }
+
+    return DEFAULT_FALLBACK_ROLES;
+  };
+
+  const hasAllowedRole = (allowedRoles: string[]) => hasAnyRoleAccess(user, allowedRoles);
 
   const tierBadgeClass = (tier: string) => {
     if (tier === 'premium') {
@@ -196,28 +215,57 @@ export function Sidebar() {
   };
 
   const filteredSections = useMemo(() => {
-    if (!query) return navigationSections;
     const lower = query.toLowerCase();
     return navigationSections
       .map((section) => {
         const items = section.items
           .map((item) => {
             if (item.children) {
-              const matchedChildren = item.children.filter((child) =>
+              const explicitGroupRoles = Array.isArray((item as any)?.allowedRoles)
+                ? ((item as any).allowedRoles as string[])
+                : null;
+              if (explicitGroupRoles && !hasAllowedRole(explicitGroupRoles)) {
+                return null;
+              }
+
+              const visibleChildren = item.children.filter((child) => {
+                const childRoles = resolveAllowedRoles(child);
+                return hasAllowedRole(childRoles);
+              });
+
+              if (!visibleChildren.length) {
+                return null;
+              }
+
+              if (!query) {
+                return { ...item, children: visibleChildren };
+              }
+
+              const matchedChildren = visibleChildren.filter((child) =>
                 child.name.toLowerCase().includes(lower),
               );
               if (item.name.toLowerCase().includes(lower) || matchedChildren.length > 0) {
-                return { ...item, children: matchedChildren.length ? matchedChildren : item.children };
+                return { ...item, children: matchedChildren.length ? matchedChildren : visibleChildren };
               }
               return null;
             }
+
+            const itemRoles = resolveAllowedRoles(item);
+            if (!hasAllowedRole(itemRoles)) {
+              return null;
+            }
+
+            if (!query) {
+              return item;
+            }
+
             return item.name.toLowerCase().includes(lower) ? item : null;
           })
           .filter(Boolean);
         return items.length ? { ...section, items } : null;
       })
       .filter(Boolean) as typeof navigationSections;
-  }, [query]);
+  }, [query, user]);
 
   return (
     <aside

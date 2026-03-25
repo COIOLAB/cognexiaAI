@@ -1,9 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { authApi } from '@/services/auth.api';
 import { useAuthStore } from '@/stores/auth-store';
 import { useTenantStore } from '@/stores/tenant-store';
 import type { LoginRequest, RegisterRequest } from '@/types/api.types';
+import { normalizeAccessValue, normalizeRoles } from '@/lib/rbac';
 import toast from 'react-hot-toast';
 
 export function useAuth() {
@@ -12,14 +13,25 @@ export function useAuth() {
   const { setAuth, logout: logoutStore, user, isAuthenticated } = useAuthStore();
   const { setCurrentOrganization, clearTenant } = useTenantStore();
 
-  const handleAuthSuccess = (data: { user: any; accessToken: string; refreshToken: string }) => {
-    const authUser = {
-      ...data.user,
-      role: data.user.role || data.user.userType || 'org_user',
-      permissions: data.user.permissions || [],
-      organizationId: data.user.organizationId || '',
-      organizationName: data.user.organizationName || '',
+  const buildAuthUser = (rawUser: any) => {
+    const normalizedRoles = normalizeRoles(rawUser?.roles);
+    const normalizedUserType = normalizeAccessValue(rawUser?.userType);
+    const primaryRole =
+      normalizeAccessValue(rawUser?.role) || normalizedRoles[0] || normalizedUserType || 'org_user';
+
+    return {
+      ...rawUser,
+      role: primaryRole,
+      roles: normalizedRoles.length ? normalizedRoles : [primaryRole],
+      userType: normalizedUserType || rawUser?.userType,
+      permissions: Array.isArray(rawUser?.permissions) ? rawUser.permissions : [],
+      organizationId: rawUser?.organizationId || '',
+      organizationName: rawUser?.organizationName || '',
     };
+  };
+
+  const handleAuthSuccess = (data: { user: any; accessToken: string; refreshToken: string }) => {
+    const authUser = buildAuthUser(data.user);
     setAuth(authUser, data.accessToken, data.refreshToken);
 
     // Store tokens in localStorage for API calls
@@ -42,7 +54,7 @@ export function useAuth() {
 
     // Role-based routing
     const isSuperAdmin =
-      data.user.userType === 'SUPER_ADMIN' || data.user.roles?.includes('SUPER_ADMIN');
+      authUser.userType === 'super_admin' || authUser.roles?.includes('super_admin');
 
     if (isSuperAdmin) {
       const superAdminUrl = process.env.NEXT_PUBLIC_SUPER_ADMIN_PORTAL_URL || 'http://localhost:3001';
@@ -87,13 +99,7 @@ export function useAuth() {
   const registerMutation = useMutation({
     mutationFn: (data: RegisterRequest) => authApi.register(data),
     onSuccess: (data) => {
-      const authUser = {
-        ...data.user,
-        role: data.user.role || data.user.userType || 'org_user',
-        permissions: data.user.permissions || [],
-        organizationId: data.user.organizationId || '',
-        organizationName: data.user.organizationName || '',
-      };
+      const authUser = buildAuthUser(data.user);
       setAuth(authUser, data.accessToken, data.refreshToken);
       
       // Store tokens in localStorage
@@ -102,9 +108,9 @@ export function useAuth() {
       localStorage.setItem('organizationId', authUser.organizationId || '');
       
       setCurrentOrganization({
-        id: data.user.organizationId,
-        name: data.user.organizationName || '',
-        slug: data.user.organizationId,
+        id: authUser.organizationId,
+        name: authUser.organizationName || '',
+        slug: authUser.organizationId,
         plan: 'trial',
         isActive: true,
       });

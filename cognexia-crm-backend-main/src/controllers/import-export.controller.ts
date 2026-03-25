@@ -31,7 +31,7 @@ export class ImportExportController {
   constructor(
     private readonly importService: ImportService,
     private readonly exportService: ExportService,
-  ) {}
+  ) { }
 
   /**
    * Upload and create import job
@@ -130,7 +130,7 @@ export class ImportExportController {
   @ApiOperation({ summary: 'Get import job status' })
   async getImportStatus(@Param('jobId') jobId: string) {
     const job = await this.importService.getImportJob(jobId);
-    
+
     return {
       id: job.id,
       status: job.status,
@@ -161,10 +161,10 @@ export class ImportExportController {
   @ApiOperation({ summary: 'Download import template' })
   async downloadTemplate(@Body() dto: ImportTemplateDto, @Res() res: Response) {
     const template = await this.importService.generateTemplate(dto.importType);
-    
+
     // Convert to CSV
     const csv = template.map(row => row.join(',')).join('\n');
-    
+
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename=${dto.importType}_template.csv`);
     res.send(csv);
@@ -206,7 +206,7 @@ export class ImportExportController {
   @ApiOperation({ summary: 'Get export job status' })
   async getExportStatus(@Param('jobId') jobId: string) {
     const job = await this.exportService.getExportJob(jobId);
-    
+
     return {
       id: job.id,
       status: job.status,
@@ -227,10 +227,10 @@ export class ImportExportController {
   @ApiOperation({ summary: 'Download export file' })
   async downloadExport(@Param('jobId') jobId: string, @Res() res: Response) {
     const { filePath, fileName, mimeType } = await this.exportService.getExportFile(jobId);
-    
+
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
-    
+
     const fileStream = fs.createReadStream(filePath);
     fileStream.pipe(res);
   }

@@ -186,8 +186,8 @@ export default function EventDetailPage() {
                           attendee.status === 'accepted'
                             ? 'default'
                             : attendee.status === 'declined'
-                            ? 'destructive'
-                            : 'secondary'
+                              ? 'destructive'
+                              : 'secondary'
                         }
                       >
                         {attendee.status}

@@ -5,12 +5,9 @@ import { Activity, ActivityType } from '../entities/activity.entity';
 import { Note } from '../entities/note.entity';
 import { CreateActivityDto, CreateNoteDto } from '../dto/activity.dto';
 import { throwNotFound } from '../utils/error-handler.util';
-<<<<<<< Updated upstream
-=======
 import { AuditLogService } from './audit-log.service';
-import { AuditAction } from '../entities/audit-log.entity';
+import { AuditAction, AuditLog } from '../entities/audit-log.entity';
 import { User } from '../entities/user.entity';
->>>>>>> Stashed changes
 
 @Injectable()
 export class ActivityLoggerService {
@@ -19,12 +16,11 @@ export class ActivityLoggerService {
     private activityRepo: Repository<Activity>,
     @InjectRepository(Note)
     private noteRepo: Repository<Note>,
-<<<<<<< Updated upstream
-=======
+    @InjectRepository(AuditLog)
+    private auditLogRepo: Repository<AuditLog>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private auditLogService: AuditLogService,
->>>>>>> Stashed changes
   ) { }
 
   /**
@@ -266,25 +262,83 @@ export class ActivityLoggerService {
     limit: number = 50,
   ): Promise<Activity[]> {
     try {
-      // Find all subordinates
+      const parsedLimit = Number(limit);
+      const safeLimit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 50;
+
+      // Find all direct reports
       const subordinates = await this.userRepository.find({
         where: { managerId, organizationId },
-        select: ['id'],
+        select: ['id', 'firstName', 'lastName', 'email'],
       });
 
-      const teamIds = [managerId, ...subordinates.map(u => u.id)];
+      const teamIds = Array.from(new Set([managerId, ...subordinates.map((u) => u.id)]));
 
-      // Construct a query builder to find activities related to the user IDs or performed by them
-      const qb = this.activityRepo.createQueryBuilder('activity')
-        .where('activity.organizationId = :organizationId', { organizationId })
-        .andWhere('(activity.performed_by IN (:...teamIds) OR activity.related_to_id IN (:...teamIds))', { teamIds })
-        .orderBy('activity.created_at', 'DESC')
-        .take(limit);
+      const [activityRows, auditRows] = await Promise.all([
+        this.activityRepo
+          .createQueryBuilder('activity')
+          .where('activity.organizationId = :organizationId', { organizationId })
+          .andWhere('(activity.performed_by IN (:...teamIds) OR activity.related_to_id IN (:...teamIds))', { teamIds })
+          .orderBy('activity.created_at', 'DESC')
+          .take(safeLimit)
+          .getMany(),
+        this.auditLogRepo
+          .createQueryBuilder('audit')
+          .where('audit.organizationId = :organizationId', { organizationId })
+          .andWhere('audit.user_id IN (:...teamIds)', { teamIds })
+          .orderBy('audit.created_at', 'DESC')
+          .take(safeLimit)
+          .getMany(),
+      ]);
 
-      return await qb.getMany() || [];
+      const managerNameMap = new Map<string, string>();
+      subordinates.forEach((u) => {
+        const fullName = `${u.firstName || ''} ${u.lastName || ''}`.trim();
+        managerNameMap.set(u.id, fullName || u.email || 'Team member');
+      });
+
+      const auditActivities: Activity[] = auditRows.map((log) => {
+        const actorId = log.user_id || managerId;
+        const inferredName =
+          (log.metadata && typeof log.metadata === 'object' ? log.metadata.userName : undefined) ||
+          managerNameMap.get(actorId) ||
+          log.user_email ||
+          'Team member';
+
+        const titleFromMetadata =
+          log.metadata && typeof log.metadata === 'object' ? log.metadata.description : undefined;
+
+        return {
+          id: `audit-${log.id}`,
+          organizationId,
+          activity_type: ActivityType.FIELD_UPDATED,
+          title: titleFromMetadata || `${(log.action || 'update').toString().toUpperCase()} ${log.entity_type || 'record'}`,
+          description: titleFromMetadata || '',
+          performed_by: actorId,
+          performed_by_name: inferredName,
+          related_to_id: log.entity_id || null,
+          related_to_type: log.entity_type || 'audit',
+          metadata: {
+            source: 'audit_log',
+            action: log.action,
+            status: log.status,
+          },
+          is_system_generated: true,
+          created_at: log.created_at,
+        } as Activity;
+      });
+
+      const merged = [...activityRows, ...auditActivities]
+        .sort((a, b) => {
+          const aTs = new Date((a as any).created_at || (a as any).createdAt || 0).getTime();
+          const bTs = new Date((b as any).created_at || (b as any).createdAt || 0).getTime();
+          return bTs - aTs;
+        })
+        .slice(0, safeLimit);
+
+      return merged || [];
     } catch (error) {
-       console.error('Failed to get team activities:', error);
-       return [];
+      console.error('Failed to get team activities:', error);
+      return [];
     }
   }
 

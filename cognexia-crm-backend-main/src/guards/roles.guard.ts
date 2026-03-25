@@ -51,6 +51,58 @@ export const Permissions = (...permissions: string[]) => {
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
+  private normalizeAccessValue(value?: string): string {
+    return (value || '').trim().toLowerCase();
+  }
+
+  private expandRoleAliases(role: string): string[] {
+    const normalizedRole = this.normalizeAccessValue(role);
+    if (!normalizedRole) {
+      return [];
+    }
+
+    const aliases = new Set<string>([normalizedRole]);
+    const aliasMap: Record<string, string[]> = {
+      super_admin: ['super_admin'],
+      owner: ['org_admin', 'admin'],
+      org_admin: ['admin', 'client_admin', 'owner'],
+      admin: ['org_admin', 'client_admin', 'owner'],
+      client_admin: ['org_admin', 'admin'],
+      org_user: ['user', 'viewer'],
+      user: ['org_user', 'viewer'],
+      viewer: ['org_user', 'user'],
+      manager: ['sales_manager', 'marketing_manager', 'support_manager'],
+      sales_manager: [],
+      marketing_manager: ['marketing', 'marketing_specialist'],
+      marketing_specialist: ['marketing_manager'],
+      marketing: ['marketing_manager', 'marketing_specialist'],
+      support_manager: ['support_agent', 'customer_success'],
+      support_agent: ['customer_success'],
+      customer_success: ['support_agent'],
+      finance: ['org_admin', 'admin'],
+    };
+
+    const mappedRoles = aliasMap[normalizedRole] || [];
+    for (const mappedRole of mappedRoles) {
+      aliases.add(this.normalizeAccessValue(mappedRole));
+    }
+
+    return [...aliases];
+  }
+
+  private buildExpandedRoleSet(roles: string[] = []): Set<string> {
+    const expandedRoles = new Set<string>();
+
+    for (const role of roles) {
+      const aliases = this.expandRoleAliases(role);
+      for (const alias of aliases) {
+        expandedRoles.add(alias);
+      }
+    }
+
+    return expandedRoles;
+  }
+
   canActivate(context: ExecutionContext): boolean {
     const requiredRoles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
       context.getHandler(),
@@ -100,7 +152,11 @@ export class RolesGuard implements CanActivate {
         return true;
       }
 
-      const hasRole = requiredRoles.some(role => user.roles.includes(role));
+      const requiredRoleSet = this.buildExpandedRoleSet(requiredRoles);
+      const userRoleSet = this.buildExpandedRoleSet(user.roles || []);
+      userRoleSet.add(this.normalizeAccessValue(user.userType));
+
+      const hasRole = [...requiredRoleSet].some((requiredRole) => userRoleSet.has(requiredRole));
       if (!hasRole) {
         throw new ForbiddenException(
           `Access denied. Required role: ${requiredRoles.join(', ')}`
@@ -110,8 +166,10 @@ export class RolesGuard implements CanActivate {
 
     // Check permissions
     if (requiredPermissions && requiredPermissions.length > 0) {
-      const hasPermission = requiredPermissions.some(permission =>
-        user.permissions.includes(permission)
+      const normalizedRequiredPermissions = requiredPermissions.map((permission) => this.normalizeAccessValue(permission));
+      const normalizedUserPermissions = (user.permissions || []).map((permission) => this.normalizeAccessValue(permission));
+      const hasPermission = normalizedRequiredPermissions.some((permission) =>
+        normalizedUserPermissions.includes(permission) || normalizedUserPermissions.includes('*')
       );
       if (!hasPermission) {
         throw new ForbiddenException(

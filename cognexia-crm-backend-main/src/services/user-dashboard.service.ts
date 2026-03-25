@@ -591,9 +591,6 @@ export class UserDashboardService {
       visibility: DashboardVisibility.PRIVATE,
     } as any);
 
-<<<<<<< Updated upstream
-    return await this.dashboardRepository.save(dashboard) as unknown as Dashboard;
-=======
     let saveCall;
     try {
       saveCall = await this.dashboardRepository.save(dashboard) as unknown as Dashboard;
@@ -605,7 +602,6 @@ export class UserDashboardService {
 
 
     return saveCall;
->>>>>>> Stashed changes
   }
 
   /**
@@ -701,9 +697,6 @@ export class UserDashboardService {
     };
   }
 
-<<<<<<< Updated upstream
-  private getTenantWhere(repo: Repository<any>, organizationId: string): Record<string, any> {
-=======
   /**
    * Get team members for a manager
    */
@@ -734,7 +727,6 @@ export class UserDashboardService {
     repo: Repository<any>,
     organizationId?: string,
   ): Record<string, any> | Array<Record<string, any>> {
->>>>>>> Stashed changes
     if (!organizationId) {
       // No tenant context supplied; return unscoped for global dashboards/demo
       return {};
